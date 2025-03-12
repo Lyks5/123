@@ -6,21 +6,21 @@ use Illuminate\Http\Request;
 
 class HomeController
 {
-    // app/Http/Controllers/CartController.php
-public function addToCart(Request $request, Product $product)
-{
-    $cart = session()->get('cart', []);
+    public function index()
+    {
+        $featuredProducts = [
+            [
+                'id' => 1,
+                'name' => 'Экологичный коврик для йоги',
+                'price' => 68.99,
+                'image' => 'https://images.unsplash.com/photo-1554284126-aa88f22d8b74?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+                'category' => 'Йога',
+                'eco_feature' => 'Натуральный каучук',
+                'isNew' => true,
+            ],
+            // Добавьте другие товары
+        ];
     
-    $cart[$product->id] = [
-        'id' => $product->id,
-        'name' => $product->name,
-        'price' => $product->price,
-        'quantity' => $request->quantity ?? 1,
-        'image' => $product->image
-    ];
-    
-    session()->put('cart', $cart);
-    
-    return back()->with('success', 'Товар добавлен в корзину');
-}
+        return view('pages.home', compact('featuredProducts'));
+    }
 }
