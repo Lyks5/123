@@ -47,7 +47,7 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 Route::get('/sustainability', [SustainabilityController::class, 'index'])->name('sustainability');
 
-// Блог
+Route::get('/blog/search', [BlogController::class, 'search'])->name('blog.search'); // Added search route
 Route::get('/blog', [BlogController::class, 'index'])->name('blog');
 Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/blog/category/{category:slug}', [BlogController::class, 'category'])->name('blog.category');
@@ -79,11 +79,85 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
     Route::post('/email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 });
-// Аккаунт пользователя
 Route::middleware(['auth'])->group(function () {
     Route::get('/account', [AccountController::class, 'index'])->name('account');
     Route::get('/account/orders', [AccountController::class, 'orders'])->name('account.orders');
     Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
-    Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+    Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.update');
+    Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    Route::get('/account/addresses', [AccountController::class, 'addresses'])->name('account.addresses');
+    Route::post('/account/addresses', [AccountController::class, 'storeAddress'])->name('account.addresses.store');
+    Route::put('/account/addresses/{address}', [AccountController::class, 'updateAddress'])->name('account.addresses.update');
+    Route::delete('/account/addresses/{address}', [AccountController::class, 'deleteAddress'])->name('account.addresses.delete');
+    Route::get('/account/wishlists', [AccountController::class, 'wishlists'])->name('account.wishlists'); // Added wishlist route
 });
 
+// Админ-панель
+Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
+    // Дашборд
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    
+    // Товары
+    Route::prefix('products')->name('products.')->group(function () {
+        Route::get('/', [AdminController::class, 'products'])->name('index');
+        Route::get('/create', [AdminController::class, 'createProduct'])->name('create');
+        Route::post('/', [AdminController::class, 'storeProduct'])->name('store');
+        Route::get('/{product}/edit', [AdminController::class, 'editProduct'])->name('edit');
+        Route::put('/{product}', [AdminController::class, 'updateProduct'])->name('update');
+        Route::delete('/{product}', [AdminController::class, 'deleteProduct'])->name('delete');
+    });
+    
+    // Категории товаров
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [AdminController::class, 'categories'])->name('index');
+        Route::get('/create', [AdminController::class, 'createCategory'])->name('create');
+        Route::post('/', [AdminController::class, 'storeCategory'])->name('store');
+        Route::get('/{category}/edit', [AdminController::class, 'editCategory'])->name('edit');
+        Route::put('/{category}', [AdminController::class, 'updateCategory'])->name('update');
+        Route::delete('/{category}', [AdminController::class, 'deleteCategory'])->name('delete');
+    });
+    
+    // Блог - Записи
+    Route::prefix('blog/posts')->name('blog.posts.')->group(function () {
+        Route::get('/', [AdminController::class, 'blogPosts'])->name('index');
+        Route::get('/create', [AdminController::class, 'createBlogPost'])->name('create');
+        Route::post('/', [AdminController::class, 'storeBlogPost'])->name('store');
+        Route::get('/{post}/edit', [AdminController::class, 'editBlogPost'])->name('edit');
+        Route::put('/{post}', [AdminController::class, 'updateBlogPost'])->name('update');
+        Route::delete('/{post}', [AdminController::class, 'deleteBlogPost'])->name('delete');
+    });
+    
+    // Блог - Категории
+    Route::prefix('blog/categories')->name('blog.categories.')->group(function () {
+        Route::get('/', [AdminController::class, 'blogCategories'])->name('index');
+        Route::get('/create', [AdminController::class, 'createBlogCategory'])->name('create');
+        Route::post('/', [AdminController::class, 'storeBlogCategory'])->name('store');
+        Route::get('/{category}/edit', [AdminController::class, 'editBlogCategory'])->name('edit');
+        Route::put('/{category}', [AdminController::class, 'updateBlogCategory'])->name('update');
+        Route::delete('/{category}', [AdminController::class, 'deleteBlogCategory'])->name('delete');
+    });
+    
+    // Пользователи
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [AdminController::class, 'users'])->name('index');
+        Route::get('/{user}/edit', [AdminController::class, 'editUser'])->name('edit');
+        Route::put('/{user}', [AdminController::class, 'updateUser'])->name('update');
+    });
+    
+    // Заказы
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [AdminController::class, 'orders'])->name('index');
+        Route::get('/{order}', [AdminController::class, 'showOrder'])->name('show');
+        Route::put('/{order}/status', [AdminController::class, 'updateOrderStatus'])->name('update.status');
+    });
+    
+    // Экологические инициативы
+    Route::prefix('initiatives')->name('initiatives.')->group(function () {
+        Route::get('/', [AdminController::class, 'initiatives'])->name('index');
+        Route::get('/create', [AdminController::class, 'createInitiative'])->name('create');
+        Route::post('/', [AdminController::class, 'storeInitiative'])->name('store');
+        Route::get('/{initiative}/edit', [AdminController::class, 'editInitiative'])->name('edit');
+        Route::put('/{initiative}', [AdminController::class, 'updateInitiative'])->name('update');
+        Route::delete('/{initiative}', [AdminController::class, 'deleteInitiative'])->name('delete');
+    });
+});

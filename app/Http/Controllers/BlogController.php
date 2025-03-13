@@ -10,6 +10,31 @@ use App\Models\Tag;
 class BlogController extends Controller
 {
     /**
+     * Search for blog posts based on the query.
+     */
+    public function search(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string|max:255',
+        ]);
+
+        $query = $request->input('query');
+        $posts = BlogPost::with(['author', 'categories'])
+            ->where('title', 'like', "%{$query}%")
+            ->orWhere('content', 'like', "%{$query}%")
+            ->latest()
+            ->paginate(8);
+
+        return view('pages.blog', [
+            'posts' => $posts,
+            'featuredPost' => null, // You can modify this if you want to show a featured post
+            'categories' => BlogCategory::withCount('posts')->get(),
+            'recentPosts' => BlogPost::latest()->take(3)->get(),
+            'tags' => Tag::has('blogPosts')->take(10)->get(),
+        ]);
+    }
+
+    /**
      * Display a listing of blog posts.
      */
     public function index()
@@ -74,7 +99,7 @@ class BlogController extends Controller
      */
     public function tag(Tag $tag)
     {
-        $posts = $tag->blogPosts()
+        $posts = $tag->posts() 
             ->with(['author', 'categories'])
             ->latest()
             ->paginate(8);

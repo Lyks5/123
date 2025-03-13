@@ -29,4 +29,12 @@ class Tag extends Model
     {
         return $this->morphedByMany(Product::class, 'taggable');
     }
+
+    /**
+     * Get all of the blog posts that are assigned this tag.
+     */
+    public function blogPosts()
+    {
+        return $this->morphedByMany(BlogPost::class, 'taggable');
+    }
 }

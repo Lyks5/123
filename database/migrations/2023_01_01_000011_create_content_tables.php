@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();
             $table->longText('content');
+            $table->boolean('is_featured')->default(false);
             $table->string('featured_image')->nullable();
             $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
             $table->string('status')->default('draft'); // draft, published

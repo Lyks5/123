@@ -15,7 +15,8 @@ class CartController extends Controller
     {
         $cart = $this->getCart();
         
-        return view('pages.cart', compact('cart'));
+        $cartItems = $cart->items; // Retrieve cart items
+        return view('pages.cart', compact('cart', 'cartItems'));
     }
 
     public function add(Request $request)

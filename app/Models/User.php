@@ -28,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'gender',
         'preferences',
         'eco_impact_score',
+        'is_admin',
     ];
 
     /**
@@ -50,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'birth_date' => 'date',
         'preferences' => 'json',
+        'is_admin' => 'boolean',
     ];
 
     /**
@@ -98,5 +100,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ecoImpactRecords()
     {
         return $this->hasMany(EcoImpactRecord::class);
+    }
+    
+    /**
+     * Get the blog posts authored by the user.
+     */
+    public function blogPosts()
+    {
+        return $this->hasMany(BlogPost::class, 'author_id');
     }
 }
