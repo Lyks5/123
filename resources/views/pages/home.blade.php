@@ -2,14 +2,14 @@
 <script src="//unpkg.com/alpinejs" defer></script>
 @section('content')
     <!-- Hero Section -->
-    @include('partials.hero')
+    @include('components.hero')
 
     <!-- Featured Products -->
-    @include('partials.featured-products')
+    @include('components.featured-products')
 
     <!-- About Section -->
-    @include('partials.about')
+    @include('components.about')
 
     <!-- Newsletter -->
-    @include('partials.newsletter')
+    @include('components.newsletter')
 @endsection

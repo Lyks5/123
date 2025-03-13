@@ -10,8 +10,11 @@
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link rel="dns-prefetch" href="//fonts.bunny.net">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
+    <title>{{ config('app.name', 'EcoSport') }} - @yield('title', 'Экологичные спортивные товары')</title>
     <link rel="icon" href="./favicon.ico" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     @vite('resources/css/app.css')
 </head>
@@ -22,11 +25,16 @@
 </style>
 
 <body>
-    @include('components.header')
-    <main class="menu">
-        @yield('content')
-    </main>
-    @include('components.footer')
+<div class="min-h-screen flex flex-col">
+        @include('components.navbar')
+        
+        <main class="flex-grow">
+            @yield('content')
+        </main>
+        
+        @include('components.footer')
+    </div>
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
 </body>
 
 </html>
