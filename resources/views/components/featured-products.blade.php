@@ -16,7 +16,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             @foreach($featuredProducts as $product)
                 <div class="opacity-0 animate-fade-in" style="animation-delay: {{ $loop->index * 0.1 + 0.2 }}s">
-                    @include('partials.product-card', ['product' => $product])
+                    {{-- @include('components.product-card', ['product' => $product]) --}}
+
                 </div>
             @endforeach
         </div>

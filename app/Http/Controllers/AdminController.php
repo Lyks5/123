@@ -63,7 +63,10 @@ class AdminController extends Controller
                                   ->get();
             
             // Calculate totals
-            $monthlyRevenue[] = $ordersInMonth->sum('total');
+$monthlyRevenue[] = $ordersInMonth->sum('total_amount');
+
+
+
             $monthlySalesCount[] = $ordersInMonth->count();
         }
         
@@ -281,7 +284,11 @@ class AdminController extends Controller
     /**
      * Show the form to create a new category.
      */
-    public function createCategory()
+public function createCategory()
+
+{
+    $parentCategories = Category::whereNull('parent_id')->get(); // Fetch parent categories
+
     {
         $categories = Category::all();
         return view('admin.categories.create', compact('categories'));
@@ -289,7 +296,7 @@ class AdminController extends Controller
     
     /**
      * Store a new category.
-     */
+*/}
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
@@ -404,12 +411,13 @@ class AdminController extends Controller
     /**
      * Show the form to create a new blog post.
      */
-    public function createBlogPost()
-    {
-        $categories = BlogCategory::all();
-        $tags = Tag::all();
-        return view('admin.blog.posts.create', compact('categories', 'tags'));
-    }
+public function createBlogPost()
+{
+    $blogCategories = BlogCategory::all(); // Fetch blog categories
+    $tags = Tag::all();
+    return view('admin.blog.posts.create', compact('blogCategories', 'tags')); // Pass blog categories to the view
+}
+
     
     /**
      * Store a new blog post.
@@ -720,7 +728,10 @@ class AdminController extends Controller
     public function initiatives()
     {
         $initiatives = EnvironmentalInitiative::latest()->paginate(15);
-        return view('admin.initiatives.index', compact('initiatives'));
+        $parentCategories = Category::parents()->active()->get(); // Fetch active parent categories
+
+        return view('admin.initiatives.index', compact('initiatives', 'parentCategories')); // Pass both variables to the view
+
     }
     
     /**
@@ -734,17 +745,21 @@ class AdminController extends Controller
     /**
      * Store a new initiative.
      */
-    public function storeInitiative(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'impact_metric' => 'nullable|string|max:255',
-            'impact_value' => 'nullable|numeric',
-        ]);
+public function storeInitiative(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'start_date' => 'nullable|date',
+        'end_date' => 'nullable|date|after:start_date',
+        'impact_metric' => 'nullable|string|max:255',
+        'impact_value' => 'nullable|numeric',
+    ]);
+    
+    // Generate slug
+    $validated['slug'] = Str::slug($validated['title']);
+
         
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -991,7 +1006,9 @@ class AdminController extends Controller
     public function analytics()
     {
         // Get general statistics
-        $totalSales = Order::where('status', 'completed')->sum('total');
+$totalSales = Order::where('status', 'completed')->sum('total');
+
+
         $totalOrders = Order::count();
         $averageOrderValue = $totalOrders > 0 ? $totalSales / $totalOrders : 0;
         $totalCustomers = User::count();

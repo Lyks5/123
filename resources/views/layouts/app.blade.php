@@ -35,6 +35,14 @@
         @include('components.footer')
     </div>
     <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+    
+    @if (session('success'))
+        <div class="toast toast-success">{{ session('success') }}</div>
+    @endif
+
+    @if (session('error'))
+        <div class="toast toast-error">{{ session('error') }}</div>
+    @endif
 </body>
 
 </html>

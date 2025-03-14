@@ -24,7 +24,7 @@ return new class extends Migration
             $table->foreignId('eco_feature_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('value')->nullable();
-            
+            $table->timestamps();
             // Составной первичный ключ
             $table->primary(['eco_feature_id', 'product_id']);
         });

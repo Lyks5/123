@@ -30,7 +30,7 @@ class CheckoutController extends Controller
         $coupon = session('checkout.coupon');
         
         // Рассчитываем сумму заказа
-        $subtotal = $cart->total;
+        $subtotal = $cart->total_amount;
         $taxRate = config('settings.tax_rate', 0.2); // 20% НДС
         $taxAmount = $subtotal * $taxRate;
         
@@ -243,7 +243,7 @@ class CheckoutController extends Controller
             }
             
             // Рассчитываем суммы
-            $subtotal = $cart->total;
+            $subtotal = $cart->total_amount;
             $taxRate = config('settings.tax_rate', 0.2); // 20% НДС
             $taxAmount = $subtotal * $taxRate;
             
