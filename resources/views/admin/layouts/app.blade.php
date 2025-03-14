@@ -72,7 +72,8 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.contacts.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.contacts.*') ? 'bg-eco-100 text-eco-700' : 'hover:bg-gray-50' }}">
+                <a href="{{ route('admin.contact-requests.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.contact-requests.*') ? 'bg-eco-100 text-eco-700' : 'hover:bg-gray-50' }}">
+
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />

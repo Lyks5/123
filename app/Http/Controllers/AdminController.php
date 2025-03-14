@@ -23,41 +23,23 @@ use Carbon\Carbon;
 class AdminController extends Controller
 {
     /**
-     * Create a new controller instance.
-     */
-    public function __construct()
-    {
-        $this->middleware('auth');
-        $this->middleware('admin');
-    }
-    
-    /**
      * Display the admin dashboard.
      */
     public function index()
     {
         $productCount = Product::count();
-        $orderCount = Order::count();
-        $userCount = User::count();
-        $postCount = BlogPost::count();
-        
-        $recentOrders = Order::with('user')->latest()->take(5)->get();
-        $latestProducts = Product::latest()->take(5)->get();
-        
-        // Get monthly sales data for last 6 months
-        $monthlyData = $this->getMonthlyStatistics();
-        
-        return view('admin.dashboard', [
-            'productCount' => $productCount,
-            'orderCount' => $orderCount,
-            'userCount' => $userCount,
-            'postCount' => $postCount,
-            'recentOrders' => $recentOrders,
-            'latestProducts' => $latestProducts,
-            'monthlyData' => $monthlyData
-        ]);
+        $orderCount = Order::count(); // Add this line to get the order count
+        $userCount = User::count(); // Add this line to get the user count
+        $postCount = BlogPost::count(); // Add this line to get the post count
+        $recentOrders = Order::latest()->take(5)->get(); // Add this line to get the recent orders
+        $latestProducts = Product::latest()->take(5)->get(); // Add this line to get the latest products
+        return view('admin.dashboard', compact('productCount', 'orderCount', 'userCount', 'postCount', 'recentOrders', 'latestProducts')); // Pass all six variables to the view
+
+
+
+
     }
-    
+
     /**
      * Get monthly statistics for dashboard.
      */
@@ -91,7 +73,7 @@ class AdminController extends Controller
             'orders' => $monthlySalesCount
         ];
     }
-    
+
     /**
      * Show the product management page.
      */
