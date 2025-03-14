@@ -8,6 +8,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\SustainabilityController;
 use App\Http\Controllers\Auth\LoginController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -93,6 +95,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Админ-панель
+// Админ-панель - ИСПРАВЛЕНО: изменена структура группы маршрутов
 Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
     // Дашборд
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
@@ -136,6 +139,21 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
         Route::put('/{category}', [AdminController::class, 'updateBlogCategory'])->name('update');
         Route::delete('/{category}', [AdminController::class, 'deleteBlogCategory'])->name('delete');
     });
+    // Атрибуты товаров
+    Route::prefix('attributes')->name('attributes.')->group(function () {
+        Route::get('/', [AdminController::class, 'attributes'])->name('index');
+        Route::get('/create', [AdminController::class, 'createAttribute'])->name('create');
+        Route::post('/', [AdminController::class, 'storeAttribute'])->name('store');
+        Route::get('/{attribute}/edit', [AdminController::class, 'editAttribute'])->name('edit');
+        Route::put('/{attribute}', [AdminController::class, 'updateAttribute'])->name('update');
+        Route::delete('/{attribute}', [AdminController::class, 'deleteAttribute'])->name('delete');
+        
+        // Значения атрибутов
+        Route::get('/{attribute}/values', [AdminController::class, 'attributeValues'])->name('values.index');
+        Route::post('/{attribute}/values', [AdminController::class, 'storeAttributeValue'])->name('values.store');
+        Route::put('/{attribute}/values/{value}', [AdminController::class, 'updateAttributeValue'])->name('values.update');
+        Route::delete('/{attribute}/values/{value}', [AdminController::class, 'deleteAttributeValue'])->name('values.delete');
+    });
     
     // Пользователи
     Route::prefix('users')->name('users.')->group(function () {
@@ -160,4 +178,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
         Route::put('/{initiative}', [AdminController::class, 'updateInitiative'])->name('update');
         Route::delete('/{initiative}', [AdminController::class, 'deleteInitiative'])->name('delete');
     });
+    // Обращения пользователей
+    Route::prefix('contact-requests')->name('contact-requests.')->group(function () {
+        Route::get('/', [AdminController::class, 'contactRequests'])->name('index');
+        Route::get('/{contactRequest}', [AdminController::class, 'showContactRequest'])->name('show');
+        Route::put('/{contactRequest}/status', [AdminController::class, 'updateContactRequestStatus'])->name('update.status');
+        Route::post('/{contactRequest}/notes', [AdminController::class, 'addContactRequestNote'])->name('add.note');
+    });
+     // Аналитика
+     Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
 });

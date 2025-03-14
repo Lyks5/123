@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Service Providers
+    |--------------------------------------------------------------------------
+    |
+    | All of the service providers registered in your application will be listed
+    | here. Feel free to add your own services to this array to grant them
+    | access to the application.
+    |
+    */
+
+   
+
 ];

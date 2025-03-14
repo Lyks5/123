@@ -16,10 +16,17 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->is_admin) {
-            return $next($request);
+        if (Auth::check()) {
+            \Log::info('User is authenticated.');
+            if (Auth::user()->is_admin) {
+                \Log::info('User is admin.');
+                return $next($request);
+            } else {
+                \Log::warning('User is not admin.');
+            }
         }
         
-        abort(403, 'Доступ запрещен. Требуются права администратора.');
+        \Log::warning('Access denied or user is not authenticated.');
+        return redirect()->route('home')->with('error', 'Доступ запрещен. У вас нет прав администратора для просмотра этой страницы.');
     }
 }

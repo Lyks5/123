@@ -28,12 +28,14 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'is_admin' => 'boolean', // Add validation for is_admin
         ]);
         
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'is_admin' => $request->has('is_admin') ? true : false, // Set is_admin based on input
         ]);
         
         event(new Registered($user));

@@ -15,6 +15,10 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\EnvironmentalInitiative;
+use App\Models\ContactRequest;
+use App\Models\Attribute;
+use App\Models\AttributeValue;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -824,5 +828,252 @@ class AdminController extends Controller
         
         return redirect()->route('admin.initiatives.index')
             ->with('success', 'Экологическая инициатива успешно удалена.');
+    }
+    public function attributes()
+    {
+        $attributes = Attribute::with('values')->paginate(15);
+        return view('admin.attributes.index', compact('attributes'));
+    }
+    
+    /**
+     * Show the form to create a new attribute.
+     */
+    public function createAttribute()
+    {
+        return view('admin.attributes.create');
+    }
+    
+    /**
+     * Store a new attribute.
+     */
+    public function storeAttribute(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|in:select,text,number,color,boolean',
+        ]);
+        
+        Attribute::create($validated);
+        
+        return redirect()->route('admin.attributes.index')
+            ->with('success', 'Атрибут успешно создан.');
+    }
+    
+    /**
+     * Show the form to edit an attribute.
+     */
+    public function editAttribute(Attribute $attribute)
+    {
+        return view('admin.attributes.edit', compact('attribute'));
+    }
+    
+    /**
+     * Update an attribute.
+     */
+    public function updateAttribute(Request $request, Attribute $attribute)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|in:select,text,number,color,boolean',
+        ]);
+        
+        $attribute->update($validated);
+        
+        return redirect()->route('admin.attributes.index')
+            ->with('success', 'Атрибут успешно обновлен.');
+    }
+    
+    /**
+     * Delete an attribute.
+     */
+    public function deleteAttribute(Attribute $attribute)
+    {
+        // Check if attribute has values used in products
+        if ($attribute->values()->whereHas('variants')->exists()) {
+            return back()->withErrors(['general' => 'Нельзя удалить атрибут, используемый в товарах.']);
+        }
+        
+        $attribute->delete();
+        
+        return redirect()->route('admin.attributes.index')
+            ->with('success', 'Атрибут успешно удален.');
+    }
+    
+    /**
+     * Display the attribute values management page.
+     */
+    public function attributeValues(Attribute $attribute)
+    {
+        $attribute->load('values');
+        return view('admin.attributes.values', compact('attribute'));
+    }
+    
+    /**
+     * Store a new attribute value.
+     */
+    public function storeAttributeValue(Request $request, Attribute $attribute)
+    {
+        $validated = $request->validate([
+            'value' => 'required|string|max:255',
+        ]);
+        
+        $attribute->values()->create($validated);
+        
+        return redirect()->route('admin.attributes.values.index', $attribute)
+            ->with('success', 'Значение атрибута успешно добавлено.');
+    }
+    
+    /**
+     * Update an attribute value.
+     */
+    public function updateAttributeValue(Request $request, Attribute $attribute, AttributeValue $value)
+    {
+        $validated = $request->validate([
+            'value' => 'required|string|max:255',
+        ]);
+        
+        $value->update($validated);
+        
+        return redirect()->route('admin.attributes.values.index', $attribute)
+            ->with('success', 'Значение атрибута успешно обновлено.');
+    }
+    
+    /**
+     * Delete an attribute value.
+     */
+    public function deleteAttributeValue(Attribute $attribute, AttributeValue $value)
+    {
+        // Check if value is used in products
+        if ($value->variants()->exists()) {
+            return back()->withErrors(['general' => 'Нельзя удалить значение атрибута, используемое в товарах.']);
+        }
+        
+        $value->delete();
+        
+        return redirect()->route('admin.attributes.values.index', $attribute)
+            ->with('success', 'Значение атрибута успешно удалено.');
+    }
+    
+    /**
+     * Display the contact requests management page.
+     */
+    public function contactRequests()
+    {
+        $requests = ContactRequest::latest()->paginate(15);
+        return view('admin.contact-requests.index', compact('requests'));
+    }
+    
+    /**
+     * Show a contact request.
+     */
+    public function showContactRequest(ContactRequest $contactRequest)
+    {
+        return view('admin.contact-requests.show', compact('contactRequest'));
+    }
+    
+    /**
+     * Update a contact request status.
+     */
+    public function updateContactRequestStatus(Request $request, ContactRequest $contactRequest)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,processing,completed,rejected',
+        ]);
+        
+        $contactRequest->update($validated);
+        
+        return redirect()->route('admin.contact-requests.show', $contactRequest)
+            ->with('success', 'Статус обращения успешно обновлен.');
+    }
+    
+    /**
+     * Add a note to a contact request.
+     */
+    public function addContactRequestNote(Request $request, ContactRequest $contactRequest)
+    {
+        $validated = $request->validate([
+            'notes' => 'required|string',
+        ]);
+        
+        $contactRequest->update([
+            'notes' => $contactRequest->notes . "\n\n" . now()->format('d.m.Y H:i') . " - " . Auth::user()->name . ":\n" . $validated['notes']
+        ]);
+        
+        return redirect()->route('admin.contact-requests.show', $contactRequest)
+            ->with('success', 'Примечание успешно добавлено.');
+    }
+    
+    /**
+     * Display the analytics page.
+     */
+    public function analytics()
+    {
+        // Get general statistics
+        $totalSales = Order::where('status', 'completed')->sum('total');
+        $totalOrders = Order::count();
+        $averageOrderValue = $totalOrders > 0 ? $totalSales / $totalOrders : 0;
+        $totalCustomers = User::count();
+        
+        // Get revenue by month for last 12 months
+        $revenueByMonth = [];
+        $monthNames = [];
+        
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthNames[] = $date->format('M Y');
+            
+            $startOfMonth = $date->copy()->startOfMonth();
+            $endOfMonth = $date->copy()->endOfMonth();
+            
+            $revenue = Order::where('status', 'completed')
+                ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                ->sum('total');
+                
+            $revenueByMonth[] = $revenue;
+        }
+        
+        // Get orders by status
+        $ordersByStatus = [
+            'pending' => Order::where('status', 'pending')->count(),
+            'processing' => Order::where('status', 'processing')->count(),
+            'shipped' => Order::where('status', 'shipped')->count(),
+            'delivered' => Order::where('status', 'delivered')->count(),
+            'completed' => Order::where('status', 'completed')->count(),
+            'cancelled' => Order::where('status', 'cancelled')->count(),
+        ];
+        
+        // Get top selling products
+        $topProducts = Product::withCount(['orderItems as sales_count' => function ($query) {
+                $query->whereHas('order', function ($q) {
+                    $q->where('status', 'completed');
+                });
+            }])
+            ->orderBy('sales_count', 'desc')
+            ->take(5)
+            ->get();
+        
+        // Get top categories
+        $topCategories = Category::withCount(['products as sales_count' => function ($query) {
+                $query->whereHas('orderItems', function ($q) {
+                    $q->whereHas('order', function ($o) {
+                        $o->where('status', 'completed');
+                    });
+                });
+            }])
+            ->orderBy('sales_count', 'desc')
+            ->take(5)
+            ->get();
+        
+        return view('admin.analytics', compact(
+            'totalSales', 
+            'totalOrders', 
+            'averageOrderValue', 
+            'totalCustomers',
+            'revenueByMonth',
+            'monthNames',
+            'ordersByStatus',
+            'topProducts',
+            'topCategories'
+        ));
     }
 }

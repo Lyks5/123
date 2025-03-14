@@ -31,7 +31,9 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
             
+            \Log::info('User authenticated:', ['user' => Auth::user()]); // Log authenticated user details
             return redirect()->intended(route('account'));
+
         }
         
         return back()->withErrors([
