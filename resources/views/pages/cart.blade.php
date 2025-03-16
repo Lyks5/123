@@ -1,186 +1,234 @@
 @extends('layouts.app')
 
-@section('title', 'Корзина покупок')
+@section('title', 'Корзина')
 
 @section('content')
-<div class="min-h-screen bg-background">
-    @include('components.navbar')
-    
-    <div class="container-width px-4 py-8 pt-24">
-        <h1 class="text-3xl font-bold text-eco-900 mb-8">Корзина покупок</h1>
+<div class="bg-gray-50 py-10">
+    <div class="container mx-auto px-4">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Корзина</h1>
         
-        @if(count($cartItems) > 0)
+        @if(session('success'))
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+                <p>{{ session('success') }}</p>
+            </div>
+        @endif
+        
+        @if(session('error'))
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                <p>{{ session('error') }}</p>
+            </div>
+        @endif
+        
+        @if($cart && $cart->items->count() > 0)
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Cart items -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                        <div class="hidden sm:grid sm:grid-cols-12 text-sm font-medium text-eco-600 mb-4">
-                            <div class="sm:col-span-6">Товар</div>
-                            <div class="sm:col-span-2 text-center">Цена</div>
-                            <div class="sm:col-span-2 text-center">Количество</div>
-                            <div class="sm:col-span-2 text-right">Итого</div>
-                        </div>
-                        
-                        <hr class="mb-6" />
-                        
-                        @foreach($cartItems as $item)
-                            <div class="mb-6">
-                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                                    <!-- Product image and details -->
-                                    <div class="sm:col-span-6">
-                                        <div class="flex items-center">
-                                            <div class="w-20 h-20 flex-shrink-0 rounded-md overflow-hidden mr-4">
-                                                <img 
-                                                    src="{{ $item->image }}" 
-                                                    alt="{{ $item->name }}" 
-                                                    class="w-full h-full object-cover"
-                                                />
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-6">
+                            <h2 class="text-xl font-semibold mb-6">Товары в корзине ({{ $cart->items->count() }})</h2>
+                            
+                            <div class="divide-y divide-gray-200">
+                                @foreach($cart->items as $item)
+                                    <div class="py-6 flex flex-col sm:flex-row">
+                                        <div class="flex-shrink-0 w-full sm:w-24 h-24 mb-4 sm:mb-0">
+                                            @if($item->product->primaryImage)
+                                                <img src="{{ asset('storage/' . $item->product->primaryImage->image_path) }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover rounded-md">
+                                            @else
+                                                <div class="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                                                    <span class="text-gray-500 text-xs">Нет фото</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        
+                                        <div class="flex-1 sm:ml-6">
+                                            <div class="flex flex-wrap justify-between mb-2">
+                                                <div>
+                                                    <h3 class="text-lg font-medium text-gray-900">
+                                                        <a href="{{ route('product.show', $item->product->slug) }}" class="hover:text-eco-600">
+                                                            {{ $item->product->name }}
+                                                        </a>
+                                                    </h3>
+                                                    <p class="text-sm text-gray-500">Артикул: {{ $item->product->sku }}</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    @if($item->product->sale_price)
+                                                        <p class="text-eco-600 font-semibold">
+                                                            {{ number_format($item->product->sale_price, 0, '.', ' ') }} ₽
+                                                        </p>
+                                                        <p class="text-sm text-gray-500 line-through">
+                                                            {{ number_format($item->product->price, 0, '.', ' ') }} ₽
+                                                        </p>
+                                                    @else
+                                                        <p class="font-semibold">
+                                                            {{ number_format($item->product->price, 0, '.', ' ') }} ₽
+                                                        </p>
+                                                    @endif
+                                                </div>
                                             </div>
-                                            <div>
-                                                <a 
-                                                    href="{{ route('product.show', $item->id) }}" 
-                                                    class="text-eco-900 font-medium hover:text-eco-700 transition-colors"
-                                                >
-                                                    {{ $item->name }}
-                                                </a>
-                                                <button 
-                                                    onclick="event.preventDefault(); document.getElementById('remove-item-{{ $item->id }}').submit();"
-                                                    class="flex items-center text-eco-600 hover:text-eco-900 text-sm mt-1"
-                                                >
-                                                    Удалить
-                                                </button>
-                                                <form id="remove-item-{{ $item->id }}" action="{{ route('cart.remove', $item->id) }}" method="POST" style="display: none;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                </form>
+                                            
+                                            @if($item->variant)
+                                                <div class="text-sm text-gray-700 mb-4">
+                                                    <span class="font-medium">Вариант:</span> 
+                                                    {{ $item->variant->name }}
+                                                </div>
+                                            @endif
+                                            
+                                            <div class="flex flex-wrap items-center justify-between mt-4">
+                                                <div class="flex items-center border border-gray-300 rounded-md">
+                                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="inline-flex">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="quantity" value="{{ max(1, $item->quantity - 1) }}">
+                                                        <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100">−</button>
+                                                    </form>
+                                                    
+                                                    <span class="px-3 py-1 text-gray-700 font-medium">{{ $item->quantity }}</span>
+                                                    
+                                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="inline-flex">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="quantity" value="{{ min($item->product->stock_quantity, $item->quantity + 1) }}">
+                                                        <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" {{ $item->quantity >= $item->product->stock_quantity ? 'disabled' : '' }}>+</button>
+                                                    </form>
+                                                </div>
+                                                
+                                                <div class="mt-4 sm:mt-0 flex items-center gap-4">
+                                                    <form action="{{ route('cart.remove', $item->id) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этот товар из корзины?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="text-sm text-red-600 hover:text-red-700 flex items-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                            Удалить
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Price -->
-                                    <div class="sm:col-span-2 text-center">
-                                        <span class="sm:hidden text-eco-600 mr-2">Цена:</span>
-                                        <span class="text-eco-900">${{ number_format($item->price, 2) }}</span>
-                                    </div>
-                                    
-                                    <!-- Quantity -->
-                                    <div class="sm:col-span-2 flex justify-center">
-                                        <div class="flex items-center border border-eco-200 rounded-lg">
-                                            <button 
-                                                onclick="event.preventDefault(); document.getElementById('decrease-quantity-{{ $item->id }}').submit();"
-                                                class="py-1 px-3 text-eco-700 hover:text-eco-900 transition-colors"
-                                                {{ $item->quantity === 1 ? 'disabled' : '' }}
-                                            >
-                                                -
-                                            </button>
-                                            <span class="py-1 px-3 text-eco-900 border-x border-eco-200">
-                                                {{ $item->quantity }}
-                                            </span>
-                                            <button 
-                                                onclick="event.preventDefault(); document.getElementById('increase-quantity-{{ $item->id }}').submit();"
-                                                class="py-1 px-3 text-eco-700 hover:text-eco-900 transition-colors"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                        <form id="decrease-quantity-{{ $item->id }}" action="{{ route('cart.update', $item->id) }}" method="POST" style="display: none;">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="quantity" value="{{ $item->quantity - 1 }}">
-                                        </form>
-                                        <form id="increase-quantity-{{ $item->id }}" action="{{ route('cart.update', $item->id) }}" method="POST" style="display: none;">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="quantity" value="{{ $item->quantity + 1 }}">
-                                        </form>
-                                    </div>
-                                    
-                                    <!-- Total -->
-                                    <div class="sm:col-span-2 text-right">
-                                        <span class="sm:hidden text-eco-600 mr-2">Итого:</span>
-                                        <span class="text-eco-900 font-medium">
-                                            ${{ number_format($item->price * $item->quantity, 2) }}
-                                        </span>
-                                    </div>
-                                </div>
-                                @if (!$loop->last)
-                                    <hr class="my-6" />
-                                @endif
+                                @endforeach
                             </div>
-                        @endforeach
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <a 
-                            href="{{ route('shop') }}"
-                            class="text-eco-700 hover:text-eco-900 transition-colors"
-                        >
-                            ← Продолжить покупки
-                        </a>
-                        <button 
-                            class="border-eco-200 text-eco-900 hover:bg-eco-50"
-                            onclick="event.preventDefault(); document.getElementById('clear-cart').submit();"
-                        >
-                            Очистить корзину
-                        </button>
-                        <form id="clear-cart" action="{{ route('cart.clear') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
+                            
+                            <div class="mt-6 flex justify-between">
+                                <a href="{{ route('shop') }}" class="inline-flex items-center text-eco-600 hover:text-eco-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Продолжить покупки
+                                </a>
+                                
+                                <form action="{{ route('cart.clear') }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите очистить корзину?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-700">
+                                        Очистить корзину
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Order summary -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                        <h2 class="text-lg font-semibold text-eco-900 mb-4">Сводка заказа</h2>
-                        
-                        <div class="space-y-4 mb-6">
-                            <div class="flex justify-between">
-                                <span class="text-eco-700">Сумма</span>
-                                <span class="text-eco-900">${{ number_format($subtotal, 2) }}</span>
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden sticky top-6">
+                        <div class="p-6">
+                            <h2 class="text-xl font-semibold mb-6">Итого</h2>
+                            
+                            <div class="space-y-4">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Стоимость товаров:</span>
+                                    <span class="font-medium">{{ number_format($cart->getSubtotal(), 0, '.', ' ') }} ₽</span>
+                                </div>
+                                
+                                @if($cart->discount_amount > 0)
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Скидка:</span>
+                                        <span class="font-medium text-red-600">-{{ number_format($cart->discount_amount, 0, '.', ' ') }} ₽</span>
+                                    </div>
+                                @endif
+                                
+                                <div class="border-t border-gray-200 pt-4">
+                                    <div class="flex justify-between text-lg font-semibold">
+                                        <span>Итого к оплате:</span>
+                                        <span>{{ number_format($cart->getTotal(), 0, '.', ' ') }} ₽</span>
+                                    </div>
+                                </div>
+                                
+                                <a href="{{ route('checkout') }}" class="w-full bg-eco-600 text-white text-center py-3 px-4 rounded-md hover:bg-eco-700 font-medium mt-4 block">
+                                    Оформить заказ
+                                </a>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-eco-700">Доставка</span>
-                                <span class="text-eco-900">${{ number_format($shipping, 2) }}</span>
+                            
+                            <!-- Промокод -->
+                            <div class="mt-6 pt-6 border-t border-gray-200">
+                                <h3 class="text-base font-medium mb-4">Применить промокод</h3>
+                                
+                                <form action="{{ route('cart.apply-coupon') }}" method="POST">
+                                    @csrf
+                                    <div class="flex">
+                                        <input type="text" name="coupon_code" id="coupon_code" placeholder="Введите код" 
+                                            class="flex-1 rounded-l-md border-gray-300 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
+                                        <button type="submit" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-r-md">
+                                            Применить
+                                        </button>
+                                    </div>
+                                    
+                                    @if($cart->coupon)
+                                        <div class="mt-2 text-sm text-eco-600">
+                                            Применен купон: {{ $cart->coupon->code }} ({{ $cart->coupon->discount_percent }}%)
+                                            <form action="{{ route('cart.remove-coupon') }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-700 ml-2">&times;</button>
+                                            </form>
+                                        </div>
+                                    @endif
+                                    
+                                    @error('coupon_code')
+                                        <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
+                                    @enderror
+                                </form>
                             </div>
-                            <hr />
-                            <div class="flex justify-between font-semibold">
-                                <span class="text-eco-900">Итого</span>
-                                <span class="text-eco-900">${{ number_format($total, 2) }}</span>
+                            
+                            <!-- Доступные способы оплаты -->
+                            <div class="mt-6 pt-3">
+                                <p class="text-sm text-gray-600 mb-2">Доступные способы оплаты:</p>
+                                <div class="flex items-center gap-2">
+                                    <img src="{{ asset('images/payment/visa.svg') }}" alt="Visa" class="h-6">
+                                    <img src="{{ asset('images/payment/mastercard.svg') }}" alt="Mastercard" class="h-6">
+                                    <img src="{{ asset('images/payment/mir.svg') }}" alt="МИР" class="h-6">
+                                    <img src="{{ asset('images/payment/sbp.svg') }}" alt="СБП" class="h-6">
+                                </div>
                             </div>
-                        </div>
-                        
-                        <button 
-                            class="w-full bg-eco-600 hover:bg-eco-700 text-white"
-                            onclick="handleCheckout()"
-                        >
-                            Оформить заказ
-                        </button>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex items-center">
-                            <span class="text-sm text-eco-700">
-                                Мы используем эко-упаковку и методы доставки, чтобы минимизировать углеродный след вашего заказа.
-                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         @else
-            <div class="text-center py-16 bg-white rounded-xl shadow-sm">
-                <h2 class="text-xl font-semibold text-eco-900 mb-2">Ваша корзина пуста</h2>
-                <p class="text-eco-700 mb-8 max-w-md mx-auto">
-                    Похоже, вы еще не добавили товары в корзину. Начните покупки, чтобы найти экологичные товары для спорта.
-                </p>
-                <a href="{{ route('shop') }}">
-                    <button class="bg-eco-600 hover:bg-eco-700 text-white">
-                        Перейти в магазин
-                    </button>
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold mb-2">Ваша корзина пуста</h2>
+                <p class="text-gray-600 mb-6">Добавьте товары в корзину, чтобы оформить заказ</p>
+                <a href="{{ route('shop') }}" class="inline-flex items-center justify-center bg-eco-600 text-white py-3 px-6 rounded-md hover:bg-eco-700">
+                    Перейти в магазин
                 </a>
             </div>
+            
+            @if($recommendedProducts && $recommendedProducts->count() > 0)
+                <div class="mt-12">
+                    <h2 class="text-2xl font-semibold mb-6">Рекомендуемые товары</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        @foreach($recommendedProducts as $product)
+                            @include('components.product-card', ['product' => $product])
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         @endif
     </div>
-    
 </div>
 @endsection

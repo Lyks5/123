@@ -96,7 +96,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Админ-панель
 // Админ-панель - ИСПРАВЛЕНО: изменена структура группы маршрутов
-Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->group(function () {
     // Дашборд
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
     

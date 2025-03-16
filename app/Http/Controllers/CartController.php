@@ -16,7 +16,17 @@ class CartController extends Controller
         $cart = $this->getCart();
         
         $cartItems = $cart->items; // Retrieve cart items
-        return view('pages.cart', compact('cart', 'cartItems'));
+        // Fetch recommended products
+        $recommendedProducts = Product::where('is_active', true)
+            ->where('stock_quantity', '>', 0)
+            ->inRandomOrder()
+            ->take(4) // Limit to 4 recommended products
+            ->get();
+
+        \Log::debug('Cart:', ['cart' => $cart]);
+        \Log::debug('Recommended Products:', ['recommendedProducts' => $recommendedProducts]);
+
+        return view('pages.cart', compact('cart', 'cartItems', 'recommendedProducts'));
     }
 
     public function add(Request $request)

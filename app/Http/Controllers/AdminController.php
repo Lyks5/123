@@ -16,30 +16,56 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\EnvironmentalInitiative;
 use App\Models\ContactRequest;
-use App\Models\Attribute;
-use App\Models\AttributeValue;
-use Carbon\Carbon;
+use App\Models\Review;
+use App\Models\ProductImage;
 
 class AdminController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+        // $this->middleware('admin');
+    }
+    
     /**
      * Display the admin dashboard.
      */
     public function index()
     {
+        // Basic stats
         $productCount = Product::count();
-        $orderCount = Order::count(); // Add this line to get the order count
-        $userCount = User::count(); // Add this line to get the user count
-        $postCount = BlogPost::count(); // Add this line to get the post count
-        $recentOrders = Order::latest()->take(5)->get(); // Add this line to get the recent orders
-        $latestProducts = Product::latest()->take(5)->get(); // Add this line to get the latest products
-        return view('admin.dashboard', compact('productCount', 'orderCount', 'userCount', 'postCount', 'recentOrders', 'latestProducts')); // Pass all six variables to the view
-
-
-
-
+        $orderCount = Order::count();
+        $userCount = User::count();
+        $postCount = BlogPost::count();
+        
+        // Recent data for dashboard display
+        $recentOrders = Order::with('user')->latest()->take(5)->get();
+        $latestProducts = Product::latest()->take(5)->get();
+        $latestUsers = User::latest()->take(5)->get();
+        $pendingReviews = Review::where('is_approved', false)->count();
+        
+        // Get monthly sales data for last 6 months
+        $monthlyData = $this->getMonthlyStatistics();
+        
+        // Low stock alert (products with less than 5 items)
+        $lowStockProducts = Product::where('stock_quantity', '<', 5)
+                                  ->where('stock_quantity', '>', 0)
+                                  ->take(5)
+                                  ->get();
+                                  
+        // Recent contact requests
+        $recentContacts = ContactRequest::where('status', 'new')->latest()->take(5)->get();
+        
+        return view('admin.dashboard', compact(
+            'productCount', 'orderCount', 'userCount', 'postCount',
+            'recentOrders', 'latestProducts', 'latestUsers', 'pendingReviews',
+            'monthlyData', 'lowStockProducts', 'recentContacts'
+        ));
     }
-
+    
     /**
      * Get monthly statistics for dashboard.
      */
@@ -48,6 +74,7 @@ class AdminController extends Controller
         $months = [];
         $monthlyRevenue = [];
         $monthlySalesCount = [];
+        $monthlyUserRegistration = [];
         
         // Get data for the last 6 months
         for ($i = 5; $i >= 0; $i--) {
@@ -62,28 +89,99 @@ class AdminController extends Controller
                                   ->where('status', 'completed')
                                   ->get();
             
+            // Get users registered this month
+            $usersRegistered = User::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                                   ->count();
+            
             // Calculate totals
-$monthlyRevenue[] = $ordersInMonth->sum('total_amount');
-
-
-
+            $monthlyRevenue[] = $ordersInMonth->sum('total');
             $monthlySalesCount[] = $ordersInMonth->count();
+            $monthlyUserRegistration[] = $usersRegistered;
         }
         
         return [
             'months' => $months,
             'revenue' => $monthlyRevenue,
-            'orders' => $monthlySalesCount
+            'orders' => $monthlySalesCount,
+            'users' => $monthlyUserRegistration
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Product Management
+    |--------------------------------------------------------------------------
+    */
+    
     /**
      * Show the product management page.
      */
-    public function products()
+    public function products(Request $request)
     {
-        $products = Product::with(['categories', 'ecoFeatures'])->latest()->paginate(15);
-        return view('admin.products.index', compact('products'));
+        $query = Product::with(['categories', 'ecoFeatures']);
+        
+        // Apply filters if any
+        if ($request->has('category')) {
+            $query->whereHas('categories', function($q) use($request) {
+                $q->where('categories.id', $request->category);
+            });
+        }
+        
+        if ($request->has('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+        
+        if ($request->has('stock')) {
+            if ($request->stock === 'in') {
+                $query->where('stock_quantity', '>', 0);
+            } elseif ($request->stock === 'out') {
+                $query->where('stock_quantity', 0);
+            } elseif ($request->stock === 'low') {
+                $query->where('stock_quantity', '>', 0)
+                      ->where('stock_quantity', '<', 5);
+            }
+        }
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        // Default sorting
+        $sort = $request->sort ?? 'latest';
+        
+        switch($sort) {
+            case 'name':
+                $query->orderBy('name');
+                break;
+            case 'price_low':
+                $query->orderBy('price');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'stock_low':
+                $query->orderBy('stock_quantity');
+                break;
+            case 'stock_high':
+                $query->orderBy('stock_quantity', 'desc');
+                break;
+            default:
+                $query->latest();
+        }
+        
+        $products = $query->paginate(15)->withQueryString();
+        $categories = Category::all();
+        
+        return view('admin.products.index', compact('products', 'categories'));
     }
     
     /**
@@ -272,23 +370,25 @@ $monthlyRevenue[] = $ordersInMonth->sum('total_amount');
             ->with('success', 'Товар успешно удален.');
     }
     
+    /*
+    |--------------------------------------------------------------------------
+    | Category Management
+    |--------------------------------------------------------------------------
+    */
+    
     /**
      * Show the category management page.
      */
     public function categories()
     {
-        $categories = Category::with('parent')->paginate(15);
+        $categories = Category::with('parent')->withCount('products')->paginate(15);
         return view('admin.categories.index', compact('categories'));
     }
     
     /**
      * Show the form to create a new category.
      */
-public function createCategory()
-
-{
-    $parentCategories = Category::whereNull('parent_id')->get(); // Fetch parent categories
-
+    public function createCategory()
     {
         $categories = Category::all();
         return view('admin.categories.create', compact('categories'));
@@ -296,7 +396,7 @@ public function createCategory()
     
     /**
      * Store a new category.
-*/}
+     */
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
@@ -399,25 +499,73 @@ public function createCategory()
             ->with('success', 'Категория успешно удалена.');
     }
     
+    /*
+    |--------------------------------------------------------------------------
+    | Blog Management
+    |--------------------------------------------------------------------------
+    */
+    
     /**
      * Show the blog posts management page.
      */
-    public function blogPosts()
+    public function blogPosts(Request $request)
     {
-        $posts = BlogPost::with(['author', 'categories'])->latest()->paginate(15);
-        return view('admin.blog.posts.index', compact('posts'));
+        $query = BlogPost::with(['author', 'categories']);
+        
+        // Apply filters if any
+        if ($request->has('category')) {
+            $query->whereHas('categories', function($q) use($request) {
+                $q->where('blog_categories.id', $request->category);
+            });
+        }
+        
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%")
+                  ->orWhere('excerpt', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->has('author')) {
+            $query->where('author_id', $request->author);
+        }
+        
+        // Default sorting
+        $sort = $request->sort ?? 'latest';
+        
+        switch($sort) {
+            case 'title':
+                $query->orderBy('title');
+                break;
+            case 'oldest':
+                $query->oldest();
+                break;
+            default:
+                $query->latest();
+        }
+        
+        $posts = $query->paginate(15)->withQueryString();
+        $categories = BlogCategory::all();
+        $authors = User::whereHas('blogPosts')->get();
+        
+        return view('admin.blog.posts.index', compact('posts', 'categories', 'authors'));
     }
     
     /**
      * Show the form to create a new blog post.
      */
-public function createBlogPost()
-{
-    $blogCategories = BlogCategory::all(); // Fetch blog categories
-    $tags = Tag::all();
-    return view('admin.blog.posts.create', compact('blogCategories', 'tags')); // Pass blog categories to the view
-}
-
+    public function createBlogPost()
+    {
+        $categories = BlogCategory::all();
+        $tags = Tag::all();
+        return view('admin.blog.posts.create', compact('categories', 'tags'));
+    }
     
     /**
      * Store a new blog post.
@@ -652,11 +800,130 @@ public function createBlogPost()
     }
     
     /**
+     * Show blog tags management page.
+     */
+    public function blogTags(Request $request)
+    {
+        $query = Tag::withCount('blogPosts');
+        
+        if ($request->has('search')) {
+            $query->where('name', 'like', "%{$request->search}%");
+        }
+        
+        $tags = $query->orderBy('name')->paginate(20);
+        
+        return view('admin.blog.tags.index', compact('tags'));
+    }
+    
+    /**
+     * Show the form to create a new tag.
+     */
+    public function createBlogTag()
+    {
+        return view('admin.blog.tags.create');
+    }
+    
+    /**
+     * Store a new tag.
+     */
+    public function storeBlogTag(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:tags,name',
+        ]);
+        
+        // Generate slug
+        $validated['slug'] = Str::slug($validated['name']);
+        
+        Tag::create($validated);
+        
+        return redirect()->route('admin.blog.tags.index')
+            ->with('success', 'Тег успешно создан.');
+    }
+    
+    /**
+     * Show the form to edit a tag.
+     */
+    public function editBlogTag(Tag $tag)
+    {
+        return view('admin.blog.tags.edit', compact('tag'));
+    }
+    
+    /**
+     * Update a tag.
+     */
+    public function updateBlogTag(Request $request, Tag $tag)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:tags,name,' . $tag->id,
+        ]);
+        
+        // Generate slug
+        $validated['slug'] = Str::slug($validated['name']);
+        
+        $tag->update($validated);
+        
+        return redirect()->route('admin.blog.tags.index')
+            ->with('success', 'Тег успешно обновлен.');
+    }
+    
+    /**
+     * Delete a tag.
+     */
+    public function deleteBlogTag(Tag $tag)
+    {
+        $tag->delete();
+        
+        return redirect()->route('admin.blog.tags.index')
+            ->with('success', 'Тег успешно удален.');
+    }
+    
+    /*
+    |--------------------------------------------------------------------------
+    | User Management
+    |--------------------------------------------------------------------------
+    */
+    
+    /**
      * Show the users management page.
      */
-    public function users()
+    public function users(Request $request)
     {
-        $users = User::paginate(15);
+        $query = User::query();
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->has('role')) {
+            if ($request->role === 'admin') {
+                $query->where('is_admin', true);
+            } elseif ($request->role === 'user') {
+                $query->where('is_admin', false);
+            }
+        }
+        
+        if ($request->has('sort')) {
+            if ($request->sort === 'name') {
+                $query->orderBy('name');
+            } elseif ($request->sort === 'email') {
+                $query->orderBy('email');
+            } elseif ($request->sort === 'oldest') {
+                $query->oldest();
+            } else {
+                $query->latest();
+            }
+        } else {
+            $query->latest();
+        }
+        
+        $users = $query->paginate(15)->withQueryString();
+        
         return view('admin.users.index', compact('users'));
     }
     
@@ -665,7 +932,8 @@ public function createBlogPost()
      */
     public function editUser(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $orders = $user->orders()->latest()->take(5)->get();
+        return view('admin.users.edit', compact('user', 'orders'));
     }
     
     /**
@@ -689,12 +957,62 @@ public function createBlogPost()
             ->with('success', 'Пользователь успешно обновлен.');
     }
     
+    /*
+    |--------------------------------------------------------------------------
+    | Order Management
+    |--------------------------------------------------------------------------
+    */
+    
     /**
      * Show the orders management page.
      */
-    public function orders()
+    public function orders(Request $request)
     {
-        $orders = Order::with('user')->latest()->paginate(15);
+        $query = Order::with('user');
+        
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q) use($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        if ($request->has('sort')) {
+            if ($request->sort === 'id_asc') {
+                $query->orderBy('id');
+            } elseif ($request->sort === 'id_desc') {
+                $query->orderBy('id', 'desc');
+            } elseif ($request->sort === 'total_asc') {
+                $query->orderBy('total');
+            } elseif ($request->sort === 'total_desc') {
+                $query->orderBy('total', 'desc');
+            } elseif ($request->sort === 'oldest') {
+                $query->oldest();
+            } else {
+                $query->latest();
+            }
+        } else {
+            $query->latest();
+        }
+        
+        $orders = $query->paginate(15)->withQueryString();
+        
         return view('admin.orders.index', compact('orders'));
     }
     
@@ -714,24 +1032,80 @@ public function createBlogPost()
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,processing,shipped,delivered,completed,cancelled',
+            'admin_notes' => 'nullable|string',
         ]);
         
+        // Update order status and notes
         $order->update($validated);
+        
+        // If updating to cancelled or completed, adjust inventory if configured to do so
+        if (in_array($validated['status'], ['cancelled', 'completed']) && 
+            $validated['status'] !== $order->getOriginal('status')) {
+            
+            // For cancelled orders, restore the stock
+            if ($validated['status'] === 'cancelled') {
+                foreach ($order->items as $item) {
+                    $product = $item->product;
+                    $product->stock_quantity += $item->quantity;
+                    $product->save();
+                }
+            }
+        }
         
         return redirect()->route('admin.orders.show', $order)
             ->with('success', 'Статус заказа успешно обновлен.');
     }
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Environmental Initiatives Management
+    |--------------------------------------------------------------------------
+    */
 
     /**
      * Show the environmental initiatives management page.
      */
-    public function initiatives()
+    public function initiatives(Request $request)
     {
-        $initiatives = EnvironmentalInitiative::latest()->paginate(15);
-        $parentCategories = Category::parents()->active()->get(); // Fetch active parent categories
-
-        return view('admin.initiatives.index', compact('initiatives', 'parentCategories')); // Pass both variables to the view
-
+        $query = EnvironmentalInitiative::query();
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->has('status')) {
+            if ($request->status === 'active') {
+                $query->where('end_date', '>=', now()->toDateString())
+                      ->orWhereNull('end_date');
+            } elseif ($request->status === 'ended') {
+                $query->where('end_date', '<', now()->toDateString())
+                      ->whereNotNull('end_date');
+            }
+        }
+        
+        if ($request->has('sort')) {
+            if ($request->sort === 'title') {
+                $query->orderBy('title');
+            } elseif ($request->sort === 'start_date') {
+                $query->orderBy('start_date');
+            } elseif ($request->sort === 'end_date') {
+                $query->orderBy('end_date');
+            } elseif ($request->sort === 'oldest') {
+                $query->oldest();
+            } else {
+                $query->latest();
+            }
+        } else {
+            $query->latest();
+        }
+        
+        $initiatives = $query->paginate(15)->withQueryString();
+        
+        return view('admin.initiatives.index', compact('initiatives'));
     }
     
     /**
@@ -745,21 +1119,17 @@ public function createBlogPost()
     /**
      * Store a new initiative.
      */
-public function storeInitiative(Request $request)
-{
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'start_date' => 'nullable|date',
-        'end_date' => 'nullable|date|after:start_date',
-        'impact_metric' => 'nullable|string|max:255',
-        'impact_value' => 'nullable|numeric',
-    ]);
-    
-    // Generate slug
-    $validated['slug'] = Str::slug($validated['title']);
-
+    public function storeInitiative(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'impact_metric' => 'nullable|string|max:255',
+            'impact_value' => 'nullable|numeric',
+        ]);
         
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -826,253 +1196,215 @@ public function storeInitiative(Request $request)
         return redirect()->route('admin.initiatives.index')
             ->with('success', 'Экологическая инициатива успешно удалена.');
     }
-    public function attributes()
-    {
-        $attributes = Attribute::with('values')->paginate(15);
-        return view('admin.attributes.index', compact('attributes'));
-    }
     
+    /*
+    |--------------------------------------------------------------------------
+    | Contact Requests Management
+    |--------------------------------------------------------------------------
+    */
+
     /**
-     * Show the form to create a new attribute.
+     * Show contact requests management page.
      */
-    public function createAttribute()
+    public function contactRequests(Request $request)
     {
-        return view('admin.attributes.create');
-    }
-    
-    /**
-     * Store a new attribute.
-     */
-    public function storeAttribute(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|in:select,text,number,color,boolean',
-        ]);
+        $query = ContactRequest::query();
         
-        Attribute::create($validated);
-        
-        return redirect()->route('admin.attributes.index')
-            ->with('success', 'Атрибут успешно создан.');
-    }
-    
-    /**
-     * Show the form to edit an attribute.
-     */
-    public function editAttribute(Attribute $attribute)
-    {
-        return view('admin.attributes.edit', compact('attribute'));
-    }
-    
-    /**
-     * Update an attribute.
-     */
-    public function updateAttribute(Request $request, Attribute $attribute)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|in:select,text,number,color,boolean',
-        ]);
-        
-        $attribute->update($validated);
-        
-        return redirect()->route('admin.attributes.index')
-            ->with('success', 'Атрибут успешно обновлен.');
-    }
-    
-    /**
-     * Delete an attribute.
-     */
-    public function deleteAttribute(Attribute $attribute)
-    {
-        // Check if attribute has values used in products
-        if ($attribute->values()->whereHas('variants')->exists()) {
-            return back()->withErrors(['general' => 'Нельзя удалить атрибут, используемый в товарах.']);
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
         }
         
-        $attribute->delete();
-        
-        return redirect()->route('admin.attributes.index')
-            ->with('success', 'Атрибут успешно удален.');
-    }
-    
-    /**
-     * Display the attribute values management page.
-     */
-    public function attributeValues(Attribute $attribute)
-    {
-        $attribute->load('values');
-        return view('admin.attributes.values', compact('attribute'));
-    }
-    
-    /**
-     * Store a new attribute value.
-     */
-    public function storeAttributeValue(Request $request, Attribute $attribute)
-    {
-        $validated = $request->validate([
-            'value' => 'required|string|max:255',
-        ]);
-        
-        $attribute->values()->create($validated);
-        
-        return redirect()->route('admin.attributes.values.index', $attribute)
-            ->with('success', 'Значение атрибута успешно добавлено.');
-    }
-    
-    /**
-     * Update an attribute value.
-     */
-    public function updateAttributeValue(Request $request, Attribute $attribute, AttributeValue $value)
-    {
-        $validated = $request->validate([
-            'value' => 'required|string|max:255',
-        ]);
-        
-        $value->update($validated);
-        
-        return redirect()->route('admin.attributes.values.index', $attribute)
-            ->with('success', 'Значение атрибута успешно обновлено.');
-    }
-    
-    /**
-     * Delete an attribute value.
-     */
-    public function deleteAttributeValue(Attribute $attribute, AttributeValue $value)
-    {
-        // Check if value is used in products
-        if ($value->variants()->exists()) {
-            return back()->withErrors(['general' => 'Нельзя удалить значение атрибута, используемое в товарах.']);
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('subject', 'like', "%{$search}%")
+                  ->orWhere('message', 'like', "%{$search}%");
+            });
         }
         
-        $value->delete();
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
         
-        return redirect()->route('admin.attributes.values.index', $attribute)
-            ->with('success', 'Значение атрибута успешно удалено.');
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        $contactRequests = $query->latest()->paginate(15)->withQueryString();
+        
+        return view('admin.contacts.index', compact('contactRequests'));
     }
     
     /**
-     * Display the contact requests management page.
+     * Show a specific contact request.
      */
-    public function contactRequests()
+    public function showContactRequest(ContactRequest $contact)
     {
-        $requests = ContactRequest::latest()->paginate(15);
-        return view('admin.contact-requests.index', compact('requests'));
+        return view('admin.contacts.show', compact('contact'));
     }
     
     /**
-     * Show a contact request.
+     * Update contact request status.
      */
-    public function showContactRequest(ContactRequest $contactRequest)
-    {
-        return view('admin.contact-requests.show', compact('contactRequest'));
-    }
-    
-    /**
-     * Update a contact request status.
-     */
-    public function updateContactRequestStatus(Request $request, ContactRequest $contactRequest)
+    public function updateContactStatus(Request $request, ContactRequest $contact)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,processing,completed,rejected',
+            'status' => 'required|in:new,processing,resolved',
+            'admin_notes' => 'nullable|string',
         ]);
         
-        $contactRequest->update($validated);
+        $contact->update($validated);
         
-        return redirect()->route('admin.contact-requests.show', $contactRequest)
+        return redirect()->route('admin.contacts.show', $contact)
             ->with('success', 'Статус обращения успешно обновлен.');
     }
     
     /**
-     * Add a note to a contact request.
+     * Delete a contact request.
      */
-    public function addContactRequestNote(Request $request, ContactRequest $contactRequest)
+    public function deleteContactRequest(ContactRequest $contact)
     {
-        $validated = $request->validate([
-            'notes' => 'required|string',
-        ]);
+        $contact->delete();
         
-        $contactRequest->update([
-            'notes' => $contactRequest->notes . "\n\n" . now()->format('d.m.Y H:i') . " - " . Auth::user()->name . ":\n" . $validated['notes']
-        ]);
+        return redirect()->route('admin.contacts.index')
+            ->with('success', 'Обращение успешно удалено.');
+    }
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Product Reviews Management
+    |--------------------------------------------------------------------------
+    */
+    
+    /**
+     * Show reviews management page.
+     */
+    public function reviews(Request $request)
+    {
+        $query = Review::with(['product', 'user']);
         
-        return redirect()->route('admin.contact-requests.show', $contactRequest)
-            ->with('success', 'Примечание успешно добавлено.');
+        if ($request->has('status')) {
+            if ($request->status === 'approved') {
+                $query->where('is_approved', true);
+            } elseif ($request->status === 'pending') {
+                $query->where('is_approved', false);
+            }
+        }
+        
+        if ($request->has('rating')) {
+            $query->where('rating', $request->rating);
+        }
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('comment', 'like', "%{$search}%")
+                  ->orWhereHas('product', function($q) use($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('user', function($q) use($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        $reviews = $query->latest()->paginate(15)->withQueryString();
+        
+        return view('admin.reviews.index', compact('reviews'));
     }
     
     /**
-     * Display the analytics page.
+     * Show a specific review.
      */
-    public function analytics()
+    public function showReview(Review $review)
     {
-        // Get general statistics
-$totalSales = Order::where('status', 'completed')->sum('total');
-
-
-        $totalOrders = Order::count();
-        $averageOrderValue = $totalOrders > 0 ? $totalSales / $totalOrders : 0;
-        $totalCustomers = User::count();
+        $review->load(['product', 'user']);
+        return view('admin.reviews.show', compact('review'));
+    }
+    
+    /**
+     * Update review approval status.
+     */
+    public function updateReviewStatus(Request $request, Review $review)
+    {
+        $validated = $request->validate([
+            'is_approved' => 'required|boolean',
+            'admin_response' => 'nullable|string',
+        ]);
         
-        // Get revenue by month for last 12 months
-        $revenueByMonth = [];
-        $monthNames = [];
+        $review->update($validated);
         
-        for ($i = 11; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $monthNames[] = $date->format('M Y');
-            
-            $startOfMonth = $date->copy()->startOfMonth();
-            $endOfMonth = $date->copy()->endOfMonth();
-            
-            $revenue = Order::where('status', 'completed')
-                ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                ->sum('total');
-                
-            $revenueByMonth[] = $revenue;
+        return redirect()->route('admin.reviews.index')
+            ->with('success', 'Статус отзыва успешно обновлен.');
+    }
+    
+    /**
+     * Delete a review.
+     */
+    public function deleteReview(Review $review)
+    {
+        $review->delete();
+        
+        return redirect()->route('admin.reviews.index')
+            ->with('success', 'Отзыв успешно удален.');
+    }
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Settings Management
+    |--------------------------------------------------------------------------
+    */
+    
+    /**
+     * Show settings page.
+     */
+    public function settings()
+    {
+        return view('admin.settings.index');
+    }
+    
+    /**
+     * Update settings.
+     */
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'site_name' => 'required|string|max:255',
+            'site_description' => 'nullable|string',
+            'contact_email' => 'required|email',
+            'contact_phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'facebook_url' => 'nullable|url',
+            'instagram_url' => 'nullable|url',
+            'twitter_url' => 'nullable|url',
+            'youtube_url' => 'nullable|url',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'favicon' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,ico|max:1024',
+        ]);
+        
+        foreach ($validated as $key => $value) {
+            if ($key !== 'logo' && $key !== 'favicon') {
+                // Store each setting in the database
+                setting([$key => $value]);
+            }
         }
         
-        // Get orders by status
-        $ordersByStatus = [
-            'pending' => Order::where('status', 'pending')->count(),
-            'processing' => Order::where('status', 'processing')->count(),
-            'shipped' => Order::where('status', 'shipped')->count(),
-            'delivered' => Order::where('status', 'delivered')->count(),
-            'completed' => Order::where('status', 'completed')->count(),
-            'cancelled' => Order::where('status', 'cancelled')->count(),
-        ];
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('settings', 'public');
+            setting(['logo' => $logoPath]);
+        }
         
-        // Get top selling products
-        $topProducts = Product::withCount(['orderItems as sales_count' => function ($query) {
-                $query->whereHas('order', function ($q) {
-                    $q->where('status', 'completed');
-                });
-            }])
-            ->orderBy('sales_count', 'desc')
-            ->take(5)
-            ->get();
+        // Handle favicon upload
+        if ($request->hasFile('favicon')) {
+            $faviconPath = $request->file('favicon')->store('settings', 'public');
+            setting(['favicon' => $faviconPath]);
+        }
         
-        // Get top categories
-        $topCategories = Category::withCount(['products as sales_count' => function ($query) {
-                $query->whereHas('orderItems', function ($q) {
-                    $q->whereHas('order', function ($o) {
-                        $o->where('status', 'completed');
-                    });
-                });
-            }])
-            ->orderBy('sales_count', 'desc')
-            ->take(5)
-            ->get();
-        
-        return view('admin.analytics', compact(
-            'totalSales', 
-            'totalOrders', 
-            'averageOrderValue', 
-            'totalCustomers',
-            'revenueByMonth',
-            'monthNames',
-            'ordersByStatus',
-            'topProducts',
-            'topCategories'
-        ));
+        return redirect()->route('admin.settings')
+            ->with('success', 'Настройки успешно обновлены.');
     }
 }

@@ -3,100 +3,93 @@
 @section('title', 'Управление категориями')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Категории товаров</h1>
-        <a href="{{ route('admin.categories.create') }}" 
-           class="btn btn-primary flex items-center">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Добавить категорию
-        </a>
-    </div>
-
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Изображение</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Родительская</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Товаров</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($categories as $category)
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        @if($category->image)
-                            <img src="{{ asset('storage/'.$category->image) }}" 
-                                 alt="{{ $category->name }}"
-                                 class="w-10 h-10 rounded object-cover">
-                        @else
-                            <div class="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">{{ $category->name }}</div>
-                        <div class="text-sm text-gray-500">{{ $category->slug }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $category->parent->name ?? '—' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $category->products_count }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {{ $category->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                            {{ $category->is_active ? 'Активна' : 'Неактивна' }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div class="flex items-center space-x-4">
-                            <a href="{{ route('admin.categories.edit', $category) }}" 
-                               class="text-eco-700 hover:text-eco-900 transition-colors"
-                               title="Редактировать">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                </svg>
-                            </a>
-                            
-                            <form action="{{ route('admin.categories.delete', $category) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" 
-                                        class="text-red-600 hover:text-red-900 transition-colors"
-                                        onclick="return confirm('Удалить категорию? Все подкатегории будут также удалены!')"
-                                        title="Удалить">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                        Нет созданных категорий
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-        
-        @if($categories->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200">
-            {{ $categories->links() }}
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Категории</h1>
+            <a href="{{ route('admin.categories.create') }}" class="bg-eco-600 hover:bg-eco-700 text-white font-bold py-2 px-4 rounded">
+                Добавить категорию
+            </a>
         </div>
+
+        @if($categories->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                    <thead class="bg-gray-100">
+                        <tr class="text-gray-700">
+                            <th class="py-3 px-4 text-left">ID</th>
+                            <th class="py-3 px-4 text-left">Изображение</th>
+                            <th class="py-3 px-4 text-left">Название</th>
+                            <th class="py-3 px-4 text-left">Родительская категория</th>
+                            <th class="py-3 px-4 text-left">Статус</th>
+                            <th class="py-3 px-4 text-left">Товаров</th>
+                            <th class="py-3 px-4 text-left">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach($categories as $category)
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-3 px-4">{{ $category->id }}</td>
+                                <td class="py-3 px-4">
+                                    @if($category->image)
+                                        <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="w-16 h-16 object-cover rounded">
+                                    @else
+                                        <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                            <span class="text-gray-500 text-xs">Нет фото</span>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4">{{ $category->name }}</td>
+                                <td class="py-3 px-4">{{ $category->parent ? $category->parent->name : '—' }}</td>
+                                <td class="py-3 px-4">
+                                    @if($category->is_active)
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Активна</span>
+                                    @else
+                                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Неактивна</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4">{{ $category->products->count() }}</td>
+                                <td class="py-3 px-4">
+                                    <div class="flex space-x-2">
+                                        <a href="{{ route('admin.categories.edit', $category->id) }}" class="text-blue-500 hover:text-blue-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </a>
+                                        <form action="{{ route('admin.categories.delete', $category->id) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить эту категорию?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-500 hover:text-red-700">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4">
+                {{ $categories->links() }}
+            </div>
+        @else
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            Нет категорий. Создайте первую категорию, нажав кнопку "Добавить категорию".
+                        </p>
+                    </div>
+                </div>
+            </div>
         @endif
     </div>
 @endsection
