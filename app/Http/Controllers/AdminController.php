@@ -22,8 +22,31 @@ use App\Models\ProductImage;
 class AdminController extends Controller
 {
     /**
-     * Show the users management page.
+     * Update a user.
      */
+    public function editUser(User $user)
+    {
+        return view('admin.users.edit', compact('user')); // Display the form for editing a user
+    }
+    public function updateUser(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        if ($request->filled('password')) {
+            $validated['password'] = bcrypt($validated['password']); // Hash the password if provided
+        } else {
+            unset($validated['password']); // Remove password from validated data if not provided
+        }
+
+        $user->update($validated); // Update the user in the database
+
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.'); // Redirect with success message
+    }
+
     public function users()
     {
         $users = User::paginate(10); // Retrieve users with pagination
@@ -40,13 +63,110 @@ class AdminController extends Controller
     }
 
     /**
+     * Show a specific contact request.
+     */
+    public function showContactRequest(ContactRequest $request)
+    {
+        return view('admin.contact-requests.show', compact('request')); // Pass request details to the view
+    }
+
+    /**
+     * Show the form to create a new environmental initiative.
+     */
+    public function createInitiative()
+    {
+        return view('admin.initiatives.create'); // Display the form for creating a new initiative
+    }
+
+    /**
+     * Store a new environmental initiative.
+     */
+    public function storeInitiative(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+        'goal' => 'required|string', // Add this line for goal validation
+            'goal' => 'required|string', // Add this line for goal validation
+            'start_date' => 'required|date',]); // Add this line for start_date validation
+
+        $validated['slug'] = Str::slug($validated['title']); // Generate slug for the initiative
+        $validated['goal'] = $request->goal; // Include goal in the validated data
+        $validated['start_date'] = $request->start_date; // Include start_date in the validated data
+        EnvironmentalInitiative::create($validated); // Store the new initiative in the database
+
+        return redirect()->route('admin.initiatives.index')->with('success', 'Инициатива успешно создана.'); // Redirect with success message
+    }
+
+    /**
+     * Store a new environmental initiative.
+
+
+  
+     * Show the form to edit an existing environmental initiative.
+     */
+    public function editInitiative(EnvironmentalInitiative $initiative)
+    {
+        return view('admin.initiatives.edit', compact('initiative')); // Display the form for editing an initiative
+    }
+
+    /**
+     * Update an existing environmental initiative.
+     */
+    public function updateInitiative(Request $request, EnvironmentalInitiative $initiative)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'goal' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'impact_metric' => 'nullable|string|max:255',
+            'impact_value' => 'nullable|numeric',
+        ]);
+
+        $validated['slug'] = Str::slug($validated['title']); // Update slug for the initiative
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete the old image if it exists
+            if ($initiative->image) {
+                Storage::disk('public')->delete($initiative->image);
+            }
+            $validated['image'] = $request->file('image')->store('initiatives', 'public');
+        }
+
+        $initiative->update($validated); // Update the initiative in the database
+
+        return redirect()->route('admin.initiatives.index')->with('success', 'Инициатива успешно обновлена.'); // Redirect with success message
+    }
+
+    /**
+     * Delete an environmental initiative.
+     */
+    public function deleteInitiative(EnvironmentalInitiative $initiative)
+    {
+        // Delete the image if it exists
+        if ($initiative->image) {
+            Storage::disk('public')->delete($initiative->image);
+        }
+
+        $initiative->delete(); // Delete the initiative from the database
+
+        return redirect()->route('admin.initiatives.index')->with('success', 'Инициатива успешно удалена.'); // Redirect with success message
+    }
+
+
+    /**
      * Show the initiatives management page.
      */
     public function initiatives()
     {
-        $initiatives = EnvironmentalInitiative::all(); // Retrieve all initiatives
+        $initiatives = EnvironmentalInitiative::paginate(10); // Retrieve initiatives with pagination
         return view('admin.initiatives.index', compact('initiatives')); // Pass initiatives to the view
     }
+  
 
     /**
      * Show the orders management page.
@@ -79,7 +199,7 @@ class AdminController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        // $this->middleware('admin');
+        // $this->middleware('admin');----------------------------------------------------------------------------------------------------------------------
     }
     
     /**

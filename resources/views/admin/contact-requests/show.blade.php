@@ -2,11 +2,11 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <h1 class="mt-4">Просмотр обращения #{{ $contactRequest->id }}</h1>
+    <h1 class="mt-4">Просмотр обращения #{{ $request->id }}</h1>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Панель управления</a></li>
         <li class="breadcrumb-item"><a href="{{ route('admin.contact-requests.index') }}">Обращения пользователей</a></li>
-        <li class="breadcrumb-item active">Просмотр обращения #{{ $contactRequest->id }}</li>
+        <li class="breadcrumb-item active">Просмотр обращения #{{ $request->id }}</li>
     </ol>
     
     <div class="row">
@@ -18,35 +18,41 @@
                 </div>
                 <div class="card-body">
                     <dl class="row">
-                        <dt class="col-sm-3">Имя:</dt>
-                        <dd class="col-sm-9">{{ $contactRequest->name }}</dd>
+<dt class="col-sm-3">Имя:</dt>
+<dd class="col-sm-9">{{ $request->name }}</dd>
+
                         
-                        <dt class="col-sm-3">Email:</dt>
-                        <dd class="col-sm-9">
-                            <a href="mailto:{{ $contactRequest->email }}">{{ $contactRequest->email }}</a>
-                        </dd>
+<dt class="col-sm-3">Email:</dt>
+<dd class="col-sm-9">
+    <a href="mailto:{{ $request->email }}">{{ $request->email }}</a>
+</dd>
+
                         
-                        <dt class="col-sm-3">Телефон:</dt>
-                        <dd class="col-sm-9">
-                            @if($contactRequest->phone)
-                                <a href="tel:{{ $contactRequest->phone }}">{{ $contactRequest->phone }}</a>
-                            @else
-                                <span class="text-muted">Не указан</span>
-                            @endif
-                        </dd>
+<dt class="col-sm-3">Телефон:</dt>
+<dd class="col-sm-9">
+    @if($request->phone)
+        <a href="tel:{{ $request->phone }}">{{ $request->phone }}</a>
+    @else
+        <span class="text-muted">Не указан</span>
+    @endif
+</dd>
+
                         
-                        <dt class="col-sm-3">Тема:</dt>
-                        <dd class="col-sm-9">{{ $contactRequest->subject }}</dd>
+<dt class="col-sm-3">Тема:</dt>
+<dd class="col-sm-9">{{ $request->subject }}</dd>
+
                         
-                        <dt class="col-sm-3">Дата создания:</dt>
-                        <dd class="col-sm-9">{{ $contactRequest->created_at->format('d.m.Y H:i') }}</dd>
+<dt class="col-sm-3">Дата создания:</dt>
+<dd class="col-sm-9">{{ $request->created_at->format('d.m.Y H:i') }}</dd>
+
                         
-                        <dt class="col-sm-12">Сообщение:</dt>
-                        <dd class="col-sm-12">
-                            <div class="p-3 bg-light rounded">
-                                {!! nl2br(e($contactRequest->message)) !!}
-                            </div>
-                        </dd>
+<dt class="col-sm-12">Сообщение:</dt>
+<dd class="col-sm-12">
+    <div class="p-3 bg-light rounded">
+        {!! nl2br(e($request->message)) !!}
+    </div>
+</dd>
+
                     </dl>
                 </div>
             </div>
@@ -57,15 +63,16 @@
                     Примечания
                 </div>
                 <div class="card-body">
-                    @if($contactRequest->notes)
-                        <div class="p-3 bg-light rounded mb-3">
-                            {!! nl2br(e($contactRequest->notes)) !!}
-                        </div>
+@if($request->notes)
+    <div class="p-3 bg-light rounded mb-3">
+        {!! nl2br(e($request->notes)) !!}
+    </div>
+
                     @else
                         <p class="text-muted">Примечаний пока нет.</p>
                     @endif
                     
-                    <form action="{{ route('admin.contact-requests.add.note', $contactRequest) }}" method="POST">
+                    <form action="{{ route('admin.contact-requests.add.note', $request) }}" method="POST">
                         @csrf
                         <div class="mb-3">
                             <label for="notes" class="form-label">Добавить примечание</label>
@@ -84,23 +91,23 @@
                     Управление
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.contact-requests.update.status', $contactRequest) }}" method="POST">
+                    <form action="{{ route('admin.contact-requests.update.status', $request) }}" method="POST">
                         @csrf
                         @method('PUT')
                         
                         <div class="mb-3">
                             <label for="status" class="form-label">Статус обращения</label>
                             <select class="form-select" id="status" name="status">
-                                <option value="pending" {{ $contactRequest->status == 'pending' ? 'selected' : '' }}>
+                                <option value="pending" {{ $request->status == 'pending' ? 'selected' : '' }}>
                                     Ожидает
                                 </option>
-                                <option value="processing" {{ $contactRequest->status == 'processing' ? 'selected' : '' }}>
+                                <option value="processing" {{ $request->status == 'processing' ? 'selected' : '' }}>
                                     В обработке
                                 </option>
-                                <option value="completed" {{ $contactRequest->status == 'completed' ? 'selected' : '' }}>
+                                <option value="completed" {{ $request->status == 'completed' ? 'selected' : '' }}>
                                     Обработано
                                 </option>
-                                <option value="rejected" {{ $contactRequest->status == 'rejected' ? 'selected' : '' }}>
+                                <option value="rejected" {{ $request->status == 'rejected' ? 'selected' : '' }}>
                                     Отклонено
                                 </option>
                             </select>
@@ -112,12 +119,13 @@
                     <hr>
                     
                     <div class="d-grid gap-2">
-                        <a href="mailto:{{ $contactRequest->email }}?subject=Re: {{ $contactRequest->subject }}" class="btn btn-outline-primary">
+                        <a href="mailto:{{ $request->email }}?subject=Re: {{ $request->subject }}" class="btn btn-outline-primary">
                             <i class="bi bi-reply"></i> Ответить по Email
                         </a>
                         
-                        @if($contactRequest->phone)
-                            <a href="tel:{{ $contactRequest->phone }}" class="btn btn-outline-secondary">
+@if($request->phone)
+    <a href="tel:{{ $request->phone }}" class="btn btn-outline-secondary">
+
                                 <i class="bi bi-telephone"></i> Позвонить
                             </a>
                         @endif
@@ -131,8 +139,9 @@
                     Статус
                 </div>
                 <div class="card-body">
-                    <h4>
-                        @switch($contactRequest->status)
+<h4>
+    @switch($request->status)
+
                             @case('pending')
                                 <span class="badge bg-warning">Ожидает</span>
                                 @break
