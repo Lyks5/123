@@ -74,21 +74,25 @@
                                             
                                             <div class="flex flex-wrap items-center justify-between mt-4">
                                                 <div class="flex items-center border border-gray-300 rounded-md">
-                                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="inline-flex">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="quantity" value="{{ max(1, $item->quantity - 1) }}">
-                                                        <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100">−</button>
-                                                    </form>
+<form action="{{ route('cart.update') }}" method="POST" class="inline-flex">
+    @csrf
+    @method('PATCH')
+    <input type="hidden" name="items[0][id]" value="{{ $item->id }}">
+    <input type="hidden" name="items[0][quantity]" value="{{ max(1, $item->quantity - 1) }}">
+    <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100">−</button>
+</form>
+
                                                     
                                                     <span class="px-3 py-1 text-gray-700 font-medium">{{ $item->quantity }}</span>
                                                     
-                                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="inline-flex">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="quantity" value="{{ min($item->product->stock_quantity, $item->quantity + 1) }}">
-                                                        <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" {{ $item->quantity >= $item->product->stock_quantity ? 'disabled' : '' }}>+</button>
-                                                    </form>
+<form action="{{ route('cart.update') }}" method="POST" class="inline-flex">
+    @csrf
+    @method('PATCH')
+    <input type="hidden" name="items[0][id]" value="{{ $item->id }}">
+    <input type="hidden" name="items[0][quantity]" value="{{ min($item->product->stock_quantity, $item->quantity + 1) }}">
+    <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" {{ $item->quantity >= $item->product->stock_quantity ? 'disabled' : '' }}>+</button>
+</form>
+
                                                 </div>
                                                 
                                                 <div class="mt-4 sm:mt-0 flex items-center gap-4">
@@ -117,7 +121,7 @@
                                     Продолжить покупки
                                 </a>
                                 
-                                <form action="{{ route('cart.clear') }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите очистить корзину?');">
+                                <form action="{{ route('cart.remove') }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите очистить корзину?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-700">
@@ -137,7 +141,7 @@
                             <div class="space-y-4">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Стоимость товаров:</span>
-                                    <span class="font-medium">{{ number_format($cart->getSubtotal(), 0, '.', ' ') }} ₽</span>
+                                    <span class="font-medium">{{ number_format($cart->getTotalAttribute(), 0, '.', ' ') }} ₽</span>
                                 </div>
                                 
                                 @if($cart->discount_amount > 0)
@@ -150,7 +154,7 @@
                                 <div class="border-t border-gray-200 pt-4">
                                     <div class="flex justify-between text-lg font-semibold">
                                         <span>Итого к оплате:</span>
-                                        <span>{{ number_format($cart->getTotal(), 0, '.', ' ') }} ₽</span>
+                                        <span>{{ number_format($cart->getTotalAttribute(), 0, '.', ' ') }} ₽</span>
                                     </div>
                                 </div>
                                 
@@ -188,17 +192,6 @@
                                         <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
                                     @enderror
                                 </form>
-                            </div>
-                            
-                            <!-- Доступные способы оплаты -->
-                            <div class="mt-6 pt-3">
-                                <p class="text-sm text-gray-600 mb-2">Доступные способы оплаты:</p>
-                                <div class="flex items-center gap-2">
-                                    <img src="{{ asset('images/payment/visa.svg') }}" alt="Visa" class="h-6">
-                                    <img src="{{ asset('images/payment/mastercard.svg') }}" alt="Mastercard" class="h-6">
-                                    <img src="{{ asset('images/payment/mir.svg') }}" alt="МИР" class="h-6">
-                                    <img src="{{ asset('images/payment/sbp.svg') }}" alt="СБП" class="h-6">
-                                </div>
                             </div>
                         </div>
                     </div>

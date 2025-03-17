@@ -15,18 +15,7 @@ class CartController extends Controller
     {
         $cart = $this->getCart();
         
-        $cartItems = $cart->items; // Retrieve cart items
-        // Fetch recommended products
-        $recommendedProducts = Product::where('is_active', true)
-            ->where('stock_quantity', '>', 0)
-            ->inRandomOrder()
-            ->take(4) // Limit to 4 recommended products
-            ->get();
-
-        \Log::debug('Cart:', ['cart' => $cart]);
-        \Log::debug('Recommended Products:', ['recommendedProducts' => $recommendedProducts]);
-
-        return view('pages.cart', compact('cart', 'cartItems', 'recommendedProducts'));
+        return view('pages.cart', compact('cart'));
     }
 
     public function add(Request $request)
@@ -144,6 +133,8 @@ class CartController extends Controller
 
         return redirect()->back()->with('success', 'Товар удален из корзины.');
     }
+
+    
 
     /**
      * Получить корзину для текущего пользователя или сессии.

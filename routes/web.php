@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\BlogController;
@@ -40,8 +41,8 @@ Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name(
 // Корзина
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+Route::PATCH('/cart/update', [CartController::class, 'update'])->name('cart.update');
+Route::PATCH('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 
 // Информационные страницы
 Route::get('/about', [AboutController::class, 'index'])->name('about');
@@ -94,8 +95,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/account/wishlists', [AccountController::class, 'wishlists'])->name('account.wishlists'); // Added wishlist route
 });
 
+// Оформление заказа
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon');
+Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
+Route::post('/checkout/shipping', [CheckoutController::class, 'updateShipping'])->name('checkout.shipping');
+Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+
 // Админ-панель
-// Админ-панель - ИСПРАВЛЕНО: изменена структура группы маршрутов
+Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.apply-coupon');
 Route::prefix('admin')->name('admin.')->group(function () {
     // Дашборд
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
@@ -119,7 +128,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/{category}', [AdminController::class, 'updateCategory'])->name('update');
         Route::delete('/{category}', [AdminController::class, 'deleteCategory'])->name('delete');
     });
-    
+    // Эко-характеристики
+    Route::prefix('eco-features')->name('eco-features.')->group(function () {
+        Route::get('/', [AdminController::class, 'ecoFeatures'])->name('index');
+        Route::get('/create', [AdminController::class, 'createEcoFeature'])->name('create');
+        Route::post('/', [AdminController::class, 'storeEcoFeature'])->name('store');
+        Route::get('/{ecoFeature}/edit', [AdminController::class, 'editEcoFeature'])->name('edit');
+        Route::put('/{ecoFeature}', [AdminController::class, 'updateEcoFeature'])->name('update');
+        Route::delete('/{ecoFeature}', [AdminController::class, 'deleteEcoFeature'])->name('delete');
+    });
     // Блог - Записи
     Route::prefix('blog/posts')->name('blog.posts.')->group(function () {
         Route::get('/', [AdminController::class, 'blogPosts'])->name('index');
@@ -171,7 +188,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     
     // Экологические инициативы
     Route::prefix('initiatives')->name('initiatives.')->group(function () {
-        Route::get('/', [AdminController::class, 'initiatives'])->name('index');
+        Route::get('/', [App\Http\Controllers\AdminController::class, 'initiatives'])->name('index');
         Route::get('/create', [AdminController::class, 'createInitiative'])->name('create');
         Route::post('/', [AdminController::class, 'storeInitiative'])->name('store');
         Route::get('/{initiative}/edit', [AdminController::class, 'editInitiative'])->name('edit');

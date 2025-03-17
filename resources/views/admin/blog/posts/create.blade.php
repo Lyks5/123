@@ -26,7 +26,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Категории</label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        @foreach($blogCategories as $category)
+                    @foreach($categories as $category)
                         <label class="flex items-center space-x-2">
                             <input type="checkbox" name="categories[]" value="{{ $category->id }}"
                                 class="rounded border-gray-300 text-eco-700">

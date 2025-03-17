@@ -14,6 +14,14 @@ class Cart extends Model
         'session_id',
     ];
 
+    public function getSubtotal()
+    {
+        return $this->items->sum(function ($item) {
+            $price = $item->variant_id ? $item->variant->current_price : $item->product->current_price;
+            return $price * $item->quantity;
+        });
+    }
+
     /**
      * Get the user for the cart.
      */

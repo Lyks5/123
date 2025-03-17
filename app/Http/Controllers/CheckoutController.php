@@ -243,7 +243,7 @@ class CheckoutController extends Controller
             }
             
             // Рассчитываем суммы
-            $subtotal = $cart->total_amount;
+            $subtotal = $cart->getSubtotal();
             $taxRate = config('settings.tax_rate', 0.2); // 20% НДС
             $taxAmount = $subtotal * $taxRate;
             

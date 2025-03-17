@@ -16,6 +16,7 @@
                 <div>
                     <p class="text-sm text-gray-500 uppercase">Товары</p>
                     <p class="text-2xl font-bold">{{ $productCount }}</p>
+                    <a href="{{ route('admin.products.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
                 </div>
             </div>
         </div>
@@ -30,6 +31,7 @@
                 <div>
                     <p class="text-sm text-gray-500 uppercase">Заказы</p>
                     <p class="text-2xl font-bold">{{ $orderCount }}</p>
+                    <a href="{{ route('admin.orders.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
                 </div>
             </div>
         </div>
@@ -44,6 +46,7 @@
                 <div>
                     <p class="text-sm text-gray-500 uppercase">Пользователи</p>
                     <p class="text-2xl font-bold">{{ $userCount }}</p>
+                    <a href="{{ route('admin.users.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
                 </div>
             </div>
         </div>
@@ -58,6 +61,54 @@
                 <div>
                     <p class="text-sm text-gray-500 uppercase">Блог</p>
                     <p class="text-2xl font-bold">{{ $postCount }}</p>
+                    <a href="{{ route('admin.blog.posts.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-700 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase">Эко-характеристики</p>
+                    <p class="text-2xl font-bold">{{ $ecoFeaturesCount }}</p>
+                    <a href="{{ route('admin.eco-features.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-teal-100 text-teal-700 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase">Эко-инициативы</p>
+                    <p class="text-2xl font-bold">{{ $initiativesCount }}</p>
+                    <a href="{{ route('admin.initiatives.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-rose-100 text-rose-700 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 uppercase">Обращения</p>
+                    <p class="text-2xl font-bold">{{ $contactRequestsCount }}</p>
+                    <a href="{{ route('admin.contact-requests.index') }}" class="text-xs text-eco-700 hover:underline">Управление →</a>
                 </div>
             </div>
         </div>
@@ -171,6 +222,54 @@
             @else
                 <p class="text-gray-500">Нет товаров.</p>
             @endif
+        </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Быстрый доступ</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="{{ route('admin.products.create') }}" class="block p-4 bg-eco-50 hover:bg-eco-100 rounded-lg transition">
+                    <div class="flex items-center">
+                        <span class="p-2 rounded-full bg-eco-700 text-white mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <span>Добавить товар</span>
+                    </div>
+                </a>
+                <a href="{{ route('admin.categories.create') }}" class="block p-4 bg-eco-50 hover:bg-eco-100 rounded-lg transition">
+                    <div class="flex items-center">
+                        <span class="p-2 rounded-full bg-eco-700 text-white mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <span>Добавить категорию</span>
+                    </div>
+                </a>
+                <a href="{{ route('admin.eco-features.create') }}" class="block p-4 bg-eco-50 hover:bg-eco-100 rounded-lg transition">
+                    <div class="flex items-center">
+                        <span class="p-2 rounded-full bg-eco-700 text-white mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <span>Добавить эко-характеристику</span>
+                    </div>
+                </a>
+                <a href="{{ route('admin.blog.posts.create') }}" class="block p-4 bg-eco-50 hover:bg-eco-100 rounded-lg transition">
+                    <div class="flex items-center">
+                        <span class="p-2 rounded-full bg-eco-700 text-white mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <span>Написать статью</span>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 @endsection

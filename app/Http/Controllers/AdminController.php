@@ -22,6 +22,58 @@ use App\Models\ProductImage;
 class AdminController extends Controller
 {
     /**
+     * Show the users management page.
+     */
+    public function users()
+    {
+        $users = User::paginate(10); // Retrieve users with pagination
+        return view('admin.users.index', compact('users')); // Pass users to the view
+    }
+
+    /**
+     * Show the contact requests management page.
+     */
+    public function contactRequests()
+    {
+        $requests = ContactRequest::all(); // Retrieve all contact requests
+        return view('admin.contact-requests.index', compact('requests')); // Pass requests to the view
+    }
+
+    /**
+     * Show the initiatives management page.
+     */
+    public function initiatives()
+    {
+        $initiatives = EnvironmentalInitiative::all(); // Retrieve all initiatives
+        return view('admin.initiatives.index', compact('initiatives')); // Pass initiatives to the view
+    }
+
+    /**
+     * Show the orders management page.
+     */
+    public function orders()
+    {
+        $orders = Order::with('user')->latest()->paginate(10); // Retrieve all orders with user info
+        return view('admin.orders.index', compact('orders')); // Pass orders to the view
+    }
+    public function showOrder(Order $order)
+  {
+    return view('admin.orders.show', compact('order')); // Pass order details to the view
+   }
+    /**
+     * Update the status of a specific order.
+     */
+    public function updateOrderStatus(Request $request, Order $order)
+    {
+        $request->validate([
+            'status' => 'required|string|in:pending,completed,canceled,processing,shipped,delivered', // Validate status
+        ]);
+
+        $order->update(['status' => $request->status]); // Update order status
+
+        return redirect()->route('admin.orders.index')->with('success', 'Статус заказа успешно обновлен.'); // Redirect with success message
+    }
+    /**
      * Create a new controller instance.
      */
     public function __construct()
@@ -36,11 +88,13 @@ class AdminController extends Controller
     public function index()
     {
         // Basic stats
+        $ecoFeaturesCount = EcoFeature::count();
+        $initiativesCount = EnvironmentalInitiative::count();
         $productCount = Product::count();
         $orderCount = Order::count();
         $userCount = User::count();
         $postCount = BlogPost::count();
-        
+
         // Recent data for dashboard display
         $recentOrders = Order::with('user')->latest()->take(5)->get();
         $latestProducts = Product::latest()->take(5)->get();
@@ -59,7 +113,24 @@ class AdminController extends Controller
         // Recent contact requests
         $recentContacts = ContactRequest::where('status', 'new')->latest()->take(5)->get();
         
+        $contactRequestsCount = ContactRequest::count();
         return view('admin.dashboard', compact(
+            'ecoFeaturesCount',
+            'initiativesCount',
+            'productCount', 
+            'orderCount', 
+            'userCount', 
+            'postCount',
+            'recentOrders', 
+            'latestProducts', 
+            'latestUsers', 
+            'pendingReviews',
+            'monthlyData', 
+            'lowStockProducts', 
+            'recentContacts',
+            'contactRequestsCount', // Add this line
+            'ecoFeaturesCount',
+            'initiativesCount',
             'productCount', 'orderCount', 'userCount', 'postCount',
             'recentOrders', 'latestProducts', 'latestUsers', 'pendingReviews',
             'monthlyData', 'lowStockProducts', 'recentContacts'
@@ -275,7 +346,7 @@ class AdminController extends Controller
     /**
      * Update a product.
      */
-    public function updateProduct(Request $request, Product $product)
+    public function updateProduct(Request $request, Product $product = null)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -304,6 +375,11 @@ class AdminController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_new'] = $request->has('is_new');
         
+        // Check if product exists
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
         // Update product
         $product->update($validated);
         
@@ -501,6 +577,136 @@ class AdminController extends Controller
     
     /*
     |--------------------------------------------------------------------------
+    | Eco Features Management
+    |--------------------------------------------------------------------------
+    */
+    
+    /**
+     * Show the eco features management page.
+     */
+    public function ecoFeatures(Request $request)
+    {
+        $query = EcoFeature::query();
+        
+        // Apply search filter if provided
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        // Apply sorting
+        if ($request->has('sort')) {
+            if ($request->sort === 'name') {
+                $query->orderBy('name');
+            } elseif ($request->sort === 'oldest') {
+                $query->oldest();
+            } else {
+                $query->latest();
+            }
+        } else {
+            $query->orderBy('name');
+        }
+        
+        $ecoFeatures = $query->paginate(15)->withQueryString();
+        
+        return view('admin.eco-features.index', compact('ecoFeatures'));
+    }
+    
+    /**
+     * Show the form to create a new eco feature.
+     */
+    public function createEcoFeature()
+    {
+        return view('admin.eco-features.create');
+    }
+    
+    /**
+     * Store a new eco feature.
+     */
+    public function storeEcoFeature(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'icon' => 'nullable|string|max:255',
+        ]);
+        
+        // Generate slug
+        $validated['slug'] = Str::slug($validated['name']);
+        
+        // Check if slug exists
+        $count = 1;
+        $originalSlug = $validated['slug'];
+        
+        while (EcoFeature::where('slug', $validated['slug'])->exists()) {
+            $validated['slug'] = $originalSlug . '-' . $count++;
+        }
+        
+        EcoFeature::create($validated);
+        
+        return redirect()->route('admin.eco-features.index')
+            ->with('success', 'Эко-характеристика успешно создана.');
+    }
+    
+    /**
+     * Show the form to edit an eco feature.
+     */
+    public function editEcoFeature(EcoFeature $ecoFeature)
+    {
+        return view('admin.eco-features.edit', compact('ecoFeature'));
+    }
+    
+    /**
+     * Update an eco feature.
+     */
+    public function updateEcoFeature(Request $request, EcoFeature $ecoFeature)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'icon' => 'nullable|string|max:255',
+        ]);
+        
+        // Update slug only if name has changed
+        if ($ecoFeature->name !== $validated['name']) {
+            $validated['slug'] = Str::slug($validated['name']);
+            
+            // Check if slug exists
+            $count = 1;
+            $originalSlug = $validated['slug'];
+            
+            while (EcoFeature::where('slug', $validated['slug'])->where('id', '!=', $ecoFeature->id)->exists()) {
+                $validated['slug'] = $originalSlug . '-' . $count++;
+            }
+        }
+        
+        $ecoFeature->update($validated);
+        
+        return redirect()->route('admin.eco-features.index')
+            ->with('success', 'Эко-характеристика успешно обновлена.');
+    }
+    
+    /**
+     * Delete an eco feature.
+     */
+    public function deleteEcoFeature(EcoFeature $ecoFeature)
+    {
+        // Check if eco-feature is associated with any products
+        if ($ecoFeature->products()->count() > 0) {
+            return back()->withErrors(['general' => 'Нельзя удалить эко-характеристику, связанную с товарами.']);
+        }
+        
+        $ecoFeature->delete();
+        
+        return redirect()->route('admin.eco-features.index')
+            ->with('success', 'Эко-характеристика успешно удалена.');
+    }
+    
+    /*
+    |--------------------------------------------------------------------------
     | Blog Management
     |--------------------------------------------------------------------------
     */
@@ -553,8 +759,9 @@ class AdminController extends Controller
         $posts = $query->paginate(15)->withQueryString();
         $categories = BlogCategory::all();
         $authors = User::whereHas('blogPosts')->get();
-        
-        return view('admin.blog.posts.index', compact('posts', 'categories', 'authors'));
+        $tags = Tag::all(); // Получаем все теги
+    
+        return view('admin.blog.posts.index', compact('posts', 'categories', 'authors', 'tags'));
     }
     
     /**
@@ -837,574 +1044,7 @@ class AdminController extends Controller
         
         Tag::create($validated);
         
-        return redirect()->route('admin.blog.tags.index')
-            ->with('success', 'Тег успешно создан.');
-    }
-    
-    /**
-     * Show the form to edit a tag.
-     */
-    public function editBlogTag(Tag $tag)
-    {
-        return view('admin.blog.tags.edit', compact('tag'));
-    }
-    
-    /**
-     * Update a tag.
-     */
-    public function updateBlogTag(Request $request, Tag $tag)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:tags,name,' . $tag->id,
-        ]);
-        
-        // Generate slug
-        $validated['slug'] = Str::slug($validated['name']);
-        
-        $tag->update($validated);
-        
-        return redirect()->route('admin.blog.tags.index')
-            ->with('success', 'Тег успешно обновлен.');
-    }
-    
-    /**
-     * Delete a tag.
-     */
-    public function deleteBlogTag(Tag $tag)
-    {
-        $tag->delete();
-        
-        return redirect()->route('admin.blog.tags.index')
-            ->with('success', 'Тег успешно удален.');
-    }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | User Management
-    |--------------------------------------------------------------------------
-    */
-    
-    /**
-     * Show the users management page.
-     */
-    public function users(Request $request)
-    {
-        $query = User::query();
-        
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
-        
-        if ($request->has('role')) {
-            if ($request->role === 'admin') {
-                $query->where('is_admin', true);
-            } elseif ($request->role === 'user') {
-                $query->where('is_admin', false);
-            }
-        }
-        
-        if ($request->has('sort')) {
-            if ($request->sort === 'name') {
-                $query->orderBy('name');
-            } elseif ($request->sort === 'email') {
-                $query->orderBy('email');
-            } elseif ($request->sort === 'oldest') {
-                $query->oldest();
-            } else {
-                $query->latest();
-            }
-        } else {
-            $query->latest();
-        }
-        
-        $users = $query->paginate(15)->withQueryString();
-        
-        return view('admin.users.index', compact('users'));
-    }
-    
-    /**
-     * Show the form to edit a user.
-     */
-    public function editUser(User $user)
-    {
-        $orders = $user->orders()->latest()->take(5)->get();
-        return view('admin.users.edit', compact('user', 'orders'));
-    }
-    
-    /**
-     * Update a user.
-     */
-    public function updateUser(Request $request, User $user)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20',
-            'is_admin' => 'nullable|boolean',
-        ]);
-        
-        // Set boolean values
-        $validated['is_admin'] = $request->has('is_admin');
-        
-        $user->update($validated);
-        
-        return redirect()->route('admin.users.index')
-            ->with('success', 'Пользователь успешно обновлен.');
-    }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Order Management
-    |--------------------------------------------------------------------------
-    */
-    
-    /**
-     * Show the orders management page.
-     */
-    public function orders(Request $request)
-    {
-        $query = Order::with('user');
-        
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-        
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use($search) {
-                $q->where('id', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($q) use($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                  });
-            });
-        }
-        
-        if ($request->has('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        
-        if ($request->has('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-        
-        if ($request->has('sort')) {
-            if ($request->sort === 'id_asc') {
-                $query->orderBy('id');
-            } elseif ($request->sort === 'id_desc') {
-                $query->orderBy('id', 'desc');
-            } elseif ($request->sort === 'total_asc') {
-                $query->orderBy('total');
-            } elseif ($request->sort === 'total_desc') {
-                $query->orderBy('total', 'desc');
-            } elseif ($request->sort === 'oldest') {
-                $query->oldest();
-            } else {
-                $query->latest();
-            }
-        } else {
-            $query->latest();
-        }
-        
-        $orders = $query->paginate(15)->withQueryString();
-        
-        return view('admin.orders.index', compact('orders'));
-    }
-    
-    /**
-     * Show an order.
-     */
-    public function showOrder(Order $order)
-    {
-        $order->load(['items.product', 'user', 'address']);
-        return view('admin.orders.show', compact('order'));
-    }
-    
-    /**
-     * Update an order status.
-     */
-    public function updateOrderStatus(Request $request, Order $order)
-    {
-        $validated = $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,completed,cancelled',
-            'admin_notes' => 'nullable|string',
-        ]);
-        
-        // Update order status and notes
-        $order->update($validated);
-        
-        // If updating to cancelled or completed, adjust inventory if configured to do so
-        if (in_array($validated['status'], ['cancelled', 'completed']) && 
-            $validated['status'] !== $order->getOriginal('status')) {
-            
-            // For cancelled orders, restore the stock
-            if ($validated['status'] === 'cancelled') {
-                foreach ($order->items as $item) {
-                    $product = $item->product;
-                    $product->stock_quantity += $item->quantity;
-                    $product->save();
-                }
-            }
-        }
-        
-        return redirect()->route('admin.orders.show', $order)
-            ->with('success', 'Статус заказа успешно обновлен.');
-    }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Environmental Initiatives Management
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Show the environmental initiatives management page.
-     */
-    public function initiatives(Request $request)
-    {
-        $query = EnvironmentalInitiative::query();
-        
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-        
-        if ($request->has('status')) {
-            if ($request->status === 'active') {
-                $query->where('end_date', '>=', now()->toDateString())
-                      ->orWhereNull('end_date');
-            } elseif ($request->status === 'ended') {
-                $query->where('end_date', '<', now()->toDateString())
-                      ->whereNotNull('end_date');
-            }
-        }
-        
-        if ($request->has('sort')) {
-            if ($request->sort === 'title') {
-                $query->orderBy('title');
-            } elseif ($request->sort === 'start_date') {
-                $query->orderBy('start_date');
-            } elseif ($request->sort === 'end_date') {
-                $query->orderBy('end_date');
-            } elseif ($request->sort === 'oldest') {
-                $query->oldest();
-            } else {
-                $query->latest();
-            }
-        } else {
-            $query->latest();
-        }
-        
-        $initiatives = $query->paginate(15)->withQueryString();
-        
-        return view('admin.initiatives.index', compact('initiatives'));
-    }
-    
-    /**
-     * Show the form to create a new initiative.
-     */
-    public function createInitiative()
-    {
-        return view('admin.initiatives.create');
-    }
-    
-    /**
-     * Store a new initiative.
-     */
-    public function storeInitiative(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'impact_metric' => 'nullable|string|max:255',
-            'impact_value' => 'nullable|numeric',
-        ]);
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('initiatives', 'public');
-        }
-        
-        EnvironmentalInitiative::create($validated);
-        
-        return redirect()->route('admin.initiatives.index')
-            ->with('success', 'Экологическая инициатива успешно создана.');
-    }
-    
-    /**
-     * Show the form to edit an initiative.
-     */
-    public function editInitiative(EnvironmentalInitiative $initiative)
-    {
-        return view('admin.initiatives.edit', compact('initiative'));
-    }
-    
-    /**
-     * Update an initiative.
-     */
-    public function updateInitiative(Request $request, EnvironmentalInitiative $initiative)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'impact_metric' => 'nullable|string|max:255',
-            'impact_value' => 'nullable|numeric',
-        ]);
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($initiative->image) {
-                Storage::disk('public')->delete($initiative->image);
-            }
-            
-            $validated['image'] = $request->file('image')->store('initiatives', 'public');
-        }
-        
-        $initiative->update($validated);
-        
-        return redirect()->route('admin.initiatives.index')
-            ->with('success', 'Экологическая инициатива успешно обновлена.');
-    }
-    
-    /**
-     * Delete an initiative.
-     */
-    public function deleteInitiative(EnvironmentalInitiative $initiative)
-    {
-        // Delete image from storage
-        if ($initiative->image) {
-            Storage::disk('public')->delete($initiative->image);
-        }
-        
-        $initiative->delete();
-        
-        return redirect()->route('admin.initiatives.index')
-            ->with('success', 'Экологическая инициатива успешно удалена.');
-    }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Contact Requests Management
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Show contact requests management page.
-     */
-    public function contactRequests(Request $request)
-    {
-        $query = ContactRequest::query();
-        
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-        
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%")
-                  ->orWhere('message', 'like', "%{$search}%");
-            });
-        }
-        
-        if ($request->has('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        
-        if ($request->has('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-        
-        $contactRequests = $query->latest()->paginate(15)->withQueryString();
-        
-        return view('admin.contacts.index', compact('contactRequests'));
-    }
-    
-    /**
-     * Show a specific contact request.
-     */
-    public function showContactRequest(ContactRequest $contact)
-    {
-        return view('admin.contacts.show', compact('contact'));
-    }
-    
-    /**
-     * Update contact request status.
-     */
-    public function updateContactStatus(Request $request, ContactRequest $contact)
-    {
-        $validated = $request->validate([
-            'status' => 'required|in:new,processing,resolved',
-            'admin_notes' => 'nullable|string',
-        ]);
-        
-        $contact->update($validated);
-        
-        return redirect()->route('admin.contacts.show', $contact)
-            ->with('success', 'Статус обращения успешно обновлен.');
-    }
-    
-    /**
-     * Delete a contact request.
-     */
-    public function deleteContactRequest(ContactRequest $contact)
-    {
-        $contact->delete();
-        
-        return redirect()->route('admin.contacts.index')
-            ->with('success', 'Обращение успешно удалено.');
-    }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Product Reviews Management
-    |--------------------------------------------------------------------------
-    */
-    
-    /**
-     * Show reviews management page.
-     */
-    public function reviews(Request $request)
-    {
-        $query = Review::with(['product', 'user']);
-        
-        if ($request->has('status')) {
-            if ($request->status === 'approved') {
-                $query->where('is_approved', true);
-            } elseif ($request->status === 'pending') {
-                $query->where('is_approved', false);
-            }
-        }
-        
-        if ($request->has('rating')) {
-            $query->where('rating', $request->rating);
-        }
-        
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use($search) {
-                $q->where('comment', 'like', "%{$search}%")
-                  ->orWhereHas('product', function($q) use($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('user', function($q) use($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                  });
-            });
-        }
-        
-        $reviews = $query->latest()->paginate(15)->withQueryString();
-        
-        return view('admin.reviews.index', compact('reviews'));
-    }
-    
-    /**
-     * Show a specific review.
-     */
-    public function showReview(Review $review)
-    {
-        $review->load(['product', 'user']);
-        return view('admin.reviews.show', compact('review'));
-    }
-    
-    /**
-     * Update review approval status.
-     */
-    public function updateReviewStatus(Request $request, Review $review)
-    {
-        $validated = $request->validate([
-            'is_approved' => 'required|boolean',
-            'admin_response' => 'nullable|string',
-        ]);
-        
-        $review->update($validated);
-        
-        return redirect()->route('admin.reviews.index')
-            ->with('success', 'Статус отзыва успешно обновлен.');
-    }
-    
-    /**
-     * Delete a review.
-     */
-    public function deleteReview(Review $review)
-    {
-        $review->delete();
-        
-        return redirect()->route('admin.reviews.index')
-            ->with('success', 'Отзыв успешно удален.');
-    }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Settings Management
-    |--------------------------------------------------------------------------
-    */
-    
-    /**
-     * Show settings page.
-     */
-    public function settings()
-    {
-        return view('admin.settings.index');
-    }
-    
-    /**
-     * Update settings.
-     */
-    public function updateSettings(Request $request)
-    {
-        $validated = $request->validate([
-            'site_name' => 'required|string|max:255',
-            'site_description' => 'nullable|string',
-            'contact_email' => 'required|email',
-            'contact_phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'facebook_url' => 'nullable|url',
-            'instagram_url' => 'nullable|url',
-            'twitter_url' => 'nullable|url',
-            'youtube_url' => 'nullable|url',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'favicon' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,ico|max:1024',
-        ]);
-        
-        foreach ($validated as $key => $value) {
-            if ($key !== 'logo' && $key !== 'favicon') {
-                // Store each setting in the database
-                setting([$key => $value]);
-            }
-        }
-        
-        // Handle logo upload
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('settings', 'public');
-            setting(['logo' => $logoPath]);
-        }
-        
-        // Handle favicon upload
-        if ($request->hasFile('favicon')) {
-            $faviconPath = $request->file('favicon')->store('settings', 'public');
-            setting(['favicon' => $faviconPath]);
-        }
-        
         return redirect()->route('admin.settings')
-            ->with('success', 'Настройки успешно обновлены.');
-    }
+        ->with('success', 'Настройки успешно обновлены.');
+}
 }
