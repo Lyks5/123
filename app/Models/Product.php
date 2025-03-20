@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+    /**
+     * Get the orders for the product.
+     */
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class, 'order_items');
+    }
+
     use HasFactory;
 
     protected $fillable = [

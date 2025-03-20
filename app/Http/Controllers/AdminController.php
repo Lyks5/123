@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\Product;
+use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\EcoFeature;
 use App\Models\BlogPost;
@@ -22,8 +23,88 @@ use App\Models\ProductImage;
 class AdminController extends Controller
 {
     /**
-     * Update a user.
+     * Display the product attributes.
      */
+    public function attributes()
+    {
+        $attributes = Attribute::all(); // Retrieve all attributes from the database
+        return view('admin.attributes.index', compact('attributes')); // Return the view with attributes
+    }
+
+
+    /**
+     * Show the form to create a new attribute.
+     */
+    /**
+     * Store a new attribute.
+     */
+    /**
+     * Store a new attribute.
+     */
+    public function storeAttribute(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|in:select,text,number,color,boolean',
+        ]);
+
+        Attribute::create($validated); // Create the new attribute
+
+        return redirect()->route('admin.attributes.index')->with('success', 'Атрибут успешно создан.'); // Redirect with success message
+    }
+
+    /**
+     * Show the form to create a new attribute.
+     */
+    public function createAttribute()
+    {
+        return view('admin.attributes.create'); // Return the view for creating a new attribute
+    }
+
+    public function editAttribute(Attribute $attribute)
+    {
+        return view('admin.attributes.edit', compact('attribute')); // Return the view for editing the attribute
+    }
+
+    /**
+     * Store a new attribute value.
+     */
+    public function storeAttributeValue(Request $request, Attribute $attribute)
+    {
+        $validated = $request->validate([
+            'value' => 'required|string|max:255',
+        ]);
+
+        $attribute->values()->create($validated); // Create the new attribute value
+
+        return redirect()->route('admin.attributes.values.index', $attribute)->with('success', 'Значение атрибута успешно создано.'); // Redirect with success message
+    }
+    public function deleteAttribute(Attribute $attribute)
+    {
+        $attribute->delete(); // Delete the attribute from the database
+        return redirect()->route('admin.attributes.index')->with('success', 'Атрибут успешно удален.'); // Redirect with success message
+    }
+
+    /**
+     * Delete an attribute value.
+     */
+    public function deleteAttributeValue(Attribute $attribute, $valueId)
+    {
+        $value = $attribute->values()->findOrFail($valueId); // Find the attribute value
+        $value->delete(); // Delete the attribute value
+
+        return redirect()->route('admin.attributes.values.index', $attribute)->with('success', 'Значение атрибута успешно удалено.'); // Redirect with success message
+    }
+    public function attributeValues(Attribute $attribute)
+    {
+        $values = $attribute->values; // Assuming there's a relationship defined in the Attribute model
+        return view('admin.attributes.values', compact('attribute', 'values')); // Return the view with attribute values
+    }
+
+
+
+ 
+
     public function editUser(User $user)
     {
         return view('admin.users.edit', compact('user')); // Display the form for editing a user
@@ -54,11 +135,11 @@ class AdminController extends Controller
     }
 
     /**
-     * Show the contact requests management page.
+     * Show the contacts management page.
      */
     public function contactRequests()
     {
-        $requests = ContactRequest::all(); // Retrieve all contact requests
+        $requests = ContactRequest::paginate(10); // Retrieve contact requests with pagination
         return view('admin.contact-requests.index', compact('requests')); // Pass requests to the view
     }
 
@@ -196,15 +277,63 @@ class AdminController extends Controller
     /**
      * Create a new controller instance.
      */
-    public function __construct()
-    {
-        $this->middleware('auth');
-        // $this->middleware('admin');----------------------------------------------------------------------------------------------------------------------
-    }
+
     
     /**
      * Display the admin dashboard.
      */
+    public function analytics()
+    {
+        // Gather analytics data
+        $userCount = User::count();
+        $productCount = Product::count();
+        $orderCount = Order::count();
+        $totalRevenue = Order::where('status', 'completed')->sum('total') ?: 0; // Ensure it defaults to 0 if no completed orders
+        $totalSales = Order::where('status', 'completed')->count() ?: 0; // Ensure it defaults to 0 if no completed orders
+        $totalSales = Order::where('status', 'completed')->count() ?: 0; // Ensure it defaults to 0 if no completed orders
+        $totalOrders = Order::count(); // Add this line
+        $averageOrderValue = $totalSales > 0 ? $totalRevenue / $totalSales : 0; // Calculate average order value
+        $totalCustomers = User::count(); // Count all users as customers
+        
+        // Get monthly sales data for last 6 months
+        $monthlyData = $this->getMonthlyStatistics();
+        
+        // Fetch top products based on sales count
+       $topProducts = Product::withCount('orders') // Assuming there's a relationship defined
+           ->orderBy('orders_count', 'desc')
+           ->take(5) // Get top 5 products
+           ->get();
+
+       // Fetch top categories based on product count
+       $topCategories = Category::withCount('products')
+           ->orderBy('products_count', 'desc')
+           ->take(5) // Get top 5 categories
+           ->get();
+
+       // Define month names for the last 6 months
+       $monthNames = [];
+       for ($i = 5; $i >= 0; $i--) {
+           $monthNames[] = now()->subMonths($i)->format('F');
+       }
+
+       // Get monthly sales data for last 6 months
+       $monthlyData = $this->getMonthlyStatistics();
+       $revenueByMonth = $monthlyData['revenue']; // Extract revenue data
+
+       // Get orders by status
+       $ordersByStatus = [
+           'pending' => Order::where('status', 'pending')->count(),
+           'processing' => Order::where('status', 'processing')->count(),
+           'shipped' => Order::where('status', 'shipped')->count(),
+           'delivered' => Order::where('status', 'delivered')->count(),
+           'completed' => Order::where('status', 'completed')->count(),
+           'cancelled' => Order::where('status', 'cancelled')->count(),
+       ];
+
+        return view('admin.analytics', compact('userCount', 'productCount', 'orderCount', 'totalRevenue', 'totalSales', 'totalOrders', 'averageOrderValue', 'totalCustomers', 'topProducts', 'topCategories', 'monthNames', 'revenueByMonth', 'ordersByStatus'));
+
+
+    }
     public function index()
     {
         // Basic stats
@@ -222,7 +351,7 @@ class AdminController extends Controller
         $pendingReviews = Review::where('is_approved', false)->count();
         
         // Get monthly sales data for last 6 months
-        $monthlyData = $this->getMonthlyStatistics();
+        $monthlyData = $this->getMonthlyStatistics(); // Get monthly sales data for last 6 months
         
         // Low stock alert (products with less than 5 items)
         $lowStockProducts = Product::where('stock_quantity', '<', 5)
@@ -235,6 +364,11 @@ class AdminController extends Controller
         
         $contactRequestsCount = ContactRequest::count();
         return view('admin.dashboard', compact(
+            'totalRevenue', // Add totalRevenue to the dashboard view
+            'userCount',
+            'productCount',
+            'orderCount',
+            'totalRevenue',
             'ecoFeaturesCount',
             'initiativesCount',
             'productCount', 
@@ -248,7 +382,7 @@ class AdminController extends Controller
             'monthlyData', 
             'lowStockProducts', 
             'recentContacts',
-            'contactRequestsCount', // Add this line
+            'contactRequestsCount',
             'ecoFeaturesCount',
             'initiativesCount',
             'productCount', 'orderCount', 'userCount', 'postCount',
@@ -1164,7 +1298,31 @@ class AdminController extends Controller
         
         Tag::create($validated);
         
-        return redirect()->route('admin.settings')
-        ->with('success', 'Настройки успешно обновлены.');
+        return redirect()->route('admin.blog.tags.index')
+        ->with('success', 'Тег успешно создан.');
+}
+
+/**
+ * Print an invoice for an order.
+ *
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function printInvoice($id)
+{
+    $order = Order::with(['items'])->findOrFail($id);
+    return view('admin.orders.print-invoice', compact('order'));
+}
+
+/**
+ * Print a packing slip for an order.
+ *
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function printPackingSlip($id)
+{
+    $order = Order::with(['items'])->findOrFail($id);
+    return view('admin.orders.print-packing-slip', compact('order'));
 }
 }

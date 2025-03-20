@@ -1,50 +1,89 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer base {
-    :root {
-      --background: 0 0% 100%;
-      --foreground: 240 10% 3.9%;
-      --card: 0 0% 100%;
-      --card-foreground: 240 10% 3.9%;
-      --popover: 0 0% 100%;
-      --popover-foreground: 240 10% 3.9%;
-      --primary: 240 5.9% 10%;
-      --primary-foreground: 0 0% 98%;
-      --secondary: 240 4.8% 95.9%;
-      --secondary-foreground: 240 5.9% 10%;
-      --muted: 240 4.8% 95.9%;
-      --muted-foreground: 240 3.8% 46.1%;
-      --accent: 240 4.8% 95.9%;
-      --accent-foreground: 240 5.9% 10%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 5.9% 90%;
-      --input: 240 5.9% 90%;
-      --ring: 240 5.9% 10%;
-      --radius: 1rem;
-    }
-  
-    * {
-      @apply border-border;
-      scroll-behavior: smooth;
-    }
-  
-    body {
-      @apply bg-background text-foreground antialiased;
-    }
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  * {
+    @apply border-border;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .container-width {
+    @apply max-w-7xl mx-auto;
   }
   
-  @layer components {
-    .container-width {
-      @apply max-w-7xl mx-auto;
-    }
-    
-    .section-padding {
-      @apply py-16 sm:py-20 md:py-24;
-    }
-    
-    .eco-btn {
-      @apply px-6 py-3 rounded-full bg-eco-600 hover:bg-eco-700 text-white font-medium transition-colors transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-eco-500;
-    }
+  .section-padding {
+    @apply py-16 sm:py-20 md:py-24;
   }
+  
+  .eco-btn {
+    @apply px-6 py-3 rounded-full bg-eco-600 hover:bg-eco-700 text-white font-medium transition-colors transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-eco-500;
+  }
+  
+  .card-admin {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm dark:shadow-gray-700/20;
+  }
+  
+  .form-input-admin {
+    @apply rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 block w-full;
+  }
+  
+  .btn-primary-admin {
+    @apply px-4 py-2 bg-eco-600 text-white rounded-md hover:bg-eco-700 transition-colors focus:outline-none focus:ring-2 focus:ring-eco-500 focus:ring-opacity-50;
+  }
+  
+  .btn-secondary-admin {
+    @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50;
+  }
+}

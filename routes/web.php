@@ -103,7 +103,7 @@ Route::post('/checkout/shipping', [CheckoutController::class, 'updateShipping'])
 Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
-// Админ-панель
+    // Аналитика
 Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.apply-coupon');
 Route::prefix('admin')->name('admin.')->group(function () {
     // Дашборд
@@ -201,6 +201,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/{contactRequest}', [AdminController::class, 'showContactRequest'])->name('show');
         Route::put('/{contactRequest}/status', [AdminController::class, 'updateContactRequestStatus'])->name('update.status');
         Route::post('/{contactRequest}/notes', [AdminController::class, 'addContactRequestNote'])->name('add.note');
+        Route::delete('/{contactRequest}', [AdminController::class, 'deleteContactRequest'])->name('destroy'); // Added delete route
     });
      // Аналитика
      Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');

@@ -10,47 +10,30 @@ use App\Models\Tag;
 class BlogController extends Controller
 {
     /**
-     * Search for blog posts based on the query.
-     */
-    public function search(Request $request)
-    {
-        $request->validate([
-            'query' => 'required|string|max:255',
-        ]);
-
-        $query = $request->input('query');
-        $posts = BlogPost::with(['author', 'categories'])
-            ->where('title', 'like', "%{$query}%")
-            ->orWhere('content', 'like', "%{$query}%")
-            ->latest()
-            ->paginate(8);
-
-        return view('pages.blog', [
-            'posts' => $posts,
-            'featuredPost' => null, // You can modify this if you want to show a featured post
-            'categories' => BlogCategory::withCount('posts')->get(),
-            'recentPosts' => BlogPost::latest()->take(3)->get(),
-            'tags' => Tag::has('blogPosts')->take(10)->get(),
-        ]);
-    }
-
-    /**
      * Display a listing of blog posts.
      */
     public function index()
     {
         $posts = BlogPost::with(['author', 'categories'])
-            ->latest()
+            ->where('status', 'published')
+            ->where('published_at', '<=', now())
+            ->latest('published_at')
             ->paginate(8);
             
         $featuredPost = BlogPost::where('is_featured', true)
+            ->where('status', 'published')
+            ->where('published_at', '<=', now())
             ->with(['author', 'categories'])
-            ->latest()
+            ->latest('published_at')
             ->first();
             
         $categories = BlogCategory::withCount('posts')->get();
         
-        $recentPosts = BlogPost::latest()->take(3)->get();
+        $recentPosts = BlogPost::where('status', 'published')
+            ->where('published_at', '<=', now())
+            ->latest('published_at')
+            ->take(3)
+            ->get();
         
         $tags = Tag::has('blogPosts')->take(10)->get();
         
@@ -60,8 +43,13 @@ class BlogController extends Controller
     /**
      * Display the specified blog post.
      */
-    public function show(BlogPost $post)
+    public function show($slug)
     {
+        $post = BlogPost::where('slug', $slug)
+            ->where('status', 'published')
+            ->where('published_at', '<=', now())
+            ->firstOrFail();
+            
         $post->load(['author', 'categories', 'tags']);
         
         // Increment view count
@@ -71,22 +59,29 @@ class BlogController extends Controller
             $query->whereIn('id', $post->categories->pluck('id'));
         })
         ->where('id', '!=', $post->id)
-        ->latest()
+        ->where('status', 'published')
+        ->where('published_at', '<=', now())
+        ->latest('published_at')
         ->take(3)
         ->get();
         
-        return view('pages.blog-post', compact('post', 'relatedPosts'));
+        return view('pages.blog-post-detail', compact('post', 'relatedPosts'));
     }
     
     /**
      * Display posts by category.
      */
-    public function category(BlogCategory $category)
+    public function category($slug)
     {
-        $posts = $category->posts()
-            ->with(['author', 'categories'])
-            ->latest()
-            ->paginate(8);
+        $category = BlogCategory::where('slug', $slug)->firstOrFail();
+        
+        $posts = BlogPost::whereHas('categories', function($query) use ($category) {
+            $query->where('blog_categories.id', $category->id);
+        })
+        ->where('status', 'published')
+        ->where('published_at', '<=', now())
+        ->latest('published_at')
+        ->paginate(8);
             
         return view('pages.blog-category', [
             'category' => $category,
@@ -97,16 +92,38 @@ class BlogController extends Controller
     /**
      * Display posts by tag.
      */
-    public function tag(Tag $tag)
+    public function tag($slug)
     {
-        $posts = $tag->posts() 
+        $tag = Tag::where('slug', $slug)->firstOrFail();
+        
+        $posts = $tag->blogPosts()
+            ->where('status', 'published')
+            ->where('published_at', '<=', now())
             ->with(['author', 'categories'])
-            ->latest()
+            ->latest('published_at')
             ->paginate(8);
             
         return view('pages.blog-tag', [
             'tag' => $tag,
             'posts' => $posts
         ]);
+    }
+    
+    /**
+     * Print invoice for an order.
+     */
+    public function printInvoice($id)
+    {
+        $order = Order::findOrFail($id);
+        return view('admin.orders.print-invoice', compact('order'));
+    }
+    
+    /**
+     * Print packing slip for an order.
+     */
+    public function printPackingSlip($id)
+    {
+        $order = Order::findOrFail($id);
+        return view('admin.orders.print-packing-slip', compact('order'));
     }
 }
