@@ -14,6 +14,125 @@
             document.documentElement.classList.remove('dark');
         }
     </script>
+    <style>
+        /* Фиксы для темной темы в компонентах, где нет классов для темной темы */
+        .dark .dataTables_wrapper .dataTables_length,
+        .dark .dataTables_wrapper .dataTables_filter,
+        .dark .dataTables_wrapper .dataTables_info,
+        .dark .dataTables_wrapper .dataTables_processing,
+        .dark .dataTables_wrapper .dataTables_paginate {
+            color: #e5e7eb !important;
+        }
+        
+        .dark .dataTables_wrapper .dataTables_paginate .paginate_button {
+            color: #e5e7eb !important;
+        }
+        
+        .dark .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #1f2937 !important;
+            color: white !important;
+            border-color: #374151 !important;
+        }
+        
+        .dark .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #374151 !important;
+            color: white !important;
+            border-color: #4b5563 !important;
+        }
+        
+        .dark table.dataTable tbody tr {
+            background-color: #1f2937 !important;
+        }
+        
+        .dark table.dataTable.stripe tbody tr.odd {
+            background-color: #111827 !important;
+        }
+        
+        .dark table.dataTable.hover tbody tr:hover, 
+        .dark table.dataTable.hover tbody tr.odd:hover {
+            background-color: #374151 !important;
+        }
+        
+        .dark table.dataTable thead th,
+        .dark table.dataTable thead td {
+            border-bottom: 1px solid #4b5563 !important;
+        }
+        
+        .dark table.dataTable.row-border tbody th, 
+        .dark table.dataTable.row-border tbody td, 
+        .dark table.dataTable.display tbody th, 
+        .dark table.dataTable.display tbody td {
+            border-top: 1px solid #4b5563 !important;
+        }
+        
+        .dark .select2-dropdown,
+        .dark .select2-container--default .select2-selection--single,
+        .dark .select2-container--default .select2-selection--multiple {
+            background-color: #1f2937 !important;
+            border-color: #4b5563 !important;
+            color: #e5e7eb !important;
+        }
+        
+        .dark .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: #374151 !important;
+        }
+        
+        .dark .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #4b5563 !important;
+            color: white !important;
+        }
+        
+        .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #e5e7eb !important;
+        }
+        
+        .dark .ck.ck-editor__main>.ck-editor__editable {
+            background: #1f2937 !important;
+            color: #e5e7eb !important;
+            border-color: #4b5563 !important;
+        }
+        
+        .dark .ck.ck-toolbar {
+            background: #111827 !important;
+            border-color: #4b5563 !important;
+        }
+        
+        .dark .ck.ck-button,
+        .dark .ck.ck-button.ck-on {
+            color: #e5e7eb !important;
+            background: #1f2937 !important;
+        }
+        
+        .dark .ck.ck-button:hover,
+        .dark .ck.ck-button.ck-on:hover {
+            background: #374151 !important;
+        }
+        
+        /* Универсальный фикс для других элементов форм */
+        .dark input[type="text"],
+        .dark input[type="email"],
+        .dark input[type="password"],
+        .dark input[type="number"],
+        .dark input[type="date"],
+        .dark input[type="datetime-local"],
+        .dark textarea,
+        .dark select {
+            background-color: #1f2937 !important;
+            color: #e5e7eb !important;
+            border-color: #4b5563 !important;
+        }
+        
+        .dark input[type="text"]:focus,
+        .dark input[type="email"]:focus,
+        .dark input[type="password"]:focus,
+        .dark input[type="number"]:focus,
+        .dark input[type="date"]:focus,
+        .dark input[type="datetime-local"]:focus,
+        .dark textarea:focus,
+        .dark select:focus {
+            border-color: #60a5fa !important;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
     <div class="flex min-h-screen">
@@ -34,7 +153,7 @@
             </div>
             
             <nav class="mt-5">
-                <a href="{{ route('admin.dashboard') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.dashboard') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -43,7 +162,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.analytics') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.analytics') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.analytics') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.analytics') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -52,7 +171,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.products.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.products.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.products.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.products.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -61,7 +180,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.attributes.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.attributes.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.attributes.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.attributes.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -70,7 +189,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.categories.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.categories.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.categories.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.categories.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -79,7 +198,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.orders.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.orders.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.orders.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.orders.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -88,7 +207,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.users.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.users.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.users.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.users.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -97,7 +216,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.blog.posts.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.blog.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.blog.posts.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.blog.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
@@ -106,7 +225,16 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.contact-requests.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.contacts.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                <a href="{{ route('admin.initiatives.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.initiatives.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <span>Эко-инициативы</span>
+                    </div>
+                </a>
+                
+                <a href="{{ route('admin.contact-requests.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.contacts.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -114,12 +242,14 @@
                         <span>Обращения</span>
                     </div>
                 </a>
+                
+                
             </nav>
             
             <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
-                    <button type="submit" class="w-full text-left block py-2 px-4 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200">
+                    <button type="submit" class="w-full text-left block py-2 px-4 rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300 transition duration-200">
                         <div class="flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

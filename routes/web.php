@@ -10,6 +10,7 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\SustainabilityController;
 use App\Http\Controllers\Auth\LoginController;
@@ -163,7 +164,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/', [AdminController::class, 'storeAttribute'])->name('store');
         Route::get('/{attribute}/edit', [AdminController::class, 'editAttribute'])->name('edit');
         Route::put('/{attribute}', [AdminController::class, 'updateAttribute'])->name('update');
-        Route::delete('/{attribute}', [AdminController::class, 'deleteAttribute'])->name('delete');
+        Route::delete('/{attribute}', [AdminController::class, 'deleteAttribute'])->name('destroy');
         
         // Значения атрибутов
         Route::get('/{attribute}/values', [AdminController::class, 'attributeValues'])->name('values.index');
@@ -204,5 +205,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/{contactRequest}', [AdminController::class, 'deleteContactRequest'])->name('destroy'); // Added delete route
     });
      // Аналитика
-     Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 });

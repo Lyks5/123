@@ -86,13 +86,13 @@
                 
                 <div class="relative">
                     <img 
-                        src="https://images.unsplash.com/photo-1554253048-1a58ec1a2098?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
+                        src="https://www.az-online.de/bilder/2013/11/21/3233246/2007087139-kl_crestock_peterhahncom-2Dea.jpg" 
                         alt="Экологичные материалы" 
                         class="rounded-2xl shadow-xl w-full aspect-[4/3] object-cover"
                     />
                     <div class="absolute -bottom-6 -left-6 w-1/2 rounded-xl overflow-hidden shadow-lg">
                         <img 
-                            src="https://images.unsplash.com/photo-1629460562669-52eb3738e6ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                            src="https://avatars.mds.yandex.net/get-altay/905403/2a000001887bb59bd971abab9a0cd25efff3/XXL_height" 
                             alt="Переработанные материалы" 
                             class="w-full aspect-square object-cover"
                         />
@@ -138,7 +138,7 @@
                         </div>
                         <div class="md:w-1/2 md:pl-12">
                             <img 
-                                src="https://images.unsplash.com/photo-1615900238828-43aa347c39e4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                                src="https://avatars.mds.yandex.net/i?id=f09f3b89aa42b756d22245ed88e7ea98_l-10414202-images-thumbs&n=13" 
                                 alt="Источники сырья" 
                                 class="rounded-xl shadow-md w-full aspect-[3/2] object-cover"
                             />

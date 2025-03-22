@@ -3,53 +3,64 @@
 @section('title', 'Категории блога')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Категории блога</h1>
-        <a href="{{ route('admin.blog.categories.create') }}" class="btn btn-primary">
+<div class="p-6 space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Категории блога</h2>
+        <a href="{{ route('admin.blog.categories.create') }}" class="btn-primary-admin">
             Добавить категорию
         </a>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статей</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach($categories as $category)
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">{{ $category->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $category->slug }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $category->posts_count }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <a href="{{ route('admin.blog.categories.edit', $category) }}" class="text-eco-700 hover:text-eco-900 mr-4">Редактировать</a>
-                        <form action="{{ route('admin.blog.categories.delete', $category) }}" method="POST" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-900" 
-                                onclick="return confirm('Удалить категорию?')">Удалить</button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        @if($categories->hasPages())
-        <div class="px-6 py-4 bg-gray-50">
-            {{ $categories->links() }}
+    @if (session('success'))
+        <div class="bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ session('success') }}</span>
         </div>
-        @endif
+    @endif
+
+    <div class="card-admin overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="admin-table">
+                <thead class="admin-table-header">
+                    <tr>
+                        <th class="admin-table-header-cell">ID</th>
+                        <th class="admin-table-header-cell">Название</th>
+                        <th class="admin-table-header-cell">Slug</th>
+                        <th class="admin-table-header-cell">Кол-во статей</th>
+                        <th class="admin-table-header-cell">Действия</th>
+                    </tr>
+                </thead>
+                <tbody class="admin-table-body">
+                    @forelse ($categories as $category)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                            <td class="admin-table-body-cell">{{ $category->id }}</td>
+                            <td class="admin-table-body-cell font-medium">{{ $category->name }}</td>
+                            <td class="admin-table-body-cell">{{ $category->slug }}</td>
+                            <td class="admin-table-body-cell">{{ $category->posts->count() }}</td>
+                            <td class="admin-table-body-cell">
+                                <div class="flex space-x-2">
+                                    <a href="{{ route('admin.blog.categories.edit', $category->id) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                        Изменить
+                                    </a>
+                                    <form action="{{ route('admin.blog.categories.destroy', $category->id) }}" method="POST" class="inline" onsubmit="return confirm('Вы уверены?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
+                                            Удалить
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Категории не найдены</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    {{ $categories->links() }}
+</div>
 @endsection

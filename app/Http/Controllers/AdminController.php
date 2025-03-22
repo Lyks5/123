@@ -27,7 +27,7 @@ class AdminController extends Controller
      */
     public function attributes()
     {
-        $attributes = Attribute::all(); // Retrieve all attributes from the database
+        $attributes = Attribute::paginate(10); // Retrieve attributes with pagination
         return view('admin.attributes.index', compact('attributes')); // Return the view with attributes
     }
 
@@ -72,12 +72,12 @@ class AdminController extends Controller
     public function storeAttributeValue(Request $request, Attribute $attribute)
     {
         $validated = $request->validate([
-            'value' => 'required|string|max:255',
+            'type' => 'required|in:select,radio,checkbox,color',
         ]);
 
         $attribute->values()->create($validated); // Create the new attribute value
 
-        return redirect()->route('admin.attributes.values.index', $attribute)->with('success', 'Значение атрибута успешно создано.'); // Redirect with success message
+        return redirect()->route('admin.attributes.values.create', $attribute)->with('success', 'Значение атрибута успешно создано.'); // Redirect with success message
     }
     public function deleteAttribute(Attribute $attribute)
     {
@@ -97,8 +97,8 @@ class AdminController extends Controller
     }
     public function attributeValues(Attribute $attribute)
     {
-        $values = $attribute->values; // Assuming there's a relationship defined in the Attribute model
-        return view('admin.attributes.values', compact('attribute', 'values')); // Return the view with attribute values
+        $values = $attribute->values()->paginate(10); // Assuming there's a relationship defined in the Attribute model
+        return view('admin.attributes.values.index', compact('attribute', 'values')); // Return the view with attribute values
     }
 
 
@@ -335,61 +335,73 @@ class AdminController extends Controller
 
     }
     public function index()
-    {
-        // Basic stats
-        $ecoFeaturesCount = EcoFeature::count();
-        $initiativesCount = EnvironmentalInitiative::count();
-        $productCount = Product::count();
-        $orderCount = Order::count();
-        $userCount = User::count();
-        $postCount = BlogPost::count();
+{
+    // Basic stats
+    $ecoFeaturesCount = EcoFeature::count();
+    $initiativesCount = EnvironmentalInitiative::count();
+    $productCount = Product::count();
+    $orderCount = Order::count();
+    $userCount = User::count();
+    $postCount = BlogPost::count();
 
-        // Recent data for dashboard display
-        $recentOrders = Order::with('user')->latest()->take(5)->get();
-        $latestProducts = Product::latest()->take(5)->get();
-        $latestUsers = User::latest()->take(5)->get();
-        $pendingReviews = Review::where('is_approved', false)->count();
-        
-        // Get monthly sales data for last 6 months
-        $monthlyData = $this->getMonthlyStatistics(); // Get monthly sales data for last 6 months
-        
-        // Low stock alert (products with less than 5 items)
-        $lowStockProducts = Product::where('stock_quantity', '<', 5)
-                                  ->where('stock_quantity', '>', 0)
-                                  ->take(5)
-                                  ->get();
-                                  
-        // Recent contact requests
-        $recentContacts = ContactRequest::where('status', 'new')->latest()->take(5)->get();
-        
-        $contactRequestsCount = ContactRequest::count();
-        return view('admin.dashboard', compact(
-            'totalRevenue', // Add totalRevenue to the dashboard view
-            'userCount',
-            'productCount',
-            'orderCount',
-            'totalRevenue',
-            'ecoFeaturesCount',
-            'initiativesCount',
-            'productCount', 
-            'orderCount', 
-            'userCount', 
-            'postCount',
-            'recentOrders', 
-            'latestProducts', 
-            'latestUsers', 
-            'pendingReviews',
-            'monthlyData', 
-            'lowStockProducts', 
-            'recentContacts',
-            'contactRequestsCount',
-            'ecoFeaturesCount',
-            'initiativesCount',
-            'productCount', 'orderCount', 'userCount', 'postCount',
-            'recentOrders', 'latestProducts', 'latestUsers', 'pendingReviews',
-            'monthlyData', 'lowStockProducts', 'recentContacts'
-        ));
-    }
+    // Recent data for dashboard display
+    $recentOrders = Order::with('user')->latest()->take(5)->get();
+    $latestProducts = Product::latest()->take(5)->get();
+    $latestUsers = User::latest()->take(5)->get();
+    $pendingReviews = Review::where('is_approved', false)->count();
+
+    // Get monthly sales data for last 6 months
+    $monthlyData = $this->getMonthlyStatistics();
+
+    // Low stock alert (products with less than 5 items)
+    $lowStockProducts = Product::where('stock_quantity', '<', 5)
+                              ->where('stock_quantity', '>', 0)
+                              ->take(5)
+                              ->get();
+
+    // Recent contact requests
+    $recentContacts = ContactRequest::where('status', 'new')->latest()->take(5)->get();
+
+    $contactRequestsCount = ContactRequest::count();
+
+    // Define total revenue
+    $totalRevenue = Order::where('status', 'completed')->sum('total_amount') ?: 0;
+
+    return view('admin.dashboard', compact(
+        'totalRevenue',
+        'userCount',
+        'productCount',
+        'orderCount',
+        'totalRevenue',
+        'ecoFeaturesCount',
+        'initiativesCount',
+        'productCount',
+        'orderCount',
+        'userCount',
+        'postCount',
+        'recentOrders',
+        'latestProducts',
+        'latestUsers',
+        'pendingReviews',
+        'monthlyData',
+        'lowStockProducts',
+        'recentContacts',
+        'contactRequestsCount',
+        'ecoFeaturesCount',
+        'initiativesCount',
+        'productCount',
+        'orderCount',
+        'userCount',
+        'postCount',
+        'recentOrders',
+        'latestProducts',
+        'latestUsers',
+        'pendingReviews',
+        'monthlyData',
+        'lowStockProducts',
+        'recentContacts'
+    ));
+}
     
     /**
      * Get monthly statistics for dashboard.
