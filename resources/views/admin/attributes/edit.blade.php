@@ -1,49 +1,50 @@
-@extends('layouts.admin')
+@extends('admin.layouts.app')
+
+@section('title', 'Редактировать атрибут')
 
 @section('content')
-<div class="container-fluid px-4">
-    <h1 class="mt-4">Редактирование атрибута</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Панель управления</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('admin.attributes.index') }}">Атрибуты товаров</a></li>
-        <li class="breadcrumb-item active">Редактирование атрибута</li>
-    </ol>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="bi bi-pencil me-1"></i>
-            Форма редактирования атрибута
-        </div>
-        <div class="card-body">
-            <form action="{{ route('admin.attributes.update', $attribute) }}" method="POST">
+<div class="p-6 space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Редактировать атрибут</h2>
+        <a href="{{ route('admin.attributes.index') }}" class="btn-secondary-admin">
+            Назад к списку
+        </a>
+    </div>
+
+    <div class="card-admin">
+        <div class="p-6">
+            <form action="{{ route('admin.attributes.update', $attribute->id) }}" method="POST">
                 @csrf
                 @method('PUT')
-                
-                <div class="mb-3">
-                    <label for="name" class="form-label">Название атрибута</label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $attribute->name) }}" required>
-                    @error('name')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <div class="mb-3">
-                    <label for="type" class="form-label">Тип атрибута</label>
-                    <select class="form-select @error('type') is-invalid @enderror" id="type" name="type" required>
-                        <option value="select" {{ old('type', $attribute->type) == 'select' ? 'selected' : '' }}>Выбор (значения из списка)</option>
-                        <option value="text" {{ old('type', $attribute->type) == 'text' ? 'selected' : '' }}>Текст</option>
-                        <option value="number" {{ old('type', $attribute->type) == 'number' ? 'selected' : '' }}>Число</option>
-                        <option value="color" {{ old('type', $attribute->type) == 'color' ? 'selected' : '' }}>Цвет</option>
-                        <option value="boolean" {{ old('type', $attribute->type) == 'boolean' ? 'selected' : '' }}>Да/Нет</option>
-                    </select>
-                    @error('type')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                    <a href="{{ route('admin.attributes.index') }}" class="btn btn-secondary">Отмена</a>
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Название</label>
+                        <input type="text" name="name" id="name" class="form-input-admin @error('name') border-red-500 @enderror" value="{{ old('name', $attribute->name) }}" required>
+                        @error('name')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип атрибута</label>
+                        <select name="type" id="type" class="form-input-admin @error('type') border-red-500 @enderror" required>
+                            <option value="select" {{ old('type', $attribute->type) == 'select' ? 'selected' : '' }}>Выбор из списка</option>
+                            <option value="radio" {{ old('type', $attribute->type) == 'radio' ? 'selected' : '' }}>Радиокнопки</option>
+                            <option value="checkbox" {{ old('type', $attribute->type) == 'checkbox' ? 'selected' : '' }}>Флажки</option>
+                            <option value="color" {{ old('type', $attribute->type) == 'color' ? 'selected' : '' }}>Цвет</option>
+                        </select>
+                        @error('type')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex justify-between items-center pt-4">
+                        <a href="{{ route('admin.attributes.values.index', $attribute->id) }}" class="btn-secondary-admin">
+                            Управление значениями ({{ $attribute->values()->count() }})
+                        </a>
+                        
+                        <button type="submit" class="btn-primary-admin">Обновить атрибут</button>
+                    </div>
                 </div>
             </form>
         </div>

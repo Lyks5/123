@@ -43,7 +43,7 @@
 
                         
 <dt class="col-sm-3">Дата создания:</dt>
-<dd class="col-sm-9">{{ $request->created_at->format('d.m.Y H:i') }}</dd>
+<dd class="col-sm-9">{{ $request->created_at ? $request->created_at->format('d.m.Y H:i') : 'Дата не указана' }}</dd>
 
                         
 <dt class="col-sm-12">Сообщение:</dt>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' - EcoSport')
+@section('title', $product ? $product->name : 'Product Not Found - EcoSport')
 
 @section('content')
     <!-- Product Details Section -->
@@ -30,9 +30,9 @@
                                 <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                            @if($product->category)
+                            @if($product && $product->category)
                                 <a href="{{ route('shop', ['category' => $product->category]) }}" class="text-sm text-eco-600 hover:text-eco-900 ml-1 md:ml-2">
-                                {{ $product->category ? $product->category->name : 'Без категории' }}
+                                {{ $product->category->name }}
                                 </a>
                             @else
                                 <span class="text-sm text-gray-500">Без категории</span>
@@ -44,7 +44,7 @@
                                 <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                                <span class="text-sm text-gray-500 ml-1 md:ml-2">{{ $product->name }}</span>
+                                <span class="text-sm text-gray-500 ml-1 md:ml-2">{{ $product ? $product->name : 'Товар не найден' }}</span>
                             </div>
                         </li>
                     </ol>
@@ -57,14 +57,15 @@
                     <!-- Product Images -->
                     <div>
                         <div class="aspect-[4/3] rounded-xl overflow-hidden bg-eco-50 mb-4">
-                            <img 
-                                src="{{ $product->image }}" 
-                                alt="{{ $product->name }}" 
-                                class="w-full h-full object-cover"
-                            />
+                                <img 
+                                    src="{{ $product ? $product->image : '' }}" 
+                                    alt="{{ $product ? $product->name : 'Товар не найден' }}" 
+                                    class="w-full h-full object-cover"
+                                />
+
                         </div>
                         
-                        @if($product->images->count() > 0)
+                        @if($product && $product->images->count() > 0)
                         <div class="grid grid-cols-4 gap-2">
                             @foreach($product->images->take(4) as $image)
                             <div class="aspect-square rounded-lg overflow-hidden bg-eco-50">
@@ -82,26 +83,29 @@
                     <!-- Product Details -->
                     <div class="flex flex-col">
                         <div>
-                            <div class="text-sm text-eco-600 mb-2">{{ $product->category->name }}</div>
-                            <h1 class="text-2xl md:text-3xl font-bold text-eco-900 mb-2">
-                                {{ $product->name }}
-                            </h1>
+                            <div class="text-sm text-eco-600 mb-2">
+                                {{ $product && $product->category ? $product->category->name : 'Без категории' }}
+                            </div>
+                                <h1 class="text-2xl md:text-3xl font-bold text-eco-900 mb-2">
+                                    {{ $product ? $product->name : 'Товар не найден' }}
+                                </h1>
+
                             <div class="flex items-center space-x-2 mb-4">
                                 <div class="px-2 py-1 bg-eco-100 text-eco-800 text-xs rounded-full">
-                                    {{ $product->eco_feature->name }}
+                                    {{ $product && $product->eco_feature ? $product->eco_feature->name : 'Нет экологической особенности' }}
                                 </div>
-                                @if($product->is_new)
+                                @if($product && $product->is_new)
                                     <div class="px-2 py-1 bg-eco-500 text-white text-xs rounded-full">
                                         Новинка
                                     </div>
                                 @endif
                             </div>
                             <div class="text-xl md:text-2xl font-bold text-eco-900 mb-6">
-                                {{ number_format($product->price, 2, ',', ' ') }} ₽
+                                {{ $product ? number_format($product->price, 2, ',', ' ') : 'Цена не доступна' }} ₽
                             </div>
                             
                             <div class="prose text-eco-700 mb-6">
-                                <p>{{ $product->description }}</p>
+                                <p>{{ $product ? $product->description : 'Описание недоступно' }}</p>
                             </div>
                         </div>
                         
@@ -260,23 +264,20 @@
                                     <div>
                                         <h4 class="text-lg font-medium text-eco-900 mb-3">Материалы</h4>
                                         <ul class="space-y-2">
-                                            @foreach($product->attributes->where('group', 'material') as $attribute)
+                                        @if($product->attributes)
+                                        @foreach($product->attributes->where('group', 'material') as $attribute)
                                             <li class="flex justify-between">
                                                 <span class="text-eco-700">{{ $attribute->name }}:</span>
                                                 <span class="text-eco-900 font-medium">{{ $attribute->value }}</span>
                                             </li>
                                             @endforeach
+                                        @endif
                                         </ul>
                                     </div>
                                     <div>
                                         <h4 class="text-lg font-medium text-eco-900 mb-3">Сертификаты</h4>
                                         <ul class="space-y-2">
-                                            @foreach($product->attributes->where('group', 'certification') as $attribute)
-                                            <li class="flex justify-between">
-                                                <span class="text-eco-700">{{ $attribute->name }}:</span>
-                                                <span class="text-eco-900 font-medium">{{ $attribute->value }}</span>
-                                            </li>
-                                            @endforeach
+                                            
                                         </ul>
                                     </div>
                                 </div>
@@ -502,4 +503,3 @@
             setRating(5);
         });
     </script>
-@endsection

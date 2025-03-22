@@ -6,14 +6,23 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\ProductQuestion;
 use Illuminate\Http\Request;
-
+use App\Models\Attribute;
+use App\Models\AttributeValue;
+use App\Models\Variant;
 class ProductController extends Controller
 {
-    public function show(Product $product)
+    public function create()
     {
-        // Проверяем активность товара
-        if (!$product->is_active) {
-            abort(404);
+        $categories = Category::all();
+        $ecoFeatures = EcoFeature::all();
+        $attributes = Attribute::all();
+        return view('admin.products.create', compact('categories', 'ecoFeatures', 'attributes'));
+    }
+    public function show(Product $product = null)
+    {
+        // Проверяем, существует ли товар
+        if (!$product || !$product->is_active) {
+            return response()->view('errors.product_not_found', [], 404);
         }
 
         // Загружаем связанные данные
@@ -116,5 +125,13 @@ class ProductController extends Controller
         $question->update(['is_answered' => true]);
 
         return redirect()->back()->with('success', 'Спасибо за ваш ответ! Он будет опубликован после проверки.');
+    }
+    public function attributes()
+    {
+        return Attribute::whereHas('values', function($query) {
+            $query->whereHas('variants', function($q) {
+                $q->where('product_id', $this->id);
+            });
+        })->distinct();
     }
 }

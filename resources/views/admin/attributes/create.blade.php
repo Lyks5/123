@@ -27,24 +27,11 @@
                     <div>
                         <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип атрибута</label>
                         <select name="type" id="type" class="form-input-admin @error('type') border-red-500 @enderror" required>
-    @if(in_array(old('type'), ['select', 'radio', 'checkbox', 'color']))
-        @if(old('type') == 'select')
-            <option value="select" selected>Выбор из списка</option>
-        @elseif(old('type') == 'radio')
-            <option value="radio" selected>Радиокнопки</option>
-        @elseif(old('type') == 'checkbox')
-            <option value="checkbox" selected>Флажки</option>
-        @elseif(old('type') == 'color')
-            <option value="color" selected>Цвет</option>
-        @endif
-    @else
-        <option value="">Выберите тип</option>
-        <option value="select">Выбор из списка</option>
-        <option value="radio">Радиокнопки</option>
-        <option value="checkbox">Флажки</option>
-        <option value="color">Цвет</option>
-    @endif
-</select>
+                            <option value="select" {{ old('type') == 'select' ? 'selected' : '' }}>Выбор из списка</option>
+                            <option value="radio" {{ old('type') == 'radio' ? 'selected' : '' }}>Радиокнопки</option>
+                            <option value="checkbox" {{ old('type') == 'checkbox' ? 'selected' : '' }}>Флажки</option>
+                            <option value="color" {{ old('type') == 'color' ? 'selected' : '' }}>Цвет</option>
+                        </select>
                         @error('type')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror

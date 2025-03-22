@@ -10,14 +10,19 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\SustainabilityController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\EcoFeatureController;
+use App\Http\Controllers\Admin\ContactRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,10 +40,13 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Магазин
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
-
-// Товары
+// Shop
+Route::get('/shop/category/{category}', [ShopController::class, 'category'])->name('shop.category');
+Route::get('/shop/tag/{tag}', [ShopController::class, 'tag'])->name('shop.tag');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 
+// Товары
+Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.review');
 // Корзина
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
@@ -138,6 +146,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/{ecoFeature}', [AdminController::class, 'updateEcoFeature'])->name('update');
         Route::delete('/{ecoFeature}', [AdminController::class, 'deleteEcoFeature'])->name('delete');
     });
+    // AJAX endpoint for attribute values
+    Route::get('attributes/{attribute}/values/list', 'App\Http\Controllers\Admin\AttributeValueController@getValues')->name('attributes.values.list');
     // Блог - Записи
     Route::prefix('blog/posts')->name('blog.posts.')->group(function () {
         Route::get('/', [AdminController::class, 'blogPosts'])->name('index');
@@ -168,6 +178,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Значения атрибутов
         Route::get('/{attribute}/values', [AdminController::class, 'attributeValues'])->name('values.index');
+        Route::get('/{attribute}/values/create', [AdminController::class, 'createAttributeValue'])->name('values.create');
         Route::post('/{attribute}/values', [AdminController::class, 'storeAttributeValue'])->name('values.store');
         Route::put('/{attribute}/values/{value}', [AdminController::class, 'updateAttributeValue'])->name('values.update');
         Route::delete('/{attribute}/values/{value}', [AdminController::class, 'deleteAttributeValue'])->name('values.delete');
@@ -202,8 +213,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/{contactRequest}', [AdminController::class, 'showContactRequest'])->name('show');
         Route::put('/{contactRequest}/status', [AdminController::class, 'updateContactRequestStatus'])->name('update.status');
         Route::post('/{contactRequest}/notes', [AdminController::class, 'addContactRequestNote'])->name('add.note');
-        Route::delete('/{contactRequest}', [AdminController::class, 'deleteContactRequest'])->name('destroy'); // Added delete route
+        Route::delete('/{contactRequest}', [AdminController::class, 'deleteContactRequest'])->name('destroy'); 
     });
      // Аналитика
+     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
      Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 });

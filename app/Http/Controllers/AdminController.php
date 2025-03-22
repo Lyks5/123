@@ -45,10 +45,10 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|string|in:select,text,number,color,boolean',
+            'type' => 'required|in:select,radio,checkbox,color'
         ]);
 
-        Attribute::create($validated); // Create the new attribute
+        Attribute::create($validated); 
 
         return redirect()->route('admin.attributes.index')->with('success', 'Атрибут успешно создан.'); // Redirect with success message
     }
@@ -70,21 +70,33 @@ class AdminController extends Controller
      * Store a new attribute value.
      */
     public function storeAttributeValue(Request $request, Attribute $attribute)
-    {
-        $validated = $request->validate([
-            'type' => 'required|in:select,radio,checkbox,color',
-        ]);
+{
+    // Валидация
+    $validated = $request->validate([
+        'value' => 'required|string|max:255', // Поле value обязательно
+        // 'type' не требуется, так как оно берется из $attribute
+    ]);
 
-        $attribute->values()->create($validated); // Create the new attribute value
+    // Создание значения атрибута
+    $attribute->values()->create([
+        'value' => $validated['value'],
+        'type' => $attribute->type, // Тип берется из родительского атрибута
+    ]);
 
-        return redirect()->route('admin.attributes.values.create', $attribute)->with('success', 'Значение атрибута успешно создано.'); // Redirect with success message
-    }
+    return redirect()->route('admin.attributes.values.index', $attribute->id)
+        ->with('success', 'Значение успешно добавлено.');
+}
     public function deleteAttribute(Attribute $attribute)
     {
         $attribute->delete(); // Delete the attribute from the database
         return redirect()->route('admin.attributes.index')->with('success', 'Атрибут успешно удален.'); // Redirect with success message
     }
-
+    public function createAttributeValue(Attribute $attribute)
+{
+    return view('admin.attributes.values.create', [
+        'attribute' => $attribute,
+    ]);
+}
     /**
      * Delete an attribute value.
      */
@@ -149,6 +161,21 @@ class AdminController extends Controller
     public function showContactRequest(ContactRequest $request)
     {
         return view('admin.contact-requests.show', compact('request')); // Pass request details to the view
+    }
+
+    /**
+     * Add a note to a contact request.
+     */
+    public function addContactRequestNote(Request $request, ContactRequest $contactRequest)
+    {
+        $validated = $request->validate([
+            'notes' => 'required|string|max:1000',
+        ]);
+
+        $contactRequest->notes .= "\n" . $validated['notes'];
+        $contactRequest->save();
+
+        return redirect()->route('admin.contact-requests.show', $contactRequest)->with('success', 'Примечание успешно добавлено.'); // Redirect with success message
     }
 
     /**
@@ -528,7 +555,8 @@ class AdminController extends Controller
     {
         $categories = Category::all();
         $ecoFeatures = EcoFeature::all();
-        return view('admin.products.create', compact('categories', 'ecoFeatures'));
+        $attributes = Attribute::all();
+        return view('admin.products.create', compact('categories', 'ecoFeatures', 'attributes'));
     }
     
     /**
@@ -548,6 +576,15 @@ class AdminController extends Controller
             'categories.*' => 'exists:categories,id',
             'eco_features' => 'nullable|array',
             'eco_features.*' => 'exists:eco_features,id',
+            'product_attributes' => 'nullable|array',
+            'product_attributes.*' => 'exists:attributes,id',
+            'attribute_values' => 'nullable|array',
+            'variants' => 'nullable|array',
+            'variants.*.sku' => 'required_with:variants|string|max:100|distinct',
+            'variants.*.price' => 'nullable|numeric|min:0',
+            'variants.*.sale_price' => 'nullable|numeric|min:0',
+            'variants.*.stock_quantity' => 'nullable|integer|min:0',
+            'variants.*.attribute_values' => 'required_with:variants|array',
             'is_featured' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'is_new' => 'nullable|boolean',
@@ -576,6 +613,24 @@ class AdminController extends Controller
                 $product->ecoFeatures()->attach($featureId, ['value' => $value]);
             }
         }
+         // Handle product variants
+         if ($request->has('variants')) {
+            foreach ($request->variants as $variantData) {
+                // Создаем вариант
+                $variant = $product->variants()->create([
+                    'sku' => $variantData['sku'],
+                    'price' => $variantData['price'] ?? $product->price,
+                    'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
+                    'stock_quantity' => $variantData['stock_quantity'] ?? 0,
+                    'is_active' => true,
+                ]);
+                
+                // Привязываем значения атрибутов к варианту
+                if (isset($variantData['attribute_values']) && is_array($variantData['attribute_values'])) {
+                    $variant->attributeValues()->attach($variantData['attribute_values']);
+                }
+            }
+        }
         
         // Handle images
         if ($request->hasFile('images')) {
@@ -600,13 +655,46 @@ class AdminController extends Controller
     /**
      * Show the form to edit a product.
      */
-    public function editProduct(Product $product)
+    public function edit(Product $product)
     {
         $categories = Category::all();
         $ecoFeatures = EcoFeature::all();
+        $attributes = Attribute::all();
         $productEcoFeatures = $product->ecoFeatures->pluck('pivot.value', 'id')->toArray();
         
-        return view('admin.products.edit', compact('product', 'categories', 'ecoFeatures', 'productEcoFeatures'));
+        // Get attributes and their values for this product
+        $productAttributes = [];
+        $productAttributeValues = [];
+        
+        foreach ($product->variants as $variant) {
+            foreach ($variant->attributeValues as $value) {
+                $attributeId = $value->attribute_id;
+                
+                // Store used attributes
+                if (!in_array($attributeId, $productAttributes)) {
+                    $productAttributes[] = $attributeId;
+                }
+                
+                // Store values for each attribute
+                if (!isset($productAttributeValues[$attributeId])) {
+                    $productAttributeValues[$attributeId] = [];
+                }
+                
+                if (!in_array($value->id, $productAttributeValues[$attributeId])) {
+                    $productAttributeValues[$attributeId][] = $value->id;
+                }
+            }
+        }
+        
+        return view('admin.products.edit', compact(
+            'product', 
+            'categories', 
+            'ecoFeatures', 
+            'attributes',
+            'productEcoFeatures', 
+            'productAttributes', 
+            'productAttributeValues'
+        ));
     }
     
     /**
@@ -626,6 +714,18 @@ class AdminController extends Controller
             'categories.*' => 'exists:categories,id',
             'eco_features' => 'nullable|array',
             'eco_features.*' => 'exists:eco_features,id',
+            'product_attributes' => 'nullable|array',
+            'product_attributes.*' => 'exists:attributes,id',
+            'attribute_values' => 'nullable|array',
+            'variants' => 'nullable|array',
+            'variants.*.id' => 'nullable|exists:variants,id',
+            'variants.*.sku' => 'required_with:variants|string|max:100',
+            'variants.*.price' => 'nullable|numeric|min:0',
+            'variants.*.sale_price' => 'nullable|numeric|min:0',
+            'variants.*.stock_quantity' => 'nullable|integer|min:0',
+            'variants.*.attribute_values' => 'required_with:variants|array',
+            'delete_variants' => 'nullable|array',
+            'delete_variants.*' => 'exists:variants,id',
             'is_featured' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'is_new' => 'nullable|boolean',
@@ -657,6 +757,46 @@ class AdminController extends Controller
         if ($request->has('eco_features')) {
             foreach ($request->eco_features as $featureId => $value) {
                 $product->ecoFeatures()->attach($featureId, ['value' => $value]);
+            }
+        }
+        
+        // Handle variants delete
+        if ($request->has('delete_variants')) {
+            $product->variants()->whereIn('id', $request->delete_variants)->delete();
+        }
+        
+        // Handle product variants
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variantData) {
+                if (isset($variantData['id'])) {
+                    // Update existing variant
+                    $variant = $product->variants()->findOrFail($variantData['id']);
+                    $variant->update([
+                        'sku' => $variantData['sku'],
+                        'price' => $variantData['price'] ?? $product->price,
+                        'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
+                        'stock_quantity' => $variantData['stock_quantity'] ?? 0,
+                    ]);
+                    
+                    // Sync attribute values
+                    if (isset($variantData['attribute_values']) && is_array($variantData['attribute_values'])) {
+                        $variant->attributeValues()->sync($variantData['attribute_values']);
+                    }
+                } else {
+                    // Create new variant
+                    $variant = $product->variants()->create([
+                        'sku' => $variantData['sku'],
+                        'price' => $variantData['price'] ?? $product->price,
+                        'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
+                        'stock_quantity' => $variantData['stock_quantity'] ?? 0,
+                        'is_active' => true,
+                    ]);
+                    
+                    // Attach attribute values
+                    if (isset($variantData['attribute_values']) && is_array($variantData['attribute_values'])) {
+                        $variant->attributeValues()->attach($variantData['attribute_values']);
+                    }
+                }
             }
         }
         
@@ -695,7 +835,14 @@ class AdminController extends Controller
         return redirect()->route('admin.products.index')
             ->with('success', 'Товар успешно обновлен.');
     }
-    
+    /**
+     * Get attribute values list (AJAX endpoint).
+     */
+    public function getAttributeValues($attributeId)
+    {
+        $values = AttributeValue::where('attribute_id', $attributeId)->get();
+        return response()->json($values);
+    }
     /**
      * Delete a product.
      */
