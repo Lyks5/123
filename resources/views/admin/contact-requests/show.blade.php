@@ -72,7 +72,7 @@
                         <p class="text-muted">Примечаний пока нет.</p>
                     @endif
                     
-                    <form action="{{ route('admin.contact-requests.add.note', $request) }}" method="POST">
+<form action="{{ route('admin.contact-requests.add.note', ['contactRequest' => $request]) }}" method="POST">
                         @csrf
                         <div class="mb-3">
                             <label for="notes" class="form-label">Добавить примечание</label>

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Order;
 use App\Models\Address;
+use App\Models\Wishlist;
 
 class AccountController extends Controller
 {
@@ -95,8 +96,16 @@ class AccountController extends Controller
      */
     public function addresses()
     {
-        $addresses = Address::where('user_id', Auth::id())->get();
-        return view('account.addresses', compact('addresses'));
+        $user = Auth::user();
+        $addresses = $user->addresses;
+        $defaultShipping = $user->getDefaultShippingAddress();
+        $defaultBilling = $user->getDefaultBillingAddress();
+        
+        return view('account.addresses', [
+            'addresses' => $addresses,
+            'defaultShipping' => $defaultShipping,
+            'defaultBilling' => $defaultBilling
+        ]);
     }
     
     /**
@@ -105,14 +114,17 @@ class AccountController extends Controller
     public function storeAddress(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'address_line1' => 'required|string|max:255',
+            'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
-            'street' => 'required|string|max:255',
-            'house' => 'required|string|max:50',
-            'apartment' => 'nullable|string|max:50',
+            'state' => 'required|string|max:255',
             'postal_code' => 'required|string|max:20',
+            'country' => 'required|string|max:255',
+            'type' => 'nullable|string|in:shipping,billing',
             'is_default' => 'nullable|boolean',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
         ]);
         
         $validated['user_id'] = Auth::id();
@@ -142,14 +154,17 @@ class AccountController extends Controller
         }
         
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'address_line1' => 'required|string|max:255',
+            'address_line2' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
-            'street' => 'required|string|max:255',
-            'house' => 'required|string|max:50',
-            'apartment' => 'nullable|string|max:50',
+            'state' => 'required|string|max:255',
             'postal_code' => 'required|string|max:20',
+            'country' => 'required|string|max:255',
+            'type' => 'nullable|string|in:shipping,billing',
             'is_default' => 'nullable|boolean',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
         ]);
         
         $validated['is_default'] = $request->has('is_default');
@@ -182,5 +197,27 @@ class AccountController extends Controller
         
         return redirect()->route('account.addresses')
             ->with('success', 'Адрес успешно удален.');
+    }
+    public function ecoImpact()
+    {
+        $user = Auth::user();
+        $ecoImpact = $user->getTotalEcoImpact();
+        $ecoImpactScore = $user->eco_impact_score;
+        $orders = $user->orders()->count();
+        
+        return view('account.eco-impact', [
+            'user' => $user,
+            'ecoImpact' => $ecoImpact,
+            'ecoImpactScore' => $ecoImpactScore,
+            'orderCount' => $orders
+        ]);
+    }
+    public function wishlists()
+    {
+        $user = Auth::user();
+        $wishlist = Wishlist::getDefaultForUser($user->id);
+        $wishlistItems = $wishlist->items()->with('product')->get();
+        
+        return view('account.wishlists', compact('wishlistItems'));
     }
 }

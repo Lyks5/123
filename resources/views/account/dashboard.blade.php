@@ -1,218 +1,304 @@
 @extends('layouts.app')
+
 @section('title', 'Личный кабинет')
+
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-bold mb-8">Личный кабинет</h1>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Боковое меню -->
-            <div class="md:col-span-1">
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <div class="p-6 border-b">
+<!-- Header spacing -->
+<div class="h-20"></div>
+
+<div class="bg-gradient-to-b from-eco-50 to-white py-12 min-h-screen">
+    <div class="container mx-auto px-4">
+        <!-- Page header -->
+        <div class="mb-10 max-w-3xl mx-auto text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-eco-900 mb-3">Личный кабинет</h1>
+            <p class="text-eco-600 text-lg max-w-2xl mx-auto">Добро пожаловать, {{ auth()->user()->name }}! Управляйте своими заказами и профилем</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            <!-- Sidebar navigation -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden sticky top-24">
+                    <div class="p-6 border-b border-eco-100">
                         <div class="flex items-center">
-                            <div class="mr-4">
+                            <div class="w-16 h-16 bg-eco-100 rounded-full flex items-center justify-center text-eco-600 mr-4">
                                 @if(auth()->user()->avatar)
-                                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}" class="w-16 h-16 rounded-full object-cover">
+                                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}" class="w-full h-full rounded-full object-cover">
                                 @else
-                                    <div class="w-16 h-16 rounded-full bg-eco-100 flex items-center justify-center text-eco-700 text-xl font-bold">
-                                        {{ substr(auth()->user()->name, 0, 1) }}
-                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
                                 @endif
                             </div>
                             <div>
-                            <h2 class="text-xl font-semibold">{{ Auth::user()->name }}</h2>
-                                <p class="text-gray-500">{{ Auth::user()->email }}</p>
-                                @if(Auth::user()->is_admin)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-eco-100 text-eco-800 mt-1">
+                                <h3 class="font-medium text-eco-900">{{ auth()->user()->name }}</h3>
+                                <p class="text-sm text-eco-600">{{ auth()->user()->email }}</p>
+                                @if(auth()->user()->is_admin)
+                                    <span class="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                                         Администратор
                                     </span>
                                 @endif
                             </div>
                         </div>
                     </div>
-                    
-                    <nav class="p-4">
-                        <ul class="space-y-2">
-                            <li>
-                                <a href="{{ route('account') }}" class="block px-4 py-2 rounded transition-colors {{ request()->routeIs('account') ? 'bg-eco-100 text-eco-700' : 'hover:bg-gray-50' }}">
-                                    <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                        </svg>
-                                        <span>Обзор</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('account.orders') }}" class="block px-4 py-2 rounded transition-colors {{ request()->routeIs('account.orders') ? 'bg-eco-100 text-eco-700' : 'hover:bg-gray-50' }}">
-                                    <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
-                                        <span>Мои заказы</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('account.profile') }}" class="block px-4 py-2 rounded transition-colors {{ request()->routeIs('account.profile') ? 'bg-eco-100 text-eco-700' : 'hover:bg-gray-50' }}">
-                                    <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        <span>Профиль</span>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('account.addresses') }}" class="block px-4 py-2 rounded transition-colors {{ request()->routeIs('account.addresses') ? 'bg-eco-100 text-eco-700' : 'hover:bg-gray-50' }}">
-                                    <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                        <span>Адреса</span>
-                                    </div>
-                                </a>
-                            </li>
+
+                    <nav class="p-3">
+                        <div class="space-y-1">
+                            <a href="{{ route('account') }}" class="block px-4 py-2.5 rounded-lg bg-eco-100 text-eco-900 transition-colors">
+                                <div class="flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                    <span class="font-medium">Обзор</span>
+                                </div>
+                            </a>
                             
-                            @if(Auth::user()->is_admin)
-                            <li class="pt-2 mt-2 border-t">
-                                <a href="{{ route('admin.dashboard') }}" class="block py-2 px-4 rounded bg-eco-700 text-white hover:bg-eco-800">
+                            <a href="{{ route('account.orders') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
+                                <div class="flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                    </svg>
+                                    <span class="font-medium">Мои заказы</span>
+                                </div>
+                            </a>
+                            
+                            <a href="{{ route('account.profile') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
+                                <div class="flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span class="font-medium">Профиль</span>
+                                </div>
+                            </a>
+                            <a href="{{ route('account.wishlists') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
+                                <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                                    <span class="font-medium">Избранное</span>
+                                </div>
+                            </a>
+                            <a href="{{ route('account.addresses') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
+                                <div class="flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    <span class="font-medium">Адреса</span>
+                                </div>
+                            </a>
+                            
+                            @if(auth()->user()->is_admin)
+                                <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors mt-4 border-t border-eco-100 pt-4">
                                     <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                                            <line x1="9" y1="21" x2="9" y2="9"></line>
                                         </svg>
-                                        <span>Админ-панель</span>
+                                        <span class="font-medium">Админ-панель</span>
                                     </div>
                                 </a>
-                            </li>
                             @endif
                             
-                            <li class="pt-2 border-t mt-2">
-                                <form action="{{ route('logout') }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="w-full text-left block px-4 py-2 rounded text-red-600 hover:bg-red-50 transition-colors">
-                                        <div class="flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                            </svg>
-                                            <span>Выйти</span>
-                                        </div>
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
+                            <form method="POST" action="{{ route('logout') }}" class="mt-4 border-t border-eco-100 pt-4">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+                                    <div class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                            <polyline points="16 17 21 12 16 7"></polyline>
+                                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                                        </svg>
+                                        <span class="font-medium">Выйти</span>
+                                    </div>
+                                </button>
+                            </form>
+                        </div>
                     </nav>
                 </div>
             </div>
-            
-            <!-- Основной контент -->
-            <div class="md:col-span-2">
-            <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-xl font-semibold mb-4">Добро пожаловать, {{ Auth::user()->name }}!</h2>
-                    
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                        <div class="border rounded-lg p-4">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-eco-100 text-eco-600 mr-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-gray-500">Заказы</p>
-                                    <p class="text-2xl font-bold">{{ Auth::user()->orders->count() }}</p>
-                                </div>
+
+            <!-- Main content -->
+            <div class="lg:col-span-3 space-y-8">
+                <!-- Stats cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-eco-600 text-sm font-medium">Заказы</h3>
+                                <p class="text-2xl font-bold text-eco-900 mt-1">{{ $user->orders->count() }}</p>
                             </div>
-                        </div>
-                        
-                        <div class="border rounded-lg p-4">
-                        <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-eco-100 text-eco-600 mr-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-gray-500">Избранное</p>
-                                    <p class="text-2xl font-bold">{{ Auth::user()->wishlists->sum(function($wishlist) { return $wishlist->items->count(); }) }}</p>
-                                </div>
+                            <div class="h-12 w-12 bg-eco-50 rounded-full flex items-center justify-center text-eco-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                </svg>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="space-y-4">
-                        <h3 class="font-medium text-lg">Последние заказы</h3>
-                        
-                        @if(Auth::user()->orders->count() > 0)
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-eco-600 text-sm font-medium">Избранное</h3>
+                                <p class="text-2xl font-bold text-eco-900 mt-1">
+                                    {{ $user->wishlists->sum(function($wishlist) { return $wishlist->items->count(); }) }}
+                                </p>
+                            </div>
+                            <div class="h-12 w-12 bg-eco-50 rounded-full flex items-center justify-center text-eco-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-eco-600 text-sm font-medium">Эко-рейтинг</h3>
+                                <p class="text-2xl font-bold text-eco-900 mt-1">
+                                    {{ $user->eco_impact_score ?? 0 }}/10
+                                </p>
+                            </div>
+                            <div class="h-12 w-12 bg-eco-50 rounded-full flex items-center justify-center text-eco-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                                    <path d="M19 7v4h-4"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Eco Impact -->
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-eco-100">
+                        <h2 class="text-xl font-semibold text-eco-900 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-eco-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                                <path d="M19 7v4h-4"></path>
+                            </svg>
+                            Ваш экологический вклад
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-eco-50 p-4 rounded-lg">
+                                <div class="text-eco-600 text-sm font-medium mb-1">Углеродный след</div>
+                                <div class="text-2xl font-bold text-eco-800">
+                                    {{ number_format($ecoImpact['carbon_saved'] ?? 0, 1) }} кг
+                                </div>
+                                <div class="text-xs text-eco-500 mt-1">CO2 сэкономлено</div>
+                            </div>
+                            
+                            <div class="bg-eco-50 p-4 rounded-lg">
+                                <div class="text-eco-600 text-sm font-medium mb-1">Пластик</div>
+                                <div class="text-2xl font-bold text-eco-800">
+                                    {{ number_format($ecoImpact['plastic_saved'] ?? 0, 1) }} кг
+                                </div>
+                                <div class="text-xs text-eco-500 mt-1">пластика не использовано</div>
+                            </div>
+                            
+                            <div class="bg-eco-50 p-4 rounded-lg">
+                                <div class="text-eco-600 text-sm font-medium mb-1">Вода</div>
+                                <div class="text-2xl font-bold text-eco-800">
+                                    {{ number_format($ecoImpact['water_saved'] ?? 0, 1) }} л
+                                </div>
+                                <div class="text-xs text-eco-500 mt-1">воды сэкономлено</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Orders -->
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-eco-100">
+                        <h2 class="text-xl font-semibold text-eco-900 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-eco-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            Последние заказы
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        @if($recentOrders->count() > 0)
                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№ заказа</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сумма</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                                <table class="min-w-full divide-y divide-eco-100">
+                                    <thead>
+                                        <tr class="text-left text-sm text-eco-500">
+                                            <th class="px-4 py-3 font-medium">№ заказа</th>
+                                            <th class="px-4 py-3 font-medium">Дата</th>
+                                            <th class="px-4 py-3 font-medium">Сумма</th>
+                                            <th class="px-4 py-3 font-medium">Статус</th>
+                                            <th class="px-4 py-3 font-medium"></th>
                                         </tr>
                                     </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @foreach(Auth::user()->orders()->latest()->take(3)->get() as $order)
-                                            <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-eco-700">
-                                            <a href="{{ route('account.orders') }}" class="hover:underline">#{{ $order->id }}</a>
+                                    <tbody class="divide-y divide-eco-100">
+                                        @foreach($recentOrders as $order)
+                                            <tr class="hover:bg-eco-50 transition-colors">
+                                                <td class="px-4 py-4 text-eco-800 font-medium">
+                                                    #{{ $order->id }}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td class="px-4 py-4 text-eco-600">
                                                     {{ $order->created_at->format('d.m.Y') }}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    {{ number_format($order->total, 0, ',', ' ') }} ₽
+                                                <td class="px-4 py-4 text-eco-800 font-medium">
+                                                    {{ number_format($order->total_amount, 0, ',', ' ') }} ₽
                                                 </td>
-                                                <td class="px-4 py-3">
-                                                    @php
-                                                        $statusClass = [
-                                                            'pending' => 'bg-yellow-100 text-yellow-800',
-                                                            'processing' => 'bg-blue-100 text-blue-800',
-                                                            'shipped' => 'bg-purple-100 text-purple-800',
-                                                            'delivered' => 'bg-green-100 text-green-800',
-                                                            'completed' => 'bg-green-100 text-green-800',
-                                                            'cancelled' => 'bg-red-100 text-red-800',
-                                                        ][$order->status] ?? 'bg-gray-100 text-gray-800';
-                                                        
-                                                        $statusText = [
-                                                            'pending' => 'Ожидает',
-                                                            'processing' => 'Обрабатывается',
-                                                            'shipped' => 'Отправлен',
-                                                            'delivered' => 'Доставлен',
-                                                            'completed' => 'Завершен',
-                                                            'cancelled' => 'Отменен',
-                                                        ][$order->status] ?? $order->status;
-                                                    @endphp
-                                                    <span class="px-2 py-1 text-xs rounded-full {{ $statusClass }}">
-                                                        {{ $statusText }}
+                                                <td class="px-4 py-4">
+                                                    <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ $order->status_color }}">
+                                                        {{ $order->status_text }}
                                                     </span>
+                                                </td>
+                                                <td class="px-4 py-4 text-right">
+                                                    <a href="{{ route('account.orders') }}" class="text-eco-600 hover:text-eco-800 text-sm font-medium">
+                                                        Подробнее
+                                                    </a>
                                                 </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="mt-4">
-                                <a href="{{ route('account.orders') }}" class="text-eco-700 hover:underline inline-flex items-center">
-                                    Все заказы
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            
+                            <div class="mt-6 text-center">
+                                <a href="{{ route('account.orders') }}" class="inline-flex items-center text-eco-600 hover:text-eco-800 font-medium transition-colors">
+                                    Смотреть все заказы
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
                                     </svg>
                                 </a>
                             </div>
                         @else
-                            <div class="text-center py-8 text-gray-500">
-                                <p>У вас пока нет заказов.</p>
-                                <a href="{{ route('shop') }}" class="mt-2 inline-flex items-center text-eco-700 hover:underline">
+                            <div class="text-center py-8">
+                                <div class="inline-flex items-center justify-center w-16 h-16 bg-eco-50 rounded-full text-eco-500 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-medium text-eco-800 mb-2">У вас пока нет заказов</h3>
+                                <p class="text-eco-600 mb-6 max-w-md mx-auto">
+                                    Время сделать первый заказ! Выбирайте из нашего ассортимента экологичных товаров
+                                </p>
+                                <a href="{{ route('shop') }}" class="inline-flex items-center px-4 py-2 bg-eco-600 hover:bg-eco-700 text-white font-medium rounded-lg transition-colors">
                                     Перейти в магазин
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
                                     </svg>
                                 </a>
                             </div>

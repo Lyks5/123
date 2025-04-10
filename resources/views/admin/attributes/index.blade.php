@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Атрибуты товаров')
+@section('title', 'Управление атрибутами')
 
 @section('content')
 <div class="p-6 space-y-6">
@@ -11,86 +11,82 @@
         </a>
     </div>
 
-    @if (session('success'))
-        <div class="bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded relative" role="alert">
-            <span class="block sm:inline">{{ session('success') }}</span>
-        </div>
-    @endif
-
-    <div class="card-admin overflow-hidden">
+    <div class="card-admin">
         <div class="overflow-x-auto">
-            <table class="admin-table">
-                <thead class="admin-table-header">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                        <th class="admin-table-header-cell">ID</th>
-                        <th class="admin-table-header-cell">Название</th>
-                        <th class="admin-table-header-cell">Тип</th>
-                        <th class="admin-table-header-cell">Кол-во значений</th>
-                        <th class="admin-table-header-cell">Действия</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Название</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Тип</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Количество значений</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Действия</th>
                     </tr>
                 </thead>
-                <tbody class="admin-table-body">
-                    @forelse ($attributes as $attribute)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                            <td class="admin-table-body-cell">{{ $attribute->id }}</td>
-                            <td class="admin-table-body-cell font-medium">{{ $attribute->name }}</td>
-                            <td class="admin-table-body-cell">
-                                @switch($attribute->type)
-                                    @case('select')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
-                                            Выбор из списка
-                                        </span>
-                                        @break
-                                    @case('radio')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
-                                            Радиокнопки
-                                        </span>
-                                        @break
-                                    @case('checkbox')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">
-                                            Флажки
-                                        </span>
-                                        @break
-                                    @case('color')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
-                                            Цвет
-                                        </span>
-                                        @break
-                                    @default
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">
-                                            {{ $attribute->type }}
-                                        </span>
-                                @endswitch
-                            </td>
-                            <td class="admin-table-body-cell">{{ $attribute->values->count() }}</td>
-                            <td class="admin-table-body-cell">
-                                <div class="flex space-x-2">
-                                    <a href="{{ route('admin.attributes.edit', $attribute->id) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                                        Изменить
-                                    </a>
-                                    <a href="{{ route('admin.attributes.values.index', $attribute->id) }}" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300">
-                                        Значения
-                                    </a>
-                                    <form action="{{ route('admin.attributes.destroy', $attribute->id) }}" method="POST" class="inline" onsubmit="return confirm('Вы уверены?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
-                                            Удалить
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Атрибуты не найдены</td>
-                        </tr>
-                    @endforelse
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    @foreach ($attributes as $attribute)
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $attribute->id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $attribute->name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            @switch($attribute->type)
+                                @case('select')
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                        Выпадающий список
+                                    </span>
+                                    @break
+                                @case('radio')
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                        Радиокнопки
+                                    </span>
+                                    @break
+                                @case('checkbox')
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
+                                        Флажки
+                                    </span>
+                                    @break
+                                @case('color')
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                                        Цвет
+                                    </span>
+                                    @break
+                                @default
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+                                        {{ $attribute->type }}
+                                    </span>
+                            @endswitch
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {{ $attribute->values_count }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center space-x-4">
+                                <a href="{{ route('admin.attributes.values.index', $attribute->id) }}" class="text-eco-600 dark:text-eco-400 hover:text-eco-900 dark:hover:text-eco-300">
+                                    Значения
+                                </a>
+                                <a href="{{ route('admin.attributes.edit', $attribute->id) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
+                                    Редактировать
+                                </a>
+                                <form action="{{ route('admin.attributes.destroy', $attribute->id) }}" method="POST" class="inline-block">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" onclick="return confirm('Уверены, что хотите удалить этот атрибут? Это может повлиять на товары, которые его используют.')">
+                                        Удалить
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
+        
+        @if($attributes->hasPages())
+        <div class="px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            {{ $attributes->links() }}
+        </div>
+        @endif
     </div>
-
-    {{ $attributes->links() }}
 </div>
 @endsection

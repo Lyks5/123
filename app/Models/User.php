@@ -26,7 +26,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'bio',
         'birth_date',
         'gender',
-        'preferences',
         'eco_impact_score',
         'is_admin',
     ];
@@ -50,7 +49,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'birth_date' => 'date',
-        'preferences' => 'json',
         'is_admin' => 'boolean',
     ];
 
@@ -108,5 +106,42 @@ class User extends Authenticatable implements MustVerifyEmail
     public function blogPosts()
     {
         return $this->hasMany(BlogPost::class, 'author_id');
+    }
+    public function getDefaultShippingAddress()
+    {
+        return $this->addresses()->where('type', 'shipping')->where('is_default', true)->first()
+            ?? $this->addresses()->where('type', 'shipping')->first()
+            ?? $this->addresses()->first();
+    }
+    
+    /**
+     * Get the default billing address for the user.
+     */
+    public function getDefaultBillingAddress()
+    {
+        return $this->addresses()->where('type', 'billing')->where('is_default', true)->first()
+            ?? $this->addresses()->where('type', 'billing')->first()
+            ?? $this->getDefaultShippingAddress();
+    }
+
+    /**
+     * Get the user's total eco impact.
+     */
+    public function getTotalEcoImpact()
+    {
+        $totalImpact = [
+            'carbon_saved' => 0,
+            'plastic_saved' => 0,
+            'water_saved' => 0,
+        ];
+        
+        foreach ($this->orders as $order) {
+            $ecoImpact = $order->calculateEcoImpact();
+            $totalImpact['carbon_saved'] += $ecoImpact['carbon_saved'] ?? 0;
+            $totalImpact['plastic_saved'] += $ecoImpact['plastic_saved'] ?? 0;
+            $totalImpact['water_saved'] += $ecoImpact['water_saved'] ?? 0;
+        }
+        
+        return $totalImpact;
     }
 }

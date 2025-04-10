@@ -1,11 +1,11 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Добавить атрибут')
+@section('title', 'Создать атрибут')
 
 @section('content')
 <div class="p-6 space-y-6">
     <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Добавить атрибут</h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Создать атрибут</h2>
         <a href="{{ route('admin.attributes.index') }}" class="btn-secondary-admin">
             Назад к списку
         </a>
@@ -38,7 +38,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button type="submit" class="btn-primary-admin">Сохранить атрибут</button>
+                        <button type="submit" class="btn-primary-admin">Создать атрибут</button>
                     </div>
                 </div>
             </form>

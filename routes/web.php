@@ -46,7 +46,7 @@ Route::get('/shop/tag/{tag}', [ShopController::class, 'tag'])->name('shop.tag');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 
 // Товары
-Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.review');
+Route::get('/product/review/{product:slug}', [ProductController::class, 'show'])->name('product.review');
 // Корзина
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');

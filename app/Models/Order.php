@@ -24,6 +24,11 @@ class Order extends Model
         'notes',
         'carbon_offset',
         'tracking_number',
+        'eco_impact',
+    ];
+
+    protected $casts = [
+        'eco_impact' => 'json',
     ];
 
     /**
@@ -59,46 +64,72 @@ class Order extends Model
     }
 
     /**
-     * Get the coupons for the order.
-     */
-    public function coupons()
-    {
-        return $this->belongsToMany(Coupon::class, 'order_coupons')
-            ->withPivot('discount_amount');
-    }
-
-    /**
-     * Get the eco impact record for the order.
-     */
-    public function ecoImpactRecord()
-    {
-        return $this->hasOne(EcoImpactRecord::class);
-    }
-
-    /**
      * Calculate total eco impact for the order.
      */
     public function calculateEcoImpact()
     {
-        // Здесь можно рассчитать экологический вклад на основе товаров в заказе
+        // Return the existing eco impact if it exists
+        if ($this->eco_impact) {
+            return $this->eco_impact;
+        }
+        
+        // Calculate from items
         $carbonSaved = 0;
         $plasticSaved = 0;
         $waterSaved = 0;
 
         foreach ($this->items as $item) {
-            // Пример расчета (в реальном проекте нужна более сложная логика)
-            if ($item->eco_impact) {
-                $impact = json_decode($item->eco_impact, true);
-                $carbonSaved += ($impact['carbon_saved'] ?? 0) * $item->quantity;
-                $plasticSaved += ($impact['plastic_saved'] ?? 0) * $item->quantity;
-                $waterSaved += ($impact['water_saved'] ?? 0) * $item->quantity;
+            if ($item->product && $item->product->eco_features) {
+                $carbonSaved += 0.5 * $item->quantity; // Example calculation
+                $plasticSaved += 0.2 * $item->quantity; // Example calculation
+                $waterSaved += 1.5 * $item->quantity; // Example calculation
             }
         }
 
-        return [
+        $impact = [
             'carbon_saved' => $carbonSaved,
             'plastic_saved' => $plasticSaved,
             'water_saved' => $waterSaved,
         ];
+        
+        // Save the calculated impact
+        $this->eco_impact = $impact;
+        $this->save();
+        
+        return $impact;
+    }
+    
+    /**
+     * Get humanized status text.
+     */
+    public function getStatusTextAttribute()
+    {
+        $statuses = [
+            'pending' => 'Ожидает',
+            'processing' => 'В обработке',
+            'shipped' => 'Отправлен',
+            'delivered' => 'Доставлен',
+            'completed' => 'Завершен',
+            'cancelled' => 'Отменен',
+        ];
+        
+        return $statuses[$this->status] ?? $this->status;
+    }
+    
+    /**
+     * Get status color class.
+     */
+    public function getStatusColorAttribute()
+    {
+        $colors = [
+            'pending' => 'bg-yellow-100 text-yellow-800',
+            'processing' => 'bg-blue-100 text-blue-800',
+            'shipped' => 'bg-purple-100 text-purple-800',
+            'delivered' => 'bg-green-100 text-green-800',
+            'completed' => 'bg-green-100 text-green-800',
+            'cancelled' => 'bg-red-100 text-red-800',
+        ];
+        
+        return $colors[$this->status] ?? 'bg-gray-100 text-gray-800';
     }
 }

@@ -20,11 +20,11 @@ class OrderItem extends Model
         'subtotal',
         'tax_amount',
         'discount_amount',
-        'eco_impact',
+        'attribute_values_json',
     ];
 
     protected $casts = [
-        'eco_impact' => 'json',
+        'attribute_values_json' => 'json',
     ];
 
     /**
@@ -42,12 +42,12 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Product::class);
     }
-
+    
     /**
-     * Get the variant for the item.
+     * Get attribute values
      */
-    public function variant()
+    public function getAttributeValuesAttribute()
     {
-        return $this->belongsTo(Variant::class);
+        return $this->attribute_values_json;
     }
 }

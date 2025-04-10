@@ -7,14 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    /**
-     * Get the orders for the product.
-     */
-    public function orders()
-    {
-        return $this->belongsToMany(Order::class, 'order_items');
-    }
-
     use HasFactory;
 
     protected $fillable = [
@@ -29,6 +21,12 @@ class Product extends Model
         'is_featured',
         'is_active',
         'is_new',
+        'parent_id',
+        'attribute_values_json',
+    ];
+
+    protected $casts = [
+        'attribute_values_json' => 'json',
     ];
 
     public function getRouteKeyName()
@@ -36,6 +34,9 @@ class Product extends Model
         return 'slug';
     }
 
+    /**
+     * Get the categories for the product.
+     */
     public function categories()
     {
         return $this->belongsToMany(Category::class);
@@ -60,35 +61,27 @@ class Product extends Model
     }
 
     /**
-     * Get the variants for the product.
+     * Get the parent product if this is a variant.
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Product::class, 'parent_id');
+    }
+
+    /**
+     * Get variants (child products).
      */
     public function variants()
     {
-        return $this->hasMany(Variant::class);
+        return $this->hasMany(Product::class, 'parent_id');
     }
 
     /**
-     * Get the reviews for the product.
+     * Get the attribute values for this product variant.
      */
-    public function reviews()
+    public function getAttributeValuesAttribute()
     {
-        return $this->hasMany(Review::class);
-    }
-
-    /**
-     * Get the questions for the product.
-     */
-    public function questions()
-    {
-        return $this->hasMany(ProductQuestion::class);
-    }
-
-    /**
-     * Get all tags for the product.
-     */
-    public function tags()
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
+        return $this->attribute_values_json;
     }
 
     /**
@@ -97,14 +90,6 @@ class Product extends Model
     public function getPrimaryImageAttribute()
     {
         return $this->images()->where('is_primary', true)->first() ?? $this->images()->first();
-    }
-
-    /**
-     * Get the average rating for the product.
-     */
-    public function getAverageRatingAttribute()
-    {
-        return $this->reviews()->where('is_approved', true)->avg('rating') ?? 0;
     }
 
     /**
@@ -132,6 +117,14 @@ class Product extends Model
     }
 
     /**
+     * Scope a query to only include main products (not variants).
+     */
+    public function scopeMainProducts($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    /**
      * Scope a query to only include featured products.
      */
     public function scopeFeatured($query)
@@ -150,16 +143,16 @@ class Product extends Model
     /**
      * Get featured products.
      */
-    public function getFeaturedProducts($limit = 4)
+    public static function getFeaturedProducts($limit = 4)
     {
-        return $this->active()->featured()->latest()->limit($limit)->get();
+        return self::mainProducts()->active()->featured()->latest()->limit($limit)->get();
     }
 
     /**
      * Get new products.
      */
-    public function getNewProducts($limit = 8)
+    public static function getNewProducts($limit = 8)
     {
-        return $this->active()->new()->latest()->limit($limit)->get();
+        return self::mainProducts()->active()->new()->latest()->limit($limit)->get();
     }
 }

@@ -70,25 +70,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('product_questions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->text('question');
-            $table->boolean('is_answered')->default(false);
-            $table->boolean('is_approved')->default(false);
-            $table->timestamps();
-        });
+       
 
-        Schema::create('product_answers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('question_id')->constrained('product_questions')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->text('answer');
-            $table->boolean('is_admin')->default(false);
-            $table->boolean('is_approved')->default(false);
-            $table->timestamps();
-        });
+        
     }
 
     /**
@@ -96,8 +80,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_answers');
-        Schema::dropIfExists('product_questions');
+
         Schema::dropIfExists('reviews');
         Schema::dropIfExists('taggables');
         Schema::dropIfExists('tags');

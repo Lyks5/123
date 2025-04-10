@@ -39,4 +39,21 @@ class Wishlist extends Model
     {
         return $this->belongsToMany(Product::class, 'wishlist_items');
     }
+    public static function getDefaultForUser($userId)
+    {
+        $wishlist = self::where('user_id', $userId)
+            ->where('is_default', true)
+            ->first();
+            
+        if (!$wishlist) {
+            $wishlist = self::create([
+                'user_id' => $userId,
+                'name' => 'Избранное',
+                'is_default' => true,
+                'is_public' => false,
+            ]);
+        }
+        
+        return $wishlist;
+    }
 }

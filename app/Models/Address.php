@@ -31,7 +31,9 @@ class Address extends Model
     {
         return $this->belongsTo(User::class);
     }
-
+    protected $casts = [
+        'is_default' => 'boolean',
+    ];
     /**
      * Scope default shipping address.
      */
@@ -46,5 +48,46 @@ class Address extends Model
     public function scopeDefaultBilling($query)
     {
         return $query->where('type', 'billing')->where('is_default', true);
+    }
+    public function scopeShipping($query)
+    {
+        return $query->where('type', 'shipping');
+    }
+    
+    /**
+     * Scope billing addresses.
+     */
+    public function scopeBilling($query)
+    {
+        return $query->where('type', 'billing');
+    }
+    
+    /**
+     * Get full name.
+     */
+    public function getFullNameAttribute()
+    {
+        if ($this->first_name || $this->last_name) {
+            return trim($this->first_name . ' ' . $this->last_name);
+        }
+        
+        return $this->user ? $this->user->name : '';
+    }
+    
+    /**
+     * Get formatted address.
+     */
+    public function getFormattedAttribute()
+    {
+        $parts = [
+            $this->address_line1,
+            $this->address_line2,
+            $this->city,
+            $this->state,
+            $this->postal_code,
+            $this->country
+        ];
+        
+        return implode(', ', array_filter($parts));
     }
 }

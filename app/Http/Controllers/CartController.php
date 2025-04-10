@@ -14,8 +14,9 @@ class CartController extends Controller
     public function index()
     {
         $cart = $this->getCart();
+        $recommendedProducts = $this->getRecommendedProducts(); // Fetch recommended products
         
-        return view('pages.cart', compact('cart'));
+        return view('pages.cart', compact('cart', 'recommendedProducts')); // Pass to view
     }
 
     public function add(Request $request)
@@ -192,5 +193,13 @@ class CartController extends Controller
         }
 
         return $cart->load('items.product', 'items.variant');
+    }
+    
+
+    protected function getRecommendedProducts()
+    {
+        // Logic to fetch recommended products
+        // For example, fetching popular products or products from the same categories as those in the cart
+        return Product::where('is_active', true)->take(4)->get(); // Example logic
     }
 }

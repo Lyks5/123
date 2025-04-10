@@ -32,13 +32,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('key')->unique();
-            $table->text('value');
-            $table->string('type')->default('string'); // string, int, boolean, array, json
-            $table->timestamps();
-        });
     }
 
     /**
