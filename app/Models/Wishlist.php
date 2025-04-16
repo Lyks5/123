@@ -56,4 +56,26 @@ class Wishlist extends Model
         
         return $wishlist;
     }
+    /**
+     * Get all wishlists for a user with item counts.
+     */
+    public static function getAllForUserWithCounts($userId)
+    {
+        return self::where('user_id', $userId)
+            ->withCount('items')
+            ->orderBy('is_default', 'desc')
+            ->orderBy('name')
+            ->get();
+    }
+    
+    /**
+     * Get wishlist by ID, making sure it belongs to the user.
+     */
+    public static function getForUser($wishlistId, $userId)
+    {
+        return self::where('id', $wishlistId)
+            ->where('user_id', $userId)
+            ->first();
+    }
+
 }

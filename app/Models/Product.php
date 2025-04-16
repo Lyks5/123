@@ -21,7 +21,6 @@ class Product extends Model
         'is_featured',
         'is_active',
         'is_new',
-        'parent_id',
         'attribute_values_json',
     ];
 
@@ -65,7 +64,8 @@ class Product extends Model
      */
     public function parent()
     {
-        return $this->belongsTo(Product::class, 'parent_id');
+        // Return null relation since parent_id column does not exist
+        return $this->belongsTo(Product::class, 'id')->whereRaw('1 = 0');
     }
 
     /**
@@ -73,7 +73,8 @@ class Product extends Model
      */
     public function variants()
     {
-        return $this->hasMany(Product::class, 'parent_id');
+        // Return empty relation since parent_id column does not exist
+        return $this->hasMany(Product::class, 'id')->whereRaw('1 = 0');
     }
 
     /**
@@ -85,6 +86,21 @@ class Product extends Model
     }
 
     /**
+     * Get the reviews for the product.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+    public function questions()
+{
+    return $this->hasMany(ProductQuestion::class)->whereNull('parent_id')->with('replies');
+}
+
+
+    /**
+     * Get the questions for the product.
+
      * Get the primary image for the product.
      */
     public function getPrimaryImageAttribute()
@@ -117,14 +133,6 @@ class Product extends Model
     }
 
     /**
-     * Scope a query to only include main products (not variants).
-     */
-    public function scopeMainProducts($query)
-    {
-        return $query->whereNull('parent_id');
-    }
-
-    /**
      * Scope a query to only include featured products.
      */
     public function scopeFeatured($query)
@@ -145,7 +153,7 @@ class Product extends Model
      */
     public static function getFeaturedProducts($limit = 4)
     {
-        return self::mainProducts()->active()->featured()->latest()->limit($limit)->get();
+        return self::active()->featured()->latest()->limit($limit)->get();
     }
 
     /**
@@ -153,6 +161,6 @@ class Product extends Model
      */
     public static function getNewProducts($limit = 8)
     {
-        return self::mainProducts()->active()->new()->latest()->limit($limit)->get();
+        return self::active()->new()->latest()->limit($limit)->get();
     }
 }

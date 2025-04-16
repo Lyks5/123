@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Wishlist;
-
+use App\Models\WishlistItem;
+use App\Models\Product;
+use Illuminate\Support\Facades\Validator;
 class AccountController extends Controller
 {
     /**
@@ -32,7 +34,58 @@ class AccountController extends Controller
             
         return view('account.dashboard', compact('user', 'recentOrders'));
     }
+     /**
+     * Show the user's wishlist.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function wishlist()
+    {
+        $user = Auth::user();
+        $defaultWishlist = Wishlist::getDefaultForUser($user->id);
+        $wishlistItems = $defaultWishlist->getItemsWithProducts();
+        
+        return view('account.favorites', compact('wishlistItems'));
+    }
     
+    /**
+     * Add a product to the user's default wishlist.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function addToWishlist(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+        ]);
+        
+        $user = Auth::user();
+        $defaultWishlist = Wishlist::getDefaultForUser($user->id);
+        
+        if ($defaultWishlist->addProduct($request->product_id)) {
+            return back()->with('success', 'Товар добавлен в избранное.');
+        }
+        
+        return back()->with('info', 'Товар уже есть в избранном.');
+    }
+    
+    /**
+     * Remove a product from the user's wishlist.
+     *
+     * @param  int  $productId
+     * @return \Illuminate\Http\Response
+     */
+    public function removeFromWishlist($productId)
+    {
+        $user = Auth::user();
+        $defaultWishlist = Wishlist::getDefaultForUser($user->id);
+        
+        $defaultWishlist->removeProduct($productId);
+        
+        return back()->with('success', 'Товар удален из избранного.');
+    }
+
     /**
      * Display the user's orders.
      */

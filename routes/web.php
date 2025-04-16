@@ -47,6 +47,12 @@ Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name(
 
 // Товары
 Route::get('/product/review/{product:slug}', [ProductController::class, 'show'])->name('product.review');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/product/review/{product:slug}', [ProductController::class, 'submitReview'])->name('product.review.submit');
+    Route::get('/product/review/{product:slug}/edit', [ProductController::class, 'editReview'])->name('product.review.edit');
+    Route::put('/product/review/{product:slug}', [ProductController::class, 'updateReview'])->name('product.review.update');
+});
 // Корзина
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
@@ -123,7 +129,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'products'])->name('index');
         Route::get('/create', [AdminController::class, 'createProduct'])->name('create');
         Route::post('/', [AdminController::class, 'storeProduct'])->name('store');
-        Route::get('/{product}/edit', [AdminController::class, 'editProduct'])->name('edit');
+        Route::get('/{product}/edit', [AdminController::class, 'edit'])->name('edit');
         Route::put('/{product}', [AdminController::class, 'updateProduct'])->name('update');
         Route::delete('/{product}', [AdminController::class, 'deleteProduct'])->name('delete');
     });
