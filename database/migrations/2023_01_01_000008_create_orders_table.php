@@ -42,7 +42,7 @@ return new class extends Migration
             $table->decimal('subtotal', 10, 2);
             $table->decimal('tax_amount', 10, 2)->default(0);
             $table->decimal('discount_amount', 10, 2)->default(0);
-            $table->json('eco_impact')->nullable();
+            $table->json('eco_impact_score')->nullable();
             $table->timestamps();
         });
     }

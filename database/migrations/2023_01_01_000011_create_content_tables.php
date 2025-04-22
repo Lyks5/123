@@ -42,19 +42,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('blog_categories')->onDelete('cascade');
         });
 
-        // Теги (полиморфные)
-        Schema::create('tags', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->timestamps();
-        });
-
-        Schema::create('taggables', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('tag_id')->constrained()->onDelete('cascade');
-            $table->morphs('taggable');
-        });
+        
 
         // Отзывы и вопросы
         Schema::create('reviews', function (Blueprint $table) {
@@ -83,7 +71,6 @@ return new class extends Migration
 
         Schema::dropIfExists('reviews');
         Schema::dropIfExists('taggables');
-        Schema::dropIfExists('tags');
         Schema::dropIfExists('blog_post_categories');
         Schema::dropIfExists('blog_posts');
         Schema::dropIfExists('blog_categories');

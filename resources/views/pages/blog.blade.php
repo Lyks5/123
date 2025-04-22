@@ -208,20 +208,7 @@
                         </div>
                     </div>
                     
-                    <!-- Tags -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h3 class="text-lg font-semibold text-eco-900 mb-4">Теги</h3>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach($tags as $tag)
-                                <a 
-                                    href="{{ route('blog.tag', $tag) }}"
-                                    class="bg-eco-50 text-eco-700 hover:bg-eco-100 px-3 py-1 rounded-full text-sm transition-colors"
-                                >
-                                    #{{ $tag }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
         </div>

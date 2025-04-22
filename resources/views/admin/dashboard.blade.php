@@ -68,6 +68,8 @@
         </div>
     </div>
 
+    
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/20 p-6">
             <div class="flex items-center">

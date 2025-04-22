@@ -42,13 +42,7 @@ class BlogPost extends Model
         return $this->belongsToMany(BlogCategory::class, 'blog_post_categories', 'post_id', 'category_id');
     }
 
-    /**
-     * Get the tags for the post.
-     */
-    public function tags()
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-    }
+   
 
     /**
      * Scope published posts.

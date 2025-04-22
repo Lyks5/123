@@ -201,7 +201,7 @@
                                                 @endif
                                                 
                                                 <div class="flex gap-2 md:ml-auto">
-                                                    <a href="{{ route('account.orders.show', $order->id) }}" class="px-4 py-2 bg-eco-50 hover:bg-eco-100 text-eco-900 rounded-lg text-sm font-medium transition-colors">
+                                                    <a href="{{ route('account.orders', $order->id) }}" class="px-4 py-2 bg-eco-50 hover:bg-eco-100 text-eco-900 rounded-lg text-sm font-medium transition-colors">
                                                         Детали заказа
                                                     </a>
                                                     @if($order->status == 'delivered' || $order->status == 'completed')

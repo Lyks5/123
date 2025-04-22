@@ -68,21 +68,7 @@
                     </select>
                 </div>
                 
-                <div class="w-[200px]">
-                    <label for="tag" class="block text-sm font-medium text-gray-700 mb-1">Тег</label>
-                    <select 
-                        id="tag" 
-                        name="tag" 
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50"
-                    >
-                        <option value="">Все теги</option>
-                        @foreach($tags as $tag)
-                            <option value="{{ $tag->id }}" {{ request('tag') == $tag->id ? 'selected' : '' }}>
-                                {{ $tag->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                
                 
                 <div class="flex items-end">
                     <button type="submit" class="bg-eco-600 hover:bg-eco-700 text-white py-2 px-4 rounded">

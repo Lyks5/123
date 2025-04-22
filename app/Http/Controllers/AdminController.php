@@ -158,10 +158,10 @@ class AdminController extends Controller
     /**
      * Show a specific contact request.
      */
-    public function showContactRequest(ContactRequest $request)
-    {
-        return view('admin.contact-requests.show', compact('request')); // Pass request details to the view
-    }
+public function showContactRequest(ContactRequest $contactRequest)
+{
+    return view('admin.contact-requests.show', compact('contactRequest')); // Pass request details to the view
+}
 
     /**
      * Add a note to a contact request.
@@ -1172,9 +1172,9 @@ class AdminController extends Controller
         $posts = $query->paginate(15)->withQueryString();
         $categories = BlogCategory::all();
         $authors = User::whereHas('blogPosts')->get();
-        $tags = Tag::all(); // Получаем все теги
+         // Получаем все теги
     
-        return view('admin.blog.posts.index', compact('posts', 'categories', 'authors', 'tags'));
+        return view('admin.blog.posts.index', compact('posts', 'categories', 'authors'));
     }
     
     /**
@@ -1183,8 +1183,8 @@ class AdminController extends Controller
     public function createBlogPost()
     {
         $categories = BlogCategory::all();
-        $tags = Tag::all();
-        return view('admin.blog.posts.create', compact('categories', 'tags'));
+        
+        return view('admin.blog.posts.create', compact('categories'));
     }
     
     /**
@@ -1200,8 +1200,6 @@ class AdminController extends Controller
             'status' => 'required|in:draft,published',
             'categories' => 'required|array',
             'categories.*' => 'exists:blog_categories,id',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'published_at' => 'nullable|date',
@@ -1229,21 +1227,6 @@ class AdminController extends Controller
         // Attach categories
         $post->categories()->attach($request->categories);
         
-        // Handle tags
-        if ($request->has('tags')) {
-            $tagIds = [];
-            
-            foreach ($request->tags as $tagName) {
-                $tag = Tag::firstOrCreate([
-                    'name' => $tagName,
-                    'slug' => Str::slug($tagName),
-                ]);
-                
-                $tagIds[] = $tag->id;
-            }
-            
-            $post->tags()->attach($tagIds);
-        }
         
         return redirect()->route('admin.blog.posts.index')
             ->with('success', 'Запись блога успешно создана.');
@@ -1252,14 +1235,13 @@ class AdminController extends Controller
     /**
      * Show the form to edit a blog post.
      */
-    public function editBlogPost(BlogPost $post)
-    {
-        $categories = BlogCategory::all();
-        $tags = Tag::all();
-        $postTags = $post->tags->pluck('name')->toArray();
-        
-        return view('admin.blog.posts.edit', compact('post', 'categories', 'tags', 'postTags'));
-    }
+public function editBlogPost(BlogPost $post)
+{
+    $categories = BlogCategory::all();
+    $authors = User::whereHas('blogPosts')->get();
+
+    return view('admin.blog.posts.edit', compact('post', 'categories', 'authors'));
+}
     
     /**
      * Update a blog post.
@@ -1274,8 +1256,6 @@ class AdminController extends Controller
             'status' => 'required|in:draft,published',
             'categories' => 'required|array',
             'categories.*' => 'exists:blog_categories,id',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'published_at' => 'nullable|date',
@@ -1302,23 +1282,7 @@ class AdminController extends Controller
         // Sync categories
         $post->categories()->sync($request->categories);
         
-        // Handle tags
-        if ($request->has('tags')) {
-            $tagIds = [];
-            
-            foreach ($request->tags as $tagName) {
-                $tag = Tag::firstOrCreate([
-                    'name' => $tagName,
-                    'slug' => Str::slug($tagName),
-                ]);
-                
-                $tagIds[] = $tag->id;
-            }
-            
-            $post->tags()->sync($tagIds);
-        } else {
-            $post->tags()->detach();
-        }
+        
         
         return redirect()->route('admin.blog.posts.index')
             ->with('success', 'Запись блога успешно обновлена.');
@@ -1419,47 +1383,11 @@ class AdminController extends Controller
             ->with('success', 'Категория блога успешно удалена.');
     }
     
-    /**
-     * Show blog tags management page.
-     */
-    public function blogTags(Request $request)
-    {
-        $query = Tag::withCount('blogPosts');
-        
-        if ($request->has('search')) {
-            $query->where('name', 'like', "%{$request->search}%");
-        }
-        
-        $tags = $query->orderBy('name')->paginate(20);
-        
-        return view('admin.blog.tags.index', compact('tags'));
-    }
     
-    /**
-     * Show the form to create a new tag.
-     */
-    public function createBlogTag()
-    {
-        return view('admin.blog.tags.create');
-    }
     
-    /**
-     * Store a new tag.
-     */
-    public function storeBlogTag(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:tags,name',
-        ]);
-        
-        // Generate slug
-        $validated['slug'] = Str::slug($validated['name']);
-        
-        Tag::create($validated);
-        
-        return redirect()->route('admin.blog.tags.index')
-        ->with('success', 'Тег успешно создан.');
-}
+   
+    
+    
 
 /**
  * Print an invoice for an order.
@@ -1484,4 +1412,27 @@ public function printPackingSlip($id)
     $order = Order::with(['items'])->findOrFail($id);
     return view('admin.orders.print-packing-slip', compact('order'));
 }
+
+    /**
+     * Update the status of a contact request.
+     */
+    public function updateContactRequestStatus(Request $request, ContactRequest $contactRequest)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:new,in_progress,closed',
+        ]);
+
+        $contactRequest->status = $validated['status'];
+        $contactRequest->save();
+
+        return redirect()->route('admin.contact-requests.show', $contactRequest)
+            ->with('success', 'Статус обращения успешно обновлен.');
+    }
+    
+    public function deleteContactRequest(ContactRequest $contactRequest)
+   {
+       $contactRequest->delete();
+        return redirect()->route('admin.contact-requests.index')
+            ->with('success', 'Обращение успешно удалено.');
+    }
 }

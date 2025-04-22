@@ -146,7 +146,7 @@
                         </div>
                     </div>
                     
-                    <!-- Categories and Tags -->
+                    <!-- Categories -->
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h2 class="text-lg font-semibold text-gray-700 mb-4">Категории и теги</h2>
                         
@@ -174,16 +174,7 @@
                             @enderror
                         </div>
                         
-                        <div class="mb-4">
-                            <label for="tags" class="block text-sm font-medium text-gray-700">Теги (разделенные запятыми)</label>
-                            <input type="text" name="tags" id="tags" 
-                                value="{{ old('tags', $post->tags->pluck('name')->join(', ')) }}"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
-                            <p class="text-xs text-gray-500 mt-1">Например: эко, спорт, йога</p>
-                            @error('tags')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        
                     </div>
                     
                     <!-- Featured Image -->

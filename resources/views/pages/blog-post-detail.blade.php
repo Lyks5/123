@@ -15,9 +15,6 @@
     @foreach($post->categories as $category)
         <meta property="article:section" content="{{ $category->name }}">
     @endforeach
-    @foreach($post->tags as $tag)
-        <meta property="article:tag" content="{{ $tag->name }}">
-    @endforeach
 @endsection
 
 @section('content')
@@ -40,7 +37,7 @@
             @endif
             
             <div class="p-6 md:p-8 {{ $post->image ? '-mt-20 relative z-10 bg-white rounded-t-3xl' : '' }}">
-                <!-- Categories & Tags -->
+                <!-- Categories -->
                 <div class="flex flex-wrap gap-2 mb-4">
                     @foreach($post->categories as $category)
                         <a href="{{ route('blog.category', $category->slug) }}" class="px-3 py-1 bg-eco-50 text-eco-700 rounded-full text-sm hover:bg-eco-100 transition">
@@ -86,19 +83,7 @@
                     {!! $post->content !!}
                 </div>
                 
-                <!-- Tags -->
-                @if($post->tags->count() > 0)
-                    <div class="mt-8 pt-6 border-t border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Теги</h3>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach($post->tags as $tag)
-                                <a href="{{ route('blog.tag', $tag->slug) }}" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition">
-                                    {{ $tag->name }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
+                
                 
                 <!-- Share -->
                 <div class="mt-8 pt-6 border-t border-gray-200">

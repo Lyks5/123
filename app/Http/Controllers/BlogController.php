@@ -35,9 +35,9 @@ class BlogController extends Controller
             ->take(3)
             ->get();
         
-        $tags = Tag::has('blogPosts')->take(10)->get();
+       
         
-        return view('pages.blog', compact('posts', 'featuredPost', 'categories', 'recentPosts', 'tags'));
+        return view('pages.blog', compact('posts', 'featuredPost', 'categories', 'recentPosts'));
     }
     
     /**
@@ -50,7 +50,7 @@ class BlogController extends Controller
             ->where('published_at', '<=', now())
             ->firstOrFail();
             
-        $post->load(['author', 'categories', 'tags']);
+        $post->load(['author', 'categories']);
         
         // Increment view count
         $post->increment('views');

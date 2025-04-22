@@ -69,20 +69,7 @@
                         {!! $post->content !!}
                     </article>
                     
-                    <!-- Tags -->
-                    <div class="mt-12 pt-8 border-t border-eco-100">
-                        <h3 class="text-lg font-semibold text-eco-900 mb-4">Теги</h3>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach($post->tags as $tag)
-                            <a 
-                                href="{{ route('blog.tag', $tag->slug) }}" 
-                                class="inline-block px-3 py-1 rounded-full bg-eco-100 text-eco-800 text-sm hover:bg-eco-200 transition-colors"
-                            >
-                                {{ $tag->name }}
-                            </a>
-                            @endforeach
-                        </div>
-                    </div>
+                    
                     
                     <!-- Share -->
                     <div class="mt-8">
