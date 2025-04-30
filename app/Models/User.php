@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -24,10 +23,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'avatar',
         'bio',
+        'email_verified_at',
+        'remember_token',
+        'is_admin',
         'birth_date',
         'gender',
-        'eco_impact_score',
-        'is_admin',
     ];
 
     /**
@@ -48,12 +48,12 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'birth_date' => 'date',
         'is_admin' => 'boolean',
+        'birth_date' => 'date',
     ];
 
     /**
-     * Get the user's addresses.
+     * Get the addresses for the user.
      */
     public function addresses()
     {
@@ -61,7 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the user's orders.
+     * Get the orders for the user.
      */
     public function orders()
     {
@@ -69,23 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the user's wishlists.
-     */
-    public function wishlists()
-    {
-        return $this->hasMany(Wishlist::class);
-    }
-
-    /**
-     * Get the user's cart.
-     */
-    public function cart()
-    {
-        return $this->hasOne(Cart::class);
-    }
-
-    /**
-     * Get the user's reviews.
+     * Get the reviews written by the user.
      */
     public function reviews()
     {
@@ -93,55 +77,47 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the user's eco impact records.
-     */
-    public function ecoImpactRecords()
-    {
-        return $this->hasMany(EcoImpactRecord::class);
-    }
-    
-    /**
      * Get the blog posts authored by the user.
      */
     public function blogPosts()
     {
         return $this->hasMany(BlogPost::class, 'author_id');
     }
+
+    /**
+     * Get the default shipping address for the user.
+     */
     public function getDefaultShippingAddress()
     {
-        return $this->addresses()->where('type', 'shipping')->where('is_default', true)->first()
-            ?? $this->addresses()->where('type', 'shipping')->first()
-            ?? $this->addresses()->first();
+        return $this->addresses()->where('type', 'shipping')->where('is_default', true)->first();
     }
-    
+
     /**
      * Get the default billing address for the user.
      */
     public function getDefaultBillingAddress()
     {
-        return $this->addresses()->where('type', 'billing')->where('is_default', true)->first()
-            ?? $this->addresses()->where('type', 'billing')->first()
-            ?? $this->getDefaultShippingAddress();
+        return $this->addresses()->where('type', 'billing')->where('is_default', true)->first();
     }
-
-    /**
-     * Get the user's total eco impact.
-     */
-    public function getTotalEcoImpact()
-    {
-        $totalImpact = [
-            'carbon_saved' => 0,
-            'plastic_saved' => 0,
-            'water_saved' => 0,
-        ];
-        
-        foreach ($this->orders as $order) {
-            $ecoImpact = $order->calculateEcoImpact();
-            $totalImpact['carbon_saved'] += $ecoImpact['carbon_saved'] ?? 0;
-            $totalImpact['plastic_saved'] += $ecoImpact['plastic_saved'] ?? 0;
-            $totalImpact['water_saved'] += $ecoImpact['water_saved'] ?? 0;
-        }
-        
-        return $totalImpact;
-    }
+    public function getCartDataAttribute($value)
+{
+    return json_decode($value, true) ?? [];
+}
+public function setCartDataAttribute($value)
+{
+    $this->attributes['cart_data'] = json_encode($value);
+}
+// app/Models/User.php
+public function ecoImpactRecords()
+{
+    return $this->hasMany(EcoImpactRecord::class);
+}
+public function getTotalEcoImpact()
+{
+    return [
+        'carbon_saved' => $this->ecoImpactRecords()->sum('carbon_saved'),
+        'plastic_saved' => $this->ecoImpactRecords()->sum('plastic_saved'),
+        'water_saved' => $this->ecoImpactRecords()->sum('water_saved')
+    ];
+}
 }

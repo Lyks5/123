@@ -24,6 +24,11 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
+        'price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'quantity' => 'integer',
         'attribute_values_json' => 'json',
     ];
 
@@ -42,9 +47,17 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * Get the variant for the item.
+     */
+    public function variant()
+    {
+        return $this->belongsTo(Variant::class);
+    }
     
     /**
-     * Get attribute values
+     * Get attribute values.
      */
     public function getAttributeValuesAttribute()
     {

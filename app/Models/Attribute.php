@@ -18,6 +18,11 @@ class Attribute extends Model
         'display_order',
     ];
 
+    protected $casts = [
+        'is_required' => 'boolean',
+        'display_order' => 'integer',
+    ];
+
     /**
      * The possible types of attributes.
      */
@@ -33,7 +38,7 @@ class Attribute extends Model
      */
     public function values(): HasMany
     {
-        return $this->hasMany(AttributeValue::class);
+        return $this->hasMany(AttributeValue::class)->orderBy('display_order');
     }
     
     /**
@@ -45,7 +50,7 @@ class Attribute extends Model
     }
     
     /**
-     * Get user-friendly display name or fallback to name
+     * Get user-friendly display name or fallback to name.
      */
     public function getDisplayNameOrNameAttribute(): string
     {

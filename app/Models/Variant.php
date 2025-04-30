@@ -18,6 +18,13 @@ class Variant extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
+        'stock_quantity' => 'integer',
+        'is_active' => 'boolean',
+    ];
+
     /**
      * Get the product for the variant.
      */
@@ -39,7 +46,7 @@ class Variant extends Model
      */
     public function getCurrentPriceAttribute()
     {
-        return $this->sale_price ?? $this->price ?? $this->product->current_price;
+        return $this->sale_price ?? $this->price;
     }
 
     /**

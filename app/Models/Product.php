@@ -4,7 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Product extends Model
 {
     use HasFactory;
@@ -21,17 +22,17 @@ class Product extends Model
         'is_featured',
         'is_active',
         'is_new',
-        'attribute_values_json',
     ];
 
     protected $casts = [
-        'attribute_values_json' => 'json',
+        'price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
+        'stock_quantity' => 'integer',
+        'is_featured' => 'boolean',
+        'is_active' => 'boolean',
+        'is_new' => 'boolean',
+        'images' => 'array'
     ];
-
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
 
     /**
      * Get the categories for the product.
@@ -41,48 +42,23 @@ class Product extends Model
         return $this->belongsToMany(Category::class);
     }
 
-    /**
-     * Get the eco features for the product.
-     */
-    public function ecoFeatures()
-    {
-        return $this->belongsToMany(EcoFeature::class)
-            ->withPivot('value')
-            ->withTimestamps();
-    }
+  
 
     /**
-     * Get the images for the product.
-     */
-    public function images()
-    {
-        return $this->hasMany(ProductImage::class);
-    }
-
-    /**
-     * Get the parent product if this is a variant.
-     */
-    public function parent()
-    {
-        // Return null relation since parent_id column does not exist
-        return $this->belongsTo(Product::class, 'id')->whereRaw('1 = 0');
-    }
-
-    /**
-     * Get variants (child products).
+     * Get the variants for the product.
      */
     public function variants()
     {
-        // Return empty relation since parent_id column does not exist
-        return $this->hasMany(Product::class, 'id')->whereRaw('1 = 0');
+        return $this->hasMany(Variant::class);
     }
 
     /**
-     * Get the attribute values for this product variant.
+     * Get the eco_features for the product.
      */
-    public function getAttributeValuesAttribute()
+    public function ecoFeatures()
     {
-        return $this->attribute_values_json;
+        return $this->belongsToMany(EcoFeature::class, 'eco_feature_product')
+                    ->withPivot('value');
     }
 
     /**
@@ -92,23 +68,16 @@ class Product extends Model
     {
         return $this->hasMany(Review::class);
     }
-    public function questions()
-{
-    return $this->hasMany(ProductQuestion::class)->whereNull('parent_id')->with('replies');
-}
-
-
-    /**
-     * Get the questions for the product.
-
-     * Get the primary image for the product.
-     */
-    public function getPrimaryImageAttribute()
+    public function mainCategory(): BelongsTo
     {
-        return $this->images()->where('is_primary', true)->first() ?? $this->images()->first();
+        return $this->belongsTo(Category::class, 'main_category_id');
     }
 
     /**
+     * Get the primary image for the product.
+   
+
+    
      * Check if the product is on sale.
      */
     public function getIsOnSaleAttribute()
@@ -125,7 +94,7 @@ class Product extends Model
     }
 
     /**
-     * Scope a query to only include active products.
+     * Scope active products.
      */
     public function scopeActive($query)
     {
@@ -133,7 +102,7 @@ class Product extends Model
     }
 
     /**
-     * Scope a query to only include featured products.
+     * Scope featured products.
      */
     public function scopeFeatured($query)
     {
@@ -141,26 +110,15 @@ class Product extends Model
     }
 
     /**
-     * Scope a query to only include new products.
+     * Scope new products.
      */
     public function scopeNew($query)
     {
         return $query->where('is_new', true);
     }
-
-    /**
-     * Get featured products.
-     */
-    public static function getFeaturedProducts($limit = 4)
+    public function scopeLowStockAlert(Builder $query): Builder
     {
-        return self::active()->featured()->latest()->limit($limit)->get();
-    }
-
-    /**
-     * Get new products.
-     */
-    public static function getNewProducts($limit = 8)
-    {
-        return self::active()->new()->latest()->limit($limit)->get();
+        return $query->where('stock_quantity', '<', 5)
+                    ->where('stock_quantity', '>', 0);
     }
 }

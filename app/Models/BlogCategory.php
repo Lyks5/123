@@ -13,13 +13,35 @@ class BlogCategory extends Model
         'name',
         'slug',
         'description',
+        'parent_id',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     /**
-     * Get the posts for the category.
+     * Get the posts for this category.
      */
     public function posts()
     {
-        return $this->belongsToMany(BlogPost::class, 'blog_post_categories', 'category_id', 'post_id');
+        return $this->hasMany(BlogPost::class, 'category_id'); // Исправлено!
+    }
+
+    /**
+     * Get the parent category.
+     */
+    public function parent()
+    {
+        return $this->belongsTo(BlogCategory::class, 'parent_id');
+    }
+
+    /**
+     * Get the child categories.
+     */
+    public function children()
+    {
+        return $this->hasMany(BlogCategory::class, 'parent_id');
     }
 }

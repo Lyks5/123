@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\EnvironmentalInitiative;
+use App\Models\EcoFeature;
 
 class SustainabilityController extends Controller
 {
@@ -12,7 +12,7 @@ class SustainabilityController extends Controller
      */
     public function index()
     {
-        $initiatives = EnvironmentalInitiative::latest()->take(3)->get();
+        $initiatives = EcoFeature::latest()->take(3)->get();
         
         return view('pages.sustainability', [
             'initiatives' => $initiatives

@@ -15,7 +15,11 @@ class AttributeValue extends Model
         'attribute_id',
         'value',
         'display_order',
-        'hex_color', // For color type attributes
+        'hex_color',
+    ];
+
+    protected $casts = [
+        'display_order' => 'integer',
     ];
 
     /**
@@ -35,7 +39,7 @@ class AttributeValue extends Model
     }
     
     /**
-     * Get formatted value based on attribute type
+     * Get formatted value based on attribute type.
      */
     public function getFormattedValueAttribute(): string
     {

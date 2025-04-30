@@ -19,7 +19,7 @@
             </div>
         @endif
         
-        @if($cart && $cart->items->count() > 0)
+        @if($cart->count() > 0)
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -161,37 +161,6 @@
                                 <a href="{{ route('checkout') }}" class="w-full bg-eco-600 text-white text-center py-3 px-4 rounded-md hover:bg-eco-700 font-medium mt-4 block">
                                     Оформить заказ
                                 </a>
-                            </div>
-                            
-                            <!-- Промокод -->
-                            <div class="mt-6 pt-6 border-t border-gray-200">
-                                <h3 class="text-base font-medium mb-4">Применить промокод</h3>
-                                
-                                <form action="{{ route('cart.apply-coupon') }}" method="POST">
-                                    @csrf
-                                    <div class="flex">
-                                        <input type="text" name="coupon_code" id="coupon_code" placeholder="Введите код" 
-                                            class="flex-1 rounded-l-md border-gray-300 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
-                                        <button type="submit" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-r-md">
-                                            Применить
-                                        </button>
-                                    </div>
-                                    
-                                    @if($cart->coupon)
-                                        <div class="mt-2 text-sm text-eco-600">
-                                            Применен купон: {{ $cart->coupon->code }} ({{ $cart->coupon->discount_percent }}%)
-                                            <form action="{{ route('cart.remove-coupon') }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-700 ml-2">&times;</button>
-                                            </form>
-                                        </div>
-                                    @endif
-                                    
-                                    @error('coupon_code')
-                                        <div class="mt-1 text-sm text-red-600">{{ $message }}</div>
-                                    @enderror
-                                </form>
                             </div>
                         </div>
                     </div>

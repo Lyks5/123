@@ -18,6 +18,7 @@ class Newsletter extends Model
 
     protected $casts = [
         'preferences' => 'json',
+        'is_active' => 'boolean',
     ];
 
     /**

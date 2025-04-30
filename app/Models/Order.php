@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Builder;
 class Order extends Model
 {
     use HasFactory;
@@ -24,11 +24,15 @@ class Order extends Model
         'notes',
         'carbon_offset',
         'tracking_number',
-        'eco_impact',
     ];
 
     protected $casts = [
-        'eco_impact' => 'json',
+        'total_amount' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'shipping_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'carbon_offset' => 'boolean',
     ];
 
     /**
@@ -63,49 +67,33 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    /**
-     * Calculate total eco impact for the order.
-     */
-    public function calculateEcoImpact()
+    public function scopeValid(Builder $query): Builder // Указываем правильный тип
     {
-        // Return the existing eco impact if it exists
-        if ($this->eco_impact) {
-            return $this->eco_impact;
-        }
-        
-        // Calculate from items
-        $carbonSaved = 0;
-        $plasticSaved = 0;
-        $waterSaved = 0;
-
-        foreach ($this->items as $item) {
-            if ($item->product && $item->product->eco_features) {
-                $carbonSaved += 0.5 * $item->quantity; // Example calculation
-                $plasticSaved += 0.2 * $item->quantity; // Example calculation
-                $waterSaved += 1.5 * $item->quantity; // Example calculation
-            }
-        }
-
-        $impact = [
-            'carbon_saved' => $carbonSaved,
-            'plastic_saved' => $plasticSaved,
-            'water_saved' => $waterSaved,
-        ];
-        
-        // Save the calculated impact
-        $this->eco_impact = $impact;
-        $this->save();
-        
-        return $impact;
+        return $query->whereIn('status', ['completed', 'shipped']);
     }
-    
+    /**
+     * Get the eco impact records for the order.
+     */
+    public function ecoImpactRecords()
+    {
+        return $this->hasMany(EcoImpactRecord::class);
+    }
+
+    /**
+     * Get the reviews for the order.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
     /**
      * Get humanized status text.
      */
     public function getStatusTextAttribute()
     {
         $statuses = [
-            'pending' => 'Ожидает',
+            'pending' => 'В ожидании',
             'processing' => 'В обработке',
             'shipped' => 'Отправлен',
             'delivered' => 'Доставлен',
@@ -114,22 +102,5 @@ class Order extends Model
         ];
         
         return $statuses[$this->status] ?? $this->status;
-    }
-    
-    /**
-     * Get status color class.
-     */
-    public function getStatusColorAttribute()
-    {
-        $colors = [
-            'pending' => 'bg-yellow-100 text-yellow-800',
-            'processing' => 'bg-blue-100 text-blue-800',
-            'shipped' => 'bg-purple-100 text-purple-800',
-            'delivered' => 'bg-green-100 text-green-800',
-            'completed' => 'bg-green-100 text-green-800',
-            'cancelled' => 'bg-red-100 text-red-800',
-        ];
-        
-        return $colors[$this->status] ?? 'bg-gray-100 text-gray-800';
     }
 }

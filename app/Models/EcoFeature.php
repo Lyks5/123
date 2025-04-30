@@ -9,11 +9,18 @@ class EcoFeature extends Model
 {
     use HasFactory;
 
+    
+
     protected $fillable = [
         'name',
         'slug',
         'description',
         'icon',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -21,8 +28,7 @@ class EcoFeature extends Model
      */
     public function products()
     {
-        return $this->belongsToMany(Product::class)
-            ->withPivot('value')
-            ->withTimestamps();
+        return $this->belongsToMany(Product::class, 'eco_feature_product')
+            ->withPivot('value');
     }
 }

@@ -24,6 +24,10 @@ class Address extends Model
         'phone',
     ];
 
+    protected $casts = [
+        'is_default' => 'boolean',
+    ];
+
     /**
      * Get the user that owns the address.
      */
@@ -31,9 +35,7 @@ class Address extends Model
     {
         return $this->belongsTo(User::class);
     }
-    protected $casts = [
-        'is_default' => 'boolean',
-    ];
+
     /**
      * Scope default shipping address.
      */
@@ -49,31 +51,15 @@ class Address extends Model
     {
         return $query->where('type', 'billing')->where('is_default', true);
     }
-    public function scopeShipping($query)
-    {
-        return $query->where('type', 'shipping');
-    }
-    
-    /**
-     * Scope billing addresses.
-     */
-    public function scopeBilling($query)
-    {
-        return $query->where('type', 'billing');
-    }
-    
+
     /**
      * Get full name.
      */
     public function getFullNameAttribute()
     {
-        if ($this->first_name || $this->last_name) {
-            return trim($this->first_name . ' ' . $this->last_name);
-        }
-        
-        return $this->user ? $this->user->name : '';
+        return trim($this->first_name . ' ' . $this->last_name);
     }
-    
+
     /**
      * Get formatted address.
      */

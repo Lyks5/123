@@ -5,40 +5,51 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\BlogPost;
-use App\Models\EnvironmentalInitiative;
+use App\Models\EcoFeature; // Заменяем EnvironmentalInitiative на EcoFeature
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
     public function index()
     {
+        // Избранные товары (без изменений)
         $featuredProducts = Product::where('is_featured', true)
             ->where('is_active', true)
             ->take(4)
             ->get();
 
-       
-        // Получаем новые товары
+        // Новые товары (без изменений)
         $newProducts = Product::where('is_new', true)
             ->where('is_active', true)
             ->latest()
             ->take(8)
             ->get();
 
-        // Получаем основные категории
+        // Основные категории (без изменений)
         $categories = Category::where('is_active', true)
             ->whereNull('parent_id')
             ->take(6)
             ->get();
 
-        // Получаем экологические инициативы
-        $initiatives = EnvironmentalInitiative::where('is_active', true)
+        // Экологические инициативы заменены на EcoFeature
+        $initiatives = EcoFeature::query()
+            ->when(
+                Schema::hasColumn('eco_features', 'is_active'),
+                function ($query) {
+                    $query->where('is_active', true); // Используем is_active если есть
+                },
+                function ($query) {
+                    $query->whereNotNull('created_at'); // Альтернативная логика
+                }
+            )
             ->latest()
             ->take(2)
             ->get();
 
-        // Получаем последние блог-посты
-        $blogPosts = BlogPost::where('status', 'published')
+        // Блог-посты (обновлённая логика связи с категориями)
+        $blogPosts = BlogPost::with('category') // Предполагается наличие связи belongsTo
+            ->where('status', 'published')
             ->where('published_at', '<=', now())
             ->latest('published_at')
             ->take(3)

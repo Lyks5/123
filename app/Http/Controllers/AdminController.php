@@ -15,10 +15,11 @@ use App\Models\BlogCategory;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Order;
-use App\Models\EnvironmentalInitiative;
 use App\Models\ContactRequest;
 use App\Models\Review;
-use App\Models\ProductImage;
+
+use App\Models\EcoImpactRecord; 
+// В начале контроллера
 
 class AdminController extends Controller
 {
@@ -201,7 +202,7 @@ public function showContactRequest(ContactRequest $contactRequest)
         $validated['slug'] = Str::slug($validated['title']); // Generate slug for the initiative
         $validated['goal'] = $request->goal; // Include goal in the validated data
         $validated['start_date'] = $request->start_date; // Include start_date in the validated data
-        EnvironmentalInitiative::create($validated); // Store the new initiative in the database
+        EcoFeature::create($validated); // Store the new initiative in the database
 
         return redirect()->route('admin.initiatives.index')->with('success', 'Инициатива успешно создана.'); // Redirect with success message
     }
@@ -363,111 +364,76 @@ public function showContactRequest(ContactRequest $contactRequest)
     }
     public function index()
 {
-    // Basic stats
-    $ecoFeaturesCount = EcoFeature::count();
-    $initiativesCount = EnvironmentalInitiative::count();
-    $productCount = Product::count();
-    $orderCount = Order::count();
-    $userCount = User::count();
-    $postCount = BlogPost::count();
+    // Основная статистика (адаптировано под новую структуру БД)
+    $stats = [
+        'productCount' => Product::where('is_active', true)->count(),
+        'orderCount' => Order::where('status', 'completed')->count(),
+        'userCount' => User::count(),
+        'postCount' => BlogPost::where('status', 'published')->count(),
+        'totalRevenue' => Order::valid()->sum('total_amount'),
+        'ecoFeaturesCount' => EcoFeature::count(),
+        'ecoImpact' => EcoImpactRecord::sumAll(),
+    ];
 
-    // Recent data for dashboard display
-    $recentOrders = Order::with('user')->latest()->take(5)->get();
-    $latestProducts = Product::latest()->take(5)->get();
-    $latestUsers = User::latest()->take(5)->get();
-    $pendingReviews = Review::where('is_approved', false)->count();
+    // Данные для графиков и списков
+    $dashboardData = [
+        'monthlySales' => $this->getMonthlySalesData(),
+        'recentOrders' => Order::with(['user', 'items'])->latest()->take(5)->get(),
+        'latestProducts' => Product::with('mainCategory')->latest()->take(5)->get(),
+        'userActivity' => User::withCount('orders')->latest()->take(5)->get(),
+        'stockAlerts' => Product::lowStockAlert()->get()
+    ];
 
-    // Get monthly sales data for last 6 months
-    $monthlyData = $this->getMonthlyStatistics();
-
-    // Low stock alert (products with less than 5 items)
-    $lowStockProducts = Product::where('stock_quantity', '<', 5)
-                              ->where('stock_quantity', '>', 0)
-                              ->take(5)
-                              ->get();
-
-    // Recent contact requests
-    $recentContacts = ContactRequest::where('status', 'new')->latest()->take(5)->get();
-
-    $contactRequestsCount = ContactRequest::count();
-
-    // Define total revenue
-    $totalRevenue = Order::where('status', 'completed')->sum('total_amount') ?: 0;
-
-    return view('admin.dashboard', compact(
-        'totalRevenue',
-        'userCount',
-        'productCount',
-        'orderCount',
-        'totalRevenue',
-        'ecoFeaturesCount',
-        'initiativesCount',
-        'productCount',
-        'orderCount',
-        'userCount',
-        'postCount',
-        'recentOrders',
-        'latestProducts',
-        'latestUsers',
-        'pendingReviews',
-        'monthlyData',
-        'lowStockProducts',
-        'recentContacts',
-        'contactRequestsCount',
-        'ecoFeaturesCount',
-        'initiativesCount',
-        'productCount',
-        'orderCount',
-        'userCount',
-        'postCount',
-        'recentOrders',
-        'latestProducts',
-        'latestUsers',
-        'pendingReviews',
-        'monthlyData',
-        'lowStockProducts',
-        'recentContacts'
-    ));
+    return view('admin.dashboard', array_merge($stats, $dashboardData));
 }
+
+// Вспомогательные методы в модели Order
+public function scopeValid($query)
+{
+    return $query->whereIn('status', ['completed', 'shipped']);
+}
+
+// Вспомогательные методы в модели EcoImpactRecord
+public static function sumAll()
+{
+    return [
+        'carbon' => self::sum('carbon_saved'),
+        'plastic' => self::sum('plastic_saved'),
+        'water' => self::sum('water_saved')
+    ];
+}
+
     
     /**
      * Get monthly statistics for dashboard.
      */
-    private function getMonthlyStatistics()
+    protected function getMonthlySalesData(): array
     {
-        $months = [];
-        $monthlyRevenue = [];
-        $monthlySalesCount = [];
-        $monthlyUserRegistration = [];
-        
-        // Get data for the last 6 months
+        $data = Order::selectRaw('
+                DATE_FORMAT(created_at, "%Y-%m") as month,
+                SUM(total_amount) as total,
+                COUNT(*) as orders
+            ')
+            ->where('created_at', '>=', now()->subMonths(6)->startOfMonth())
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->keyBy('month');
+
+        // Формируем полный список месяцев
+        $months = collect();
         for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $months[] = $date->format('M Y');
-            
-            $startOfMonth = $date->copy()->startOfMonth();
-            $endOfMonth = $date->copy()->endOfMonth();
-            
-            // Get orders for this month
-            $ordersInMonth = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                                  ->where('status', 'completed')
-                                  ->get();
-            
-            // Get users registered this month
-            $usersRegistered = User::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                                   ->count();
-            
-            // Calculate totals
-            $monthlyRevenue[] = $ordersInMonth->sum('total');
-            $monthlySalesCount[] = $ordersInMonth->count();
-            $monthlyUserRegistration[] = $usersRegistered;
+            $month = now()->subMonths($i)->format('Y-m');
+            $months[$month] = [
+                'total' => $data[$month]->total ?? 0,
+                'orders' => $data[$month]->orders ?? 0
+            ];
         }
-        
+
         return [
-            'months' => $months,
-            'revenue' => $monthlyRevenue,
-            'orders' => $monthlySalesCount,
-            'users' => $monthlyUserRegistration
+            'labels' => $months->keys(),
+            'totals' => $months->pluck('total'),
+            'orders' => $months->pluck('orders')
         ];
     }
 
@@ -563,94 +529,83 @@ public function showContactRequest(ContactRequest $contactRequest)
      * Store a new product.
      */
     public function storeProduct(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'short_description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'sku' => 'required|string|max:100|unique:products',
-            'stock_quantity' => 'required|integer|min:0',
-            'categories' => 'required|array',
-            'categories.*' => 'exists:categories,id',
-            'eco_features' => 'nullable|array',
-            'eco_features.*' => 'exists:eco_features,id',
-            'product_attributes' => 'nullable|array',
-            'product_attributes.*' => 'exists:attributes,id',
-            'attribute_values' => 'nullable|array',
-            'variants' => 'nullable|array',
-            'variants.*.sku' => 'required_with:variants|string|max:100|distinct',
-            'variants.*.price' => 'nullable|numeric|min:0',
-            'variants.*.sale_price' => 'nullable|numeric|min:0',
-            'variants.*.stock_quantity' => 'nullable|integer|min:0',
-            'variants.*.attribute_values' => 'required_with:variants|array',
-            'is_featured' => 'nullable|boolean',
-            'is_active' => 'nullable|boolean',
-            'is_new' => 'nullable|boolean',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'primary_image' => 'nullable|integer',
-        ]);
-        
-        // Generate slug
-        $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
-        
-        // Set boolean values
-        $validated['is_featured'] = $request->has('is_featured');
-        $validated['is_active'] = $request->has('is_active');
-        $validated['is_new'] = $request->has('is_new');
-        
-        // Create product
-        $product = Product::create($validated);
-        
-        // Attach categories
-        $product->categories()->attach($request->categories);
-        
-        // Attach eco features
-        if ($request->has('eco_features')) {
-            foreach ($request->eco_features as $featureId => $value) {
-                $product->ecoFeatures()->attach($featureId, ['value' => $value]);
-            }
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'description' => 'required|string',
+        'short_description' => 'nullable|string|max:500',
+        'price' => 'required|numeric|min:0',
+        'sale_price' => 'nullable|numeric|min:0',
+        'sku' => 'required|string|max:100|unique:products',
+        'stock_quantity' => 'required|integer|min:0',
+        'categories' => 'required|array',
+        'categories.*' => 'exists:categories,id',
+        'eco_features' => 'nullable|array',
+        'variants' => 'nullable|array',
+        'variants.*.sku' => 'required_with:variants|string|max:100|distinct',
+        'variants.*.price' => 'nullable|numeric|min:0',
+        'variants.*.sale_price' => 'nullable|numeric|min:0',
+        'variants.*.stock_quantity' => 'nullable|integer|min:0',
+        'variants.*.attributes' => 'nullable|array',
+        'is_featured' => 'nullable|boolean',
+        'is_active' => 'nullable|boolean',
+        'is_new' => 'nullable|boolean',
+        'images' => 'nullable|array',
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        'primary_image' => 'nullable|integer',
+    ]);
+
+    // Генерация slug
+    $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
+
+    // Обработка изображений
+    if ($request->hasFile('images')) {
+        $images = [];
+        foreach ($request->file('images') as $index => $image) {
+            $path = $image->store('products', 'public');
+            $images[] = [
+                'path' => $path,
+                'alt' => $product->name,
+                'is_primary' => $index == $request->primary_image
+            ];
         }
-         // Handle product variants
-         if ($request->has('variants')) {
-            foreach ($request->variants as $variantData) {
-                // Создаем вариант
-                $variant = $product->variants()->create([
-                    'sku' => $variantData['sku'],
-                    'price' => $variantData['price'] ?? $product->price,
-                    'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
-                    'stock_quantity' => $variantData['stock_quantity'] ?? 0,
-                    'is_active' => true,
-                ]);
-                
-                // Привязываем значения атрибутов к варианту
-                if (isset($variantData['attribute_values']) && is_array($variantData['attribute_values'])) {
-                    $variant->attributeValues()->attach($variantData['attribute_values']);
-                }
-            }
-        }
-        
-        // Handle images
-        if ($request->hasFile('images')) {
-            $primaryImageIndex = $request->input('primary_image', 0);
-            
-            foreach ($request->file('images') as $index => $image) {
-                $path = $image->store('products', 'public');
-                
-                $product->images()->create([
-                    'image_path' => $path,
-                    'alt_text' => $product->name,
-                    'is_primary' => $index == $primaryImageIndex,
-                    'sort_order' => $index,
-                ]);
-            }
-        }
-        
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Товар успешно создан.');
+        $product->update(['images' => $images]);
     }
+
+    // Создание продукта
+    $product = Product::create([
+        ...$validated,
+        'is_featured' => $request->has('is_featured'),
+        'is_active' => $request->has('is_active'),
+        'is_new' => $request->has('is_new')
+    ]);
+
+    // Прикрепление категорий
+    $product->categories()->attach($request->categories);
+
+    // Обработка экологических характеристик
+    if ($request->has('eco_features')) {
+        $product->update([
+            'eco_features' => $request->eco_features
+        ]);
+    }
+
+    // Создание вариантов
+    if ($request->has('variants')) {
+        foreach ($request->variants as $variantData) {
+            $product->variants()->create([
+                'sku' => $variantData['sku'],
+                'price' => $variantData['price'] ?? $product->price,
+                'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
+                'stock_quantity' => $variantData['stock_quantity'] ?? 0,
+                'attributes' => $variantData['attributes'] ?? []
+            ]);
+        }
+    }
+
+    return redirect()->route('admin.products.index')
+        ->with('success', 'Товар успешно создан.');
+}
     
     /**
      * Show the form to edit a product.

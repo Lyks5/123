@@ -80,41 +80,19 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Эко-характеристики</p>
+                    @isset($ecoFeaturesCount)
                     <p class="text-2xl font-bold dark:text-white">{{ $ecoFeaturesCount }}</p>
+                    @else
+                    <p class="text-red-500">Данные недоступны</p>
+                    @endisset
                     <a href="{{ route('admin.eco-features.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/20 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-400 mr-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Эко-инициативы</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $initiativesCount }}</p>
-                    <a href="{{ route('admin.initiatives.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
-                </div>
-            </div>
-        </div>
+        
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/20 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-400 mr-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Обращения</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $contactRequestsCount }}</p>
-                    <a href="{{ route('admin.contact-requests.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
-                </div>
-            </div>
-        </div>
+        
     </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">

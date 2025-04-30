@@ -9,21 +9,24 @@ class BlogPost extends Model
 {
     use HasFactory;
 
+    protected $table = 'blog_posts';
+
     protected $fillable = [
         'title',
         'slug',
-        'excerpt',
         'content',
+        'excerpt',
+        'meta_title',
+        'meta_description',
         'featured_image',
         'author_id',
         'status',
         'published_at',
-        'meta_title',
-        'meta_description',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'is_featured' => 'boolean',
     ];
 
     /**
@@ -41,8 +44,6 @@ class BlogPost extends Model
     {
         return $this->belongsToMany(BlogCategory::class, 'blog_post_categories', 'post_id', 'category_id');
     }
-
-   
 
     /**
      * Scope published posts.

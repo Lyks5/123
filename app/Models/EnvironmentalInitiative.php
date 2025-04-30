@@ -24,6 +24,9 @@ class EnvironmentalInitiative extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'goal' => 'decimal:2',
+        'current_progress' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
     /**

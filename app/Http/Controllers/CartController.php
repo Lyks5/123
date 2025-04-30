@@ -12,194 +12,199 @@ use Illuminate\Support\Str;
 class CartController extends Controller
 {
     public function index()
-    {
-        $cart = $this->getCart();
-        $recommendedProducts = $this->getRecommendedProducts(); // Fetch recommended products
-        
-        return view('pages.cart', compact('cart', 'recommendedProducts')); // Pass to view
+{
+    // Получаем корзину из JSON-поля пользователя
+    $cartData = auth()->user()->cart_data ?? [];
+    $recommendedProducts = $this->getRecommendedProducts();
+
+    return view('pages.cart', [
+        'cart' => $this->normalizeCartData($cartData),
+        'recommendedProducts' => $recommendedProducts
+    ]);
+}
+
+public function add(Request $request)
+{
+    $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'variant_id' => 'nullable|exists:variants,id',
+        'quantity' => 'required|integer|min:1',
+    ]);
+
+    $product = Product::findOrFail($request->product_id);
+    $variant = $request->variant_id ? Variant::findOrFail($request->variant_id) : null;
+
+    // Проверка доступности
+    $this->validateAvailability($product, $variant, $request->quantity);
+
+    // Обновляем корзину
+    $user = auth()->user();
+    $cartData = $user->cart_data ?? [];
+    
+    $cartData = $this->updateCartItems(
+        $cartData,
+        $request->product_id,
+        $request->variant_id,
+        $request->quantity
+    );
+
+    // Сохраняем обновлённую корзину
+    $user->update(['cart_data' => $cartData]);
+
+    return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
+}
+
+private function normalizeCartData($cartData)
+{
+    // Преобразуем JSON-данные в коллекцию с моделями
+    return collect($cartData)->map(function($item) {
+        return [
+            'product' => Product::find($item['product_id']),
+            'variant' => $item['variant_id'] ? Variant::find($item['variant_id']) : null,
+            'quantity' => $item['quantity']
+        ];
+    })->filter();
+}
+
+private function validateAvailability($product, $variant, $quantity)
+{
+    if (!$product->is_active) {
+        throw ValidationException::withMessages([
+            'product_id' => 'Этот товар больше не доступен.'
+        ]);
     }
 
-    public function add(Request $request)
-    {
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'variant_id' => 'nullable|exists:variants,id',
-            'quantity' => 'required|integer|min:1',
+    $stock = $variant ? $variant->stock_quantity : $product->stock_quantity;
+    
+    if ($stock < $quantity) {
+        throw ValidationException::withMessages([
+            'quantity' => 'Запрошенное количество недоступно.'
         ]);
+    }
+}
 
-        $product = Product::findOrFail($request->product_id);
-        
-        // Проверяем, что товар активен
-        if (!$product->is_active) {
-            return redirect()->back()->with('error', 'Этот товар больше не доступен.');
+public function update(Request $request)
+{
+    $request->validate([
+        'items' => 'required|array',
+        'items.*.product_id' => 'required|exists:products,id',
+        'items.*.variant_id' => 'nullable|exists:variants,id',
+        'items.*.quantity' => 'required|integer|min:0',
+    ]);
+
+    $user = auth()->user();
+    $cartData = $user->cart_data ?? [];
+    $hasErrors = false;
+
+    foreach ($request->items as $requestItem) {
+        // Находим элемент в корзине
+        $foundIndex = $this->findCartItemIndex(
+            $cartData,
+            $requestItem['product_id'],
+            $requestItem['variant_id']
+        );
+
+        if ($foundIndex === null) continue;
+
+        // Проверяем доступность товара
+        $product = Product::find($requestItem['product_id']);
+        $variant = $requestItem['variant_id'] ? Variant::find($requestItem['variant_id']) : null;
+
+        if (!$this->isItemValid($product, $variant, $requestItem['quantity'])) {
+            $hasErrors = true;
+            continue;
         }
 
-        // Проверяем наличие варианта, если указан
-        if ($request->variant_id) {
-            $variant = Variant::findOrFail($request->variant_id);
-            
-            if (!$variant->is_active) {
-                return redirect()->back()->with('error', 'Этот вариант товара больше не доступен.');
-            }
-            
-            // Проверяем наличие на складе
-            if ($variant->stock_quantity < $request->quantity) {
-                return redirect()->back()->with('error', 'К сожалению, запрошенное количество недоступно.');
-            }
+        // Обновляем или удаляем
+        if ($requestItem['quantity'] == 0) {
+            array_splice($cartData, $foundIndex, 1);
         } else {
-            // Проверяем наличие на складе
-            if ($product->stock_quantity < $request->quantity) {
-                return redirect()->back()->with('error', 'К сожалению, запрошенное количество недоступно.');
-            }
+            $cartData[$foundIndex]['quantity'] = $requestItem['quantity'];
         }
-
-        // Получаем или создаем корзину
-        $cart = $this->getCart();
-
-        // Проверяем, есть ли уже такой товар в корзине
-        $cartItem = $cart->items()
-            ->where('product_id', $request->product_id)
-            ->where('variant_id', $request->variant_id)
-            ->first();
-
-        if ($cartItem) {
-            // Обновляем количество
-            $cartItem->update([
-                'quantity' => $cartItem->quantity + $request->quantity,
-            ]);
-        } else {
-            // Создаем новый элемент корзины
-            $cart->items()->create([
-                'product_id' => $request->product_id,
-                'variant_id' => $request->variant_id,
-                'quantity' => $request->quantity,
-            ]);
-        }
-
-        return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
     }
 
-    public function update(Request $request)
-    {
-        $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:cart_items,id',
-            'items.*.quantity' => 'required|integer|min:0',
-        ]);
+    $user->update(['cart_data' => $cartData]);
 
-        foreach ($request->items as $item) {
-            $cartItem = CartItem::findOrFail($item['id']);
-            
-            // Проверяем, принадлежит ли элемент текущей корзине
-            if ($cartItem->cart_id !== $this->getCart()->id) {
-                continue;
-            }
+    return $hasErrors 
+        ? redirect()->back()->with('error', 'Некоторые товары не были обновлены')
+        : redirect()->back()->with('success', 'Корзина обновлена');
+}
 
-            if ($item['quantity'] == 0) {
-                // Удаляем элемент, если количество 0
-                $cartItem->delete();
-            } else {
-                // Проверяем наличие на складе
-                $product = $cartItem->product;
-                $variant = $cartItem->variant;
-                
-                $stockQuantity = $variant ? $variant->stock_quantity : $product->stock_quantity;
-                
-                if ($stockQuantity < $item['quantity']) {
-                    return redirect()->back()->with('error', "К сожалению, для товара '{$product->name}' доступно только {$stockQuantity} шт.");
-                }
-                
-                // Обновляем количество
-                $cartItem->update([
-                    'quantity' => $item['quantity'],
-                ]);
-            }
-        }
+public function remove(Request $request)
+{
+    $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'variant_id' => 'nullable|exists:variants,id',
+    ]);
 
-        return redirect()->back()->with('success', 'Корзина обновлена.');
+    $user = auth()->user();
+    $cartData = $user->cart_data ?? [];
+    
+    $foundIndex = $this->findCartItemIndex(
+        $cartData,
+        $request->product_id,
+        $request->variant_id
+    );
+
+    if ($foundIndex !== null) {
+        array_splice($cartData, $foundIndex, 1);
+        $user->update(['cart_data' => $cartData]);
     }
 
-    public function remove(Request $request)
-    {
-        $request->validate([
-            'item_id' => 'required|exists:cart_items,id',
-        ]);
-
-        $cartItem = CartItem::findOrFail($request->item_id);
-        
-        // Проверяем, принадлежит ли элемент текущей корзине
-        if ($cartItem->cart_id === $this->getCart()->id) {
-            $cartItem->delete();
-        }
-
-        return redirect()->back()->with('success', 'Товар удален из корзины.');
-    }
+    return redirect()->back()->with('success', 'Товар удален из корзины');
+}
 
     
 
     /**
-     * Получить корзину для текущего пользователя или сессии.
-     */
-    protected function getCart()
-    {
-        if (auth()->check()) {
-            // Для авторизованного пользователя
-            $cart = Cart::firstOrCreate([
-                'user_id' => auth()->id(),
-            ]);
+ * Получить корзину для текущего пользователя или сессии.
+ */
+protected function getCart()
+{
+    // Для авторизованных пользователей
+    if (auth()->check()) {
+        $user = auth()->user();
+        $cartData = $user->cart_data ?? [];
 
-            // Если есть временная корзина, объединяем с пользовательской
-            if (session()->has('cart_id')) {
-                $sessionCart = Cart::where('session_id', session('cart_id'))->first();
+        // Объединение с гостевой корзиной при наличии
+        if (session()->has('guest_cart')) {
+            $guestCart = session('guest_cart', []);
+
+            foreach ($guestCart as $guestItem) {
+                $found = false;
                 
-                if ($sessionCart && $sessionCart->id !== $cart->id) {
-                    // Переносим товары из временной корзины
-                    foreach ($sessionCart->items as $item) {
-                        $existingItem = $cart->items()
-                            ->where('product_id', $item->product_id)
-                            ->where('variant_id', $item->variant_id)
-                            ->first();
-
-                        if ($existingItem) {
-                            $existingItem->update([
-                                'quantity' => $existingItem->quantity + $item->quantity,
-                            ]);
-                        } else {
-                            $cart->items()->create([
-                                'product_id' => $item->product_id,
-                                'variant_id' => $item->variant_id,
-                                'quantity' => $item->quantity,
-                            ]);
-                        }
+                // Ищем совпадения в пользовательской корзине
+                foreach ($cartData as &$userItem) {
+                    if ($userItem['product_id'] == $guestItem['product_id'] 
+                        && $userItem['variant_id'] == $guestItem['variant_id']) {
+                        $userItem['quantity'] += $guestItem['quantity'];
+                        $found = true;
+                        break;
                     }
-
-                    // Удаляем временную корзину
-                    $sessionCart->delete();
-                    session()->forget('cart_id');
+                }
+                
+                // Добавляем новый элемент если не найдено совпадений
+                if (!$found) {
+                    $cartData[] = $guestItem;
                 }
             }
-        } else {
-            // Для гостя
-            $sessionId = session()->get('cart_id');
-            
-            if (!$sessionId) {
-                $sessionId = Str::uuid();
-                session()->put('cart_id', $sessionId);
-            }
-            
-            $cart = Cart::firstOrCreate([
-                'session_id' => $sessionId,
-            ]);
+
+            // Сохраняем обновлённую корзину
+            $user->update(['cart_data' => $cartData]);
+            session()->forget('guest_cart');
         }
 
-        return $cart->load('items.product', 'items.variant');
-    }
-    
+        return $this->normalizeCartData($cartData);
 
+    // Для гостей
+    } else {
+        $guestCart = session('guest_cart', []);
+        return $this->normalizeCartData($guestCart);
+    }
+}
+    
     protected function getRecommendedProducts()
     {
-        // Logic to fetch recommended products
-        // For example, fetching popular products or products from the same categories as those in the cart
         return Product::where('is_active', true)->take(4)->get(); // Example logic
     }
 }

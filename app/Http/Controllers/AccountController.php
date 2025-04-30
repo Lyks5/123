@@ -252,25 +252,78 @@ class AccountController extends Controller
             ->with('success', 'Адрес успешно удален.');
     }
     public function ecoImpact()
-    {
-        $user = Auth::user();
-        $ecoImpact = $user->getTotalEcoImpact();
-        $ecoImpactScore = $user->eco_impact_score;
-        $orders = $user->orders()->count();
+{
+    $user = $this->user();
+    
+    return view('account.eco-impact', [
+        'user' => $user,
+        'ecoImpact' => $user->getTotalEcoImpact(),
+        'ecoImpactScore' => $user->eco_impact_score,
+        'orderCount' => Order::forUser()->count()
+    ]);
+}
+public function wishlists()
+{
+    $user = Auth::user();
+    
+    // Получаем или создаем дефолтный вишлист
+    $defaultWishlist = $this->getDefaultWishlist($user);
+    
+    // Загружаем продукты для элементов вишлиста
+    $wishlistItems = $this->loadWishlistItems($defaultWishlist);
+
+    return view('account.wishlists', [
+        'wishlistItems' => $wishlistItems,
+        'wishlistName' => $defaultWishlist['name'] ?? 'Мой список'
+    ]);
+}
+
+protected function getDefaultWishlist($user)
+{
+    $wishlistData = $user->wishlist_data ?? [];
+    
+    // Ищем дефолтный вишлист
+    $defaultWishlist = collect($wishlistData)->firstWhere('is_default', true);
+
+    // Если нет дефолтного - создаем структуру
+    if (!$defaultWishlist) {
+        $defaultWishlist = [
+            'name' => 'Мой список',
+            'is_default' => true,
+            'items' => [],
+            'created_at' => now()->toDateTimeString()
+        ];
         
-        return view('account.eco-impact', [
-            'user' => $user,
-            'ecoImpact' => $ecoImpact,
-            'ecoImpactScore' => $ecoImpactScore,
-            'orderCount' => $orders
+        $user->update([
+            'wishlist_data' => array_merge($wishlistData, [$defaultWishlist])
         ]);
     }
-    public function wishlists()
-    {
-        $user = Auth::user();
-        $wishlist = Wishlist::getDefaultForUser($user->id);
-        $wishlistItems = $wishlist->items()->with('product')->get();
-        
-        return view('account.wishlists', compact('wishlistItems'));
-    }
+
+    return $defaultWishlist;
+}
+
+protected function loadWishlistItems($wishlist)
+{
+    $productIds = collect($wishlist['items'])->pluck('product_id')->unique();
+
+
+    // Загружаем продукты и варианты
+    $products = Product::with('variants')
+        ->whereIn('id', $productIds)
+        ->get()
+        ->keyBy('id');
+
+   
+    // Формируем итоговую коллекцию
+    return collect($wishlist['items'])->map(function($item) use ($products) {
+        $product = $products[$item['product_id']] ?? null;
+      
+
+        return [
+            'product' => $product,
+         
+            'added_at' => $item['added_at'] ?? null
+        ];
+    })->filter(fn($item) => !is_null($item['product'])); // Фильтруем несуществующие товары
+}
 }
