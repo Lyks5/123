@@ -11,7 +11,7 @@
         <!-- Page header -->
         <div class="mb-10 max-w-3xl mx-auto text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-eco-900 mb-3">Личный кабинет</h1>
-            <p class="text-eco-600 text-lg max-w-2xl mx-auto">Управляйте своим профилем, просматривайте заказы и отслеживайте свой эко-вклад</p>
+            <p class="text-eco-600 text-lg max-w-2xl mx-auto">Управляйте своим профилем и просматривайте заказы</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
