@@ -171,23 +171,74 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.products.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.products.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
+                <div class="relative">
+                <button 
+                    @click="catalogOpen = !catalogOpen" 
+                    class="flex items-center justify-between w-full px-3 py-2 my-1 rounded-md text-sm font-medium {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.attributes.*') || request()->routeIs('admin.eco-features.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}"
+                >
                     <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        <span>Каталог</span>
+                    </div>
+                    <svg 
+                        class="h-5 w-5 transition-transform" 
+                        :class="{'transform rotate-180': catalogOpen}"
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        stroke-width="2" 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                
+                <div x-show="catalogOpen" x-transition class="pl-8 mt-1 space-y-1">
+                    <!-- Products -->
+                    <a href="{{ route('admin.products.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.products.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
                         </svg>
                         <span>Товары</span>
-                    </div>
-                </a>
-                
-                <a href="{{ route('admin.attributes.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.attributes.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </a>
+                    
+                    <!-- Categories -->
+                    <a href="{{ route('admin.categories.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.categories.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Категории</span>
+                    </a>
+                    
+                    <!-- Attributes -->
+                    <a href="{{ route('admin.attributes.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.attributes.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                            <line x1="7" y1="7" x2="7.01" y2="7"></line>
                         </svg>
                         <span>Атрибуты</span>
-                    </div>
-                </a>
+                    </a>
+                    
+                    <!-- Eco Features -->
+                    <a href="{{ route('admin.eco-features.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.eco-features.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        </svg>
+                        <span>Эко-характеристики</span>
+                    </a>
+                </div>
+            </div>
                 
                 <a href="{{ route('admin.categories.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.categories.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
