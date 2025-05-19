@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Контакты - EcoSport')
@@ -9,7 +8,7 @@
         <div class="absolute inset-0 -z-10">
             <div class="absolute inset-0 bg-gradient-to-r from-eco-50/90 to-eco-50/70"></div>
             <img 
-                src="https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+                src="{{ asset('img/contact-hero.jpg') }}" 
                 alt="Связаться с EcoSport" 
                 class="w-full h-full object-cover"
             />
@@ -115,6 +114,13 @@
                         <h2 class="text-2xl font-semibold text-eco-900 mb-6">Отправьте нам сообщение</h2>
                         <form action="{{ route('contact.store') }}" method="POST" class="space-y-6">
                             @csrf
+                            
+                            @if(session('success'))
+                                <div class="bg-green-100 text-green-800 p-4 rounded-lg mb-6">
+                                    {{ session('success') }}
+                                </div>
+                            @endif
+                            
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <label for="name" class="block text-eco-900 mb-2">Имя</label>
@@ -124,7 +130,11 @@
                                         name="name" 
                                         required 
                                         class="w-full rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
+                                        value="{{ old('name') }}"
                                     >
+                                    @error('name')
+                                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
                                 <div>
                                     <label for="email" class="block text-eco-900 mb-2">Email</label>
@@ -134,7 +144,11 @@
                                         name="email" 
                                         required 
                                         class="w-full rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
+                                        value="{{ old('email') }}"
                                     >
+                                    @error('email')
+                                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
                             
@@ -145,7 +159,11 @@
                                     id="phone" 
                                     name="phone" 
                                     class="w-full rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
+                                    value="{{ old('phone') }}"
                                 >
+                                @error('phone')
+                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
                             
                             <div>
@@ -156,13 +174,16 @@
                                     required 
                                     class="w-full rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
                                 >
-                                    <option value="">Выберите тему</option>
-                                    <option value="Вопрос о продукте">Вопрос о продукте</option>
-                                    <option value="Отслеживание заказа">Отслеживание заказа</option>
-                                    <option value="Возврат и обмен">Возврат и обмен</option>
-                                    <option value="Сотрудничество">Сотрудничество</option>
-                                    <option value="Другое">Другое</option>
+                                    <option value="" {{ old('subject') == '' ? 'selected' : '' }}>Выберите тему</option>
+                                    <option value="Вопрос о продукте" {{ old('subject') == 'Вопрос о продукте' ? 'selected' : '' }}>Вопрос о продукте</option>
+                                    <option value="Отслеживание заказа" {{ old('subject') == 'Отслеживание заказа' ? 'selected' : '' }}>Отслеживание заказа</option>
+                                    <option value="Возврат и обмен" {{ old('subject') == 'Возврат и обмен' ? 'selected' : '' }}>Возврат и обмен</option>
+                                    <option value="Сотрудничество" {{ old('subject') == 'Сотрудничество' ? 'selected' : '' }}>Сотрудничество</option>
+                                    <option value="Другое" {{ old('subject') == 'Другое' ? 'selected' : '' }}>Другое</option>
                                 </select>
+                                @error('subject')
+                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
                             
                             <div>
@@ -173,7 +194,10 @@
                                     rows="5" 
                                     required 
                                     class="w-full rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
-                                ></textarea>
+                                >{{ old('message') }}</textarea>
+                                @error('message')
+                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
                             
                             <div>
@@ -198,9 +222,8 @@
                 </p>
             </div>
             <div class="rounded-2xl overflow-hidden shadow-md h-[400px]">
-                <!-- Здесь будет карта, например через iframe Google Maps -->
                 <div class="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span class="text-gray-600">Карта будет здесь</span>
+                    <span class="text-gray-600">Интерактивная карта</span>
                 </div>
             </div>
         </div>
@@ -290,54 +313,6 @@
                     <div x-show="open" x-collapse class="px-6 pb-6 pt-0">
                         <p class="text-eco-700">
                             На странице каждого товара вы найдете таблицу размеров с подробными измерениями. Если у вас остаются сомнения, вы всегда можете обратиться к нашим консультантам, которые помогут вам выбрать подходящий размер.
-                        </p>
-                    </div>
-                </div>
-                
-                <div x-data="{ open: false }" class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <button 
-                        @click="open = !open" 
-                        class="flex justify-between items-center w-full p-6 text-left"
-                    >
-                        <span class="text-lg font-semibold text-eco-900">Как проверить статус моего заказа?</span>
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            :class="{'rotate-180': open}" 
-                            class="h-5 w-5 transform transition-transform duration-200 text-eco-700" 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
-                        >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <div x-show="open" x-collapse class="px-6 pb-6 pt-0">
-                        <p class="text-eco-700">
-                            Вы можете проверить статус вашего заказа в личном кабинете на нашем сайте. Кроме того, мы отправляем уведомления о статусе заказа на email, указанный при оформлении.
-                        </p>
-                    </div>
-                </div>
-                
-                <div x-data="{ open: false }" class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <button 
-                        @click="open = !open" 
-                        class="flex justify-between items-center w-full p-6 text-left"
-                    >
-                        <span class="text-lg font-semibold text-eco-900">Как подтверждается экологичность ваших товаров?</span>
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            :class="{'rotate-180': open}" 
-                            class="h-5 w-5 transform transition-transform duration-200 text-eco-700" 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
-                        >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <div x-show="open" x-collapse class="px-6 pb-6 pt-0">
-                        <p class="text-eco-700">
-                            Все наши товары имеют сертификаты экологической безопасности и соответствуют стандартам устойчивого развития. Для каждого продукта мы указываем его экологические особенности и влияние на окружающую среду.
                         </p>
                     </div>
                 </div>
