@@ -38,7 +38,7 @@
             </div>
           @endif
         </div>
-        @if($product->images->count() > 1)
+        @if($product->images && $product->images->count() > 1)
         <div class="flex space-x-2">
           @foreach($product->images as $img)
           <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-transparent hover:border-eco-400 cursor-pointer transition">

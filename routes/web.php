@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\EcoFeatureController;
 use App\Http\Controllers\Admin\ContactRequestController;
+use App\Http\Controllers\EnvironmentalInitiative;
 
 /*
 |--------------------------------------------------------------------------

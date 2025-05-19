@@ -75,9 +75,21 @@ class Product extends Model
 
     /**
      * Get the primary image for the product.
-   
+     */
+    public function primary_image()
+    {
+        return $this->hasOne(ProductImage::class)->where('is_primary', true);
+    }
 
-    
+    /**
+     * Get all images for the product.
+     */
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
+    }
+
+    /**
      * Check if the product is on sale.
      */
     public function getIsOnSaleAttribute()

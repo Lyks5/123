@@ -17,7 +17,7 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\ContactRequest;
 use App\Models\Review;
-
+use App\Models\EnvironmentalInitiative;
 use App\Models\EcoImpactRecord; 
 // В начале контроллера
 
@@ -529,83 +529,84 @@ public static function sumAll()
      * Store a new product.
      */
     public function storeProduct(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'description' => 'required|string',
-        'short_description' => 'nullable|string|max:500',
-        'price' => 'required|numeric|min:0',
-        'sale_price' => 'nullable|numeric|min:0',
-        'sku' => 'required|string|max:100|unique:products',
-        'stock_quantity' => 'required|integer|min:0',
-        'categories' => 'required|array',
-        'categories.*' => 'exists:categories,id',
-        'eco_features' => 'nullable|array',
-        'variants' => 'nullable|array',
-        'variants.*.sku' => 'required_with:variants|string|max:100|distinct',
-        'variants.*.price' => 'nullable|numeric|min:0',
-        'variants.*.sale_price' => 'nullable|numeric|min:0',
-        'variants.*.stock_quantity' => 'nullable|integer|min:0',
-        'variants.*.attributes' => 'nullable|array',
-        'is_featured' => 'nullable|boolean',
-        'is_active' => 'nullable|boolean',
-        'is_new' => 'nullable|boolean',
-        'images' => 'nullable|array',
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-        'primary_image' => 'nullable|integer',
-    ]);
-
-    // Генерация slug
-    $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
-
-    // Обработка изображений
-    if ($request->hasFile('images')) {
-        $images = [];
-        foreach ($request->file('images') as $index => $image) {
-            $path = $image->store('products', 'public');
-            $images[] = [
-                'path' => $path,
-                'alt' => $product->name,
-                'is_primary' => $index == $request->primary_image
-            ];
-        }
-        $product->update(['images' => $images]);
-    }
-
-    // Создание продукта
-    $product = Product::create([
-        ...$validated,
-        'is_featured' => $request->has('is_featured'),
-        'is_active' => $request->has('is_active'),
-        'is_new' => $request->has('is_new')
-    ]);
-
-    // Прикрепление категорий
-    $product->categories()->attach($request->categories);
-
-    // Обработка экологических характеристик
-    if ($request->has('eco_features')) {
-        $product->update([
-            'eco_features' => $request->eco_features
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'short_description' => 'nullable|string|max:500',
+            'price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'sku' => 'required|string|max:100|unique:products',
+            'stock_quantity' => 'required|integer|min:0',
+            'categories' => 'required|array',
+            'categories.*' => 'exists:categories,id',
+            'eco_features' => 'nullable|array',
+            'variants' => 'nullable|array',
+            'variants.*.sku' => 'required_with:variants|string|max:100|distinct',
+            'variants.*.price' => 'nullable|numeric|min:0',
+            'variants.*.sale_price' => 'nullable|numeric|min:0',
+            'variants.*.stock_quantity' => 'nullable|integer|min:0',
+            'variants.*.attributes' => 'nullable|array',
+            'is_featured' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+            'is_new' => 'nullable|boolean',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'primary_image' => 'nullable|integer',
         ]);
-    }
-
-    // Создание вариантов
-    if ($request->has('variants')) {
-        foreach ($request->variants as $variantData) {
-            $product->variants()->create([
-                'sku' => $variantData['sku'],
-                'price' => $variantData['price'] ?? $product->price,
-                'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
-                'stock_quantity' => $variantData['stock_quantity'] ?? 0,
-                'attributes' => $variantData['attributes'] ?? []
+    
+        // Генерация slug
+        $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
+    
+        // Создание продукта
+        $product = Product::create([
+            ...$validated,
+            'is_featured' => $request->boolean('is_featured'),
+            'is_active' => $request->boolean('is_active'),
+            'is_new' => $request->boolean('is_new'),
+        ]);
+    
+        // Прикрепление категорий
+        $product->categories()->attach($request->categories);
+    
+        // Обработка изображений после создания продукта
+        if ($request->hasFile('images')) {
+            $images = [];
+            foreach ($request->file('images') as $index => $image) {
+                $path = $image->store('products', 'public');
+                $images[] = [
+                    'path' => $path,
+                    'alt' => $product->name,
+                    'is_primary' => $index == $request->primary_image
+                ];
+            }
+            $product->update(['images' => $images]);
+        }
+    
+        // Обработка экологических характеристик
+        if ($request->filled('eco_features')) {
+            $product->update([
+                'eco_features' => $request->eco_features
             ]);
         }
+    
+        // Создание вариантов
+        if ($request->filled('variants')) {
+            foreach ($request->variants as $variantData) {
+                $product->variants()->create([
+                    'sku' => $variantData['sku'],
+                    'price' => $variantData['price'] ?? $product->price,
+                    'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
+                    'stock_quantity' => $variantData['stock_quantity'] ?? 0,
+                    'attributes' => $variantData['attributes'] ?? []
+                ]);
+            }
+        }
+    
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Товар успешно создан.');
     }
-
-    return redirect()->route('admin.products.index')
-        ->with('success', 'Товар успешно создан.');
-}
+    
     
     /**
      * Show the form to edit a product.

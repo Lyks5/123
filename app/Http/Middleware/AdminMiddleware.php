@@ -18,8 +18,7 @@ class AdminMiddleware
     {
         if (Auth::check()) {
             \Log::info('User is authenticated.');
-            if (Auth::user()->is_admin) {
-                \Log::info('User is admin.');
+            if (Auth::user()->is_admin) {                \Log::info('User is admin.');
                 return $next($request);
             } else {
                 \Log::warning('User is not admin.');
