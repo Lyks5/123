@@ -15,6 +15,7 @@ use App\Models\BlogCategory;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Order;
+use Intervention\Image\Facades\Image;
 use App\Models\ContactRequest;
 use App\Models\Review;
 use App\Models\EnvironmentalInitiative;
@@ -528,6 +529,8 @@ public static function sumAll()
     /**
      * Store a new product.
      */
+    
+    
     public function storeProduct(Request $request)
     {
         $validated = $request->validate([
@@ -558,47 +561,68 @@ public static function sumAll()
         // Генерация slug
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
     
-        // Создание продукта
+        // Создаем продукт, передавая только нужные поля
         $product = Product::create([
-            ...$validated,
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'short_description' => $validated['short_description'] ?? null,
+            'price' => $validated['price'],
+            'sale_price' => $validated['sale_price'] ?? null,
+            'sku' => $validated['sku'],
+            'stock_quantity' => $validated['stock_quantity'],
+            'slug' => $validated['slug'],
             'is_featured' => $request->boolean('is_featured'),
             'is_active' => $request->boolean('is_active'),
             'is_new' => $request->boolean('is_new'),
+            'eco_features' => $validated['eco_features'] ?? null,
         ]);
     
-        // Прикрепление категорий
-        $product->categories()->attach($request->categories);
+        // Прикрепляем категории
+        $product->categories()->attach($validated['categories']);
     
-        // Обработка изображений после создания продукта
+        // Обработка и сохранение изображений
         if ($request->hasFile('images')) {
-            $images = [];
-            foreach ($request->file('images') as $index => $image) {
-                $path = $image->store('products', 'public');
-                $images[] = [
-                    'path' => $path,
-                    'alt' => $product->name,
-                    'is_primary' => $index == $request->primary_image
-                ];
-            }
-            $product->update(['images' => $images]);
-        }
+            $imageBlobs = [];
     
-        // Обработка экологических характеристик
-        if ($request->filled('eco_features')) {
-            $product->update([
-                'eco_features' => $request->eco_features
-            ]);
+            foreach ($request->file('images') as $imageFile) {
+                $image = Image::make($imageFile->getRealPath());
+    
+                // Изменяем размер по ширине 1680px с сохранением пропорций
+                $image->resize(1680, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+    
+                // Кодируем в WebP с качеством 80%
+                $imageContent = (string) $image->encode('webp', 80);
+    
+                $imageBlobs[] = $imageContent;
+            }
+    
+            // Сохраняем все изображения в JSON формате в отдельное поле (например, image_blobs)
+            // Для этого в таблице products должно быть поле image_blobs типа TEXT или JSON
+            $product->image_blobs = json_encode($imageBlobs);
+    
+            // Если нужно, сохраняем первичное изображение отдельно (например, первый элемент)
+            if (isset($validated['primary_image']) && isset($imageBlobs[$validated['primary_image']])) {
+                $product->image_blob = $imageBlobs[$validated['primary_image']];
+            } else {
+                // Если primary_image не указан, берем первое изображение
+                $product->image_blob = $imageBlobs[0];
+            }
+    
+            $product->save();
         }
     
         // Создание вариантов
-        if ($request->filled('variants')) {
-            foreach ($request->variants as $variantData) {
+        if (!empty($validated['variants'])) {
+            foreach ($validated['variants'] as $variantData) {
                 $product->variants()->create([
                     'sku' => $variantData['sku'],
                     'price' => $variantData['price'] ?? $product->price,
                     'sale_price' => $variantData['sale_price'] ?? $product->sale_price,
                     'stock_quantity' => $variantData['stock_quantity'] ?? 0,
-                    'attributes' => $variantData['attributes'] ?? []
+                    'attributes' => $variantData['attributes'] ?? [],
                 ]);
             }
         }
@@ -606,6 +630,7 @@ public static function sumAll()
         return redirect()->route('admin.products.index')
             ->with('success', 'Товар успешно создан.');
     }
+    
     
     
     /**
@@ -757,35 +782,14 @@ public static function sumAll()
         }
         
         // Handle image deletion
-        if ($request->has('delete_images')) {
-            $imagesToDelete = $product->images()->whereIn('id', $request->delete_images)->get();
-            
-            foreach ($imagesToDelete as $image) {
-                Storage::disk('public')->delete($image->image_path);
-                $image->delete();
-            }
-        }
+        // No longer applicable since images are stored as BLOB in products table
         
         // Handle new images
         if ($request->hasFile('images')) {
-            $primaryImageIndex = $request->input('primary_image', 0);
-            $currentCount = $product->images()->count();
-            
-            // If setting a new primary image, unset the current one
-            if ($primaryImageIndex !== null) {
-                $product->images()->update(['is_primary' => false]);
-            }
-            
-            foreach ($request->file('images') as $index => $image) {
-                $path = $image->store('products', 'public');
-                
-                $product->images()->create([
-                    'image_path' => $path,
-                    'alt_text' => $product->name,
-                    'is_primary' => $index == $primaryImageIndex,
-                    'sort_order' => $currentCount + $index,
-                ]);
-            }
+            $imageFile = $request->file('images')[0];
+            $imageContent = file_get_contents($imageFile->getRealPath());
+            $product->image_blob = $imageContent;
+            $product->save();
         }
         
         return redirect()->route('admin.products.index')

@@ -16,7 +16,7 @@ public function up()
     Schema::dropIfExists('contact_requests');
     Schema::dropIfExists('environmental_initiatives');
     Schema::dropIfExists('newsletters');
-    Schema::dropIfExists('sessions');
+
     Schema::dropIfExists('wishlists');
     Schema::dropIfExists('wishlist_items');
     Schema::dropIfExists('product_images');
