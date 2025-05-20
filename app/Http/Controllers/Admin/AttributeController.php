@@ -3,47 +3,44 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Attribute;
+use Illuminate\Http\Request;
 
 class AttributeController extends Controller
 {
-
-
-    
     /**
-     * Display a listing of the attributes.
+     * Display the product attributes.
      */
     public function index()
     {
-        $attributes = Attribute::withCount('values')->paginate(15);
+        $attributes = Attribute::paginate(10);
         return view('admin.attributes.index', compact('attributes'));
     }
-    
+
     /**
-     * Show the form for creating a new attribute.
+     * Show the form to create a new attribute.
      */
     public function create()
     {
         return view('admin.attributes.create');
     }
-    
+
     /**
-     * Store a newly created attribute.
+     * Store a new attribute.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:select,radio,checkbox,color',
+            'type' => 'required|in:select,radio,checkbox,color'
         ]);
-        
+
         Attribute::create($validated);
-        
+
         return redirect()->route('admin.attributes.index')
             ->with('success', 'Атрибут успешно создан.');
     }
-    
+
     /**
      * Show the form for editing the specified attribute.
      */
@@ -51,7 +48,7 @@ class AttributeController extends Controller
     {
         return view('admin.attributes.edit', compact('attribute'));
     }
-    
+
     /**
      * Update the specified attribute.
      */
@@ -59,31 +56,69 @@ class AttributeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:select,radio,checkbox,color',
+            'type' => 'required|in:select,radio,checkbox,color'
         ]);
-        
+
         $attribute->update($validated);
-        
+
         return redirect()->route('admin.attributes.index')
             ->with('success', 'Атрибут успешно обновлен.');
     }
-    
+
     /**
      * Remove the specified attribute.
      */
     public function destroy(Attribute $attribute)
     {
-        // Check if attribute is used in any variants
-        $inUse = $attribute->values()->whereHas('variants')->exists();
-        
-        if ($inUse) {
-            return back()->withErrors(['error' => 'Нельзя удалить атрибут, который используется в вариантах товаров.']);
-        }
-        
-        $attribute->values()->delete();
         $attribute->delete();
-        
         return redirect()->route('admin.attributes.index')
             ->with('success', 'Атрибут успешно удален.');
+    }
+
+    /**
+     * Display attribute values.
+     */
+    public function values(Attribute $attribute)
+    {
+        $values = $attribute->values()->paginate(10);
+        return view('admin.attributes.values.index', compact('attribute', 'values'));
+    }
+
+    /**
+     * Show form to create attribute value.
+     */
+    public function createValue(Attribute $attribute)
+    {
+        return view('admin.attributes.values.create', compact('attribute'));
+    }
+
+    /**
+     * Store attribute value.
+     */
+    public function storeValue(Request $request, Attribute $attribute)
+    {
+        $validated = $request->validate([
+            'value' => 'required|string|max:255',
+        ]);
+
+        $attribute->values()->create([
+            'value' => $validated['value'],
+            'type' => $attribute->type,
+        ]);
+
+        return redirect()->route('admin.attributes.values.index', $attribute)
+            ->with('success', 'Значение успешно добавлено.');
+    }
+
+    /**
+     * Delete attribute value.
+     */
+    public function deleteValue(Attribute $attribute, $valueId)
+    {
+        $value = $attribute->values()->findOrFail($valueId);
+        $value->delete();
+
+        return redirect()->route('admin.attributes.values.index', $attribute)
+            ->with('success', 'Значение атрибута успешно удалено.');
     }
 }

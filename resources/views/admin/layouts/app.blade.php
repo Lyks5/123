@@ -162,7 +162,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('admin.analytics') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.analytics') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
+                <a href="{{ route('admin.analytics.index') }}" class="block py-2.5 px-4 rounded transition duration-200 {{ request()->routeIs('admin.analytics.index') ? 'bg-eco-100 dark:bg-eco-900 text-eco-700 dark:text-eco-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300' }}">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -331,7 +331,7 @@
                     <span class="text-xs">Дашборд</span>
                 </a>
                 
-                <a href="{{ route('admin.analytics') }}" class="p-3 text-center {{ request()->routeIs('admin.analytics') ? 'text-eco-700 dark:text-eco-400' : 'text-gray-500 dark:text-gray-400' }}">
+                <a href="{{ route('admin.analytics.index') }}" class="p-3 text-center {{ request()->routeIs('admin.analytics.index') ? 'text-eco-700 dark:text-eco-400' : 'text-gray-500 dark:text-gray-400' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>

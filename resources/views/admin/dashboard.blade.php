@@ -16,7 +16,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Товары</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $productCount }}</p>
+                    <p class="text-2xl font-bold dark:text-white">{{ $stats['products'] }}</p>
                     <a href="{{ route('admin.products.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Заказы</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $orderCount }}</p>
+                    <p class="text-2xl font-bold dark:text-white">{{ $stats['orders'] }}</p>
                     <a href="{{ route('admin.orders.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Пользователи</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $userCount }}</p>
+                    <p class="text-2xl font-bold dark:text-white">{{ $stats['users'] }}</p>
                     <a href="{{ route('admin.users.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Блог</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $postCount }}</p>
+                    <p class="text-2xl font-bold dark:text-white">{{ $stats['posts'] }}</p>
                     <a href="{{ route('admin.blog.posts.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
                 </div>
             </div>

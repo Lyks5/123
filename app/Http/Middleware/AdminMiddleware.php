@@ -9,23 +9,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check()) {
-            \Log::info('User is authenticated.');
-            if (Auth::user()->is_admin) {                \Log::info('User is admin.');
-                return $next($request);
-            } else {
-                \Log::warning('User is not admin.');
-            }
+        // Проверка аутентификации
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Требуется авторизация');
         }
-        
-        \Log::warning('Access denied or user is not authenticated.');
-        return redirect()->route('home')->with('error', 'Доступ запрещен. У вас нет прав администратора для просмотра этой страницы.');
+
+        // Получаем авторизованного пользователя
+        $user = Auth::user();
+
+        // Проверка статуса администратора
+        if ($user->is_admin != 1) {
+            abort(403, 'Доступ запрещен');
+        }
+
+        return $next($request);
     }
 }

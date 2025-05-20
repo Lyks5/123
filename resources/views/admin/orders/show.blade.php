@@ -201,7 +201,7 @@
             <div class="bg-white shadow rounded-lg p-6">
                 <h2 class="text-lg font-semibold mb-4">Действия</h2>
                 
-                <form action="{{ route('admin.orders.update.status', $order->id) }}" method="POST" class="mb-4">
+                <form action="{{ route('admin.orders.update-status', $order->id) }}" method="POST" class="mb-4">
                     @csrf
                     @method('PUT')
                     
@@ -223,10 +223,10 @@
                 </form>
                 
                 <div class="flex space-x-2">
-                    <a href="#" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded text-center">
+                    <a href="{{ route('admin.orders.print-invoice', $order->id) }}" target="_blank" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded text-center">
                         Печать счета
                     </a>
-                    <a href="#" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded text-center">
+                    <a href="{{ route('admin.orders.print-packing-slip', $order->id) }}" target="_blank" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded text-center">
                         Печать накладной
                     </a>
                 </div>

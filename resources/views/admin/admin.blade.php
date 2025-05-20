@@ -180,7 +180,7 @@
                             <div class="sb-nav-link-icon"><i class="bi bi-speedometer2"></i></div>
                             Панель управления
                         </a>
-                        <a class="nav-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}" href="{{ route('admin.analytics') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.analytics.index') ? 'active' : '' }}" href="{{ route('admin.analytics.index') }}">
                             <div class="sb-nav-link-icon"><i class="bi bi-graph-up"></i></div>
                             Аналитика
                         </a>
