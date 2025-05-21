@@ -13,10 +13,7 @@ class CategoryManagementController extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-        $this->middleware(['auth', 'admin']);
-    }
+ 
 
     /**
      * Display a listing of categories

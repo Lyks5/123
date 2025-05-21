@@ -3,10 +3,22 @@
 @section('content')
 <div class="container-fluid px-4">
     <h1 class="mt-4">Аналитика</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Панель управления</a></li>
-        <li class="breadcrumb-item active">Аналитика</li>
-    </ol>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Панель управления</a></li>
+            <li class="breadcrumb-item active">Аналитика</li>
+        </ol>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                Скачать отчет
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ route('admin.analytics.export.csv') }}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV</a></li>
+                <li><a class="dropdown-item" href="{{ route('admin.analytics.export.pdf') }}"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
+                <li><a class="dropdown-item" href="{{ route('admin.analytics.export.json') }}"><i class="bi bi-file-earmark-code me-2"></i>JSON</a></li>
+            </ul>
+        </div>
+    </div>
     
     <div class="row">
         <div class="col-xl-3 col-md-6">

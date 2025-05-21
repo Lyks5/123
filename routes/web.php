@@ -219,6 +219,9 @@ Route::group([], function () {
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/', [AnalyticsController::class, 'index'])->name('index');
             Route::get('/data', [AnalyticsController::class, 'analytics'])->name('data');
+            Route::get('/export/csv', [AnalyticsController::class, 'exportCsv'])->name('export.csv');
+            Route::get('/export/pdf', [AnalyticsController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/json', [AnalyticsController::class, 'exportJson'])->name('export.json');
         });
     });
 });

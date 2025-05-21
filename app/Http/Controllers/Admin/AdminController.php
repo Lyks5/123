@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -30,7 +31,7 @@ use Illuminate\Http\Request;
  * Функционал аналитики перенесен в:
  * @see \App\Http\Controllers\Admin\AnalyticsController
  */
-class AdminController extends \App\Http\Controllers\Controller
+class AdminController extends Controller
 {
     /**
      * Конструктор с middleware авторизации и проверки прав администратора

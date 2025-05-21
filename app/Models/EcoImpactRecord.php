@@ -2,50 +2,41 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EcoImpactRecord extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'user_id',
-        'order_id',
-        'carbon_saved',
+        'product_id',
         'plastic_saved',
+        'carbon_saved',
         'water_saved',
         'type',
-        'description',
+        'description'
     ];
 
     protected $casts = [
-        'carbon_saved' => 'decimal:2',
         'plastic_saved' => 'decimal:2',
-        'water_saved' => 'decimal:2',
+        'carbon_saved' => 'decimal:2',
+        'water_saved' => 'decimal:2'
     ];
 
     /**
-     * Get the user for the record.
+     * Правила валидации
      */
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    public static $rules = [
+        'product_id' => 'required|exists:products,id',
+        'plastic_reduced' => 'required|numeric|min:0',
+        'co2_reduced' => 'required|numeric|min:0',
+        'water_saved' => 'required|numeric|min:0'
+    ];
 
-    public static function sumAll(): array
-    {
-        return [
-            'carbon' => (float) self::sum('carbon_saved'),
-            'plastic' => (float) self::sum('plastic_saved'),
-            'water' => (float) self::sum('water_saved')
-        ];
-    }
     /**
-     * Get the order for the record.
+     * Get the product that owns the eco impact record.
      */
-    public function order()
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Product::class);
     }
 }

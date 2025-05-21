@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\EcoImpactRecord;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\EcoFeature;
@@ -103,6 +104,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            // Существующие правила валидации
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'short_description' => 'nullable|string|max:500',
@@ -125,6 +127,11 @@ class ProductController extends Controller
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'primary_image' => 'nullable|integer',
+            // Добавляем правила для экологических показателей
+            'plastic_saved' => 'nullable|numeric|min:0',
+            'carbon_saved' => 'nullable|numeric|min:0',
+            'water_saved' => 'nullable|numeric|min:0',
+            'eco_description' => 'nullable|string|max:1000',
         ]);
     
         // Генерация slug
@@ -144,6 +151,15 @@ class ProductController extends Controller
             'is_active' => $request->boolean('is_active'),
             'is_new' => $request->boolean('is_new'),
             'eco_features' => $validated['eco_features'] ?? null,
+        ]);
+
+        // Создаем экологический эффект для продукта
+        $product->ecoImpactRecord()->create([
+            'plastic_saved' => $request->input('plastic_saved', 0),
+            'carbon_saved' => $request->input('carbon_saved', 0),
+            'water_saved' => $request->input('water_saved', 0),
+            'type' => 'product',
+            'description' => $request->input('eco_description')
         ]);
     
         // Прикрепляем категории
@@ -250,6 +266,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
+            // Существующие поля валидации
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'short_description' => 'nullable|string|max:500',
@@ -281,6 +298,10 @@ class ProductController extends Controller
             'primary_image' => 'nullable|integer',
             'delete_images' => 'nullable|array',
             'delete_images.*' => 'integer|exists:product_images,id',
+            // Экологические показатели
+            'plastic_reduced' => 'nullable|numeric|min:0',
+            'co2_reduced' => 'nullable|numeric|min:0',
+            'water_saved' => 'nullable|numeric|min:0',
         ]);
         
         // Set boolean values
@@ -289,7 +310,18 @@ class ProductController extends Controller
         $validated['is_new'] = $request->has('is_new');
         
         // Update product
+        // Обновляем основные данные продукта
         $product->update($validated);
+
+        // Обновляем или создаем запись экологического эффекта
+        $product->ecoImpactRecord()->updateOrCreate(
+            ['product_id' => $product->id],
+            [
+                'plastic_reduced' => $request->input('plastic_reduced', 0),
+                'co2_reduced' => $request->input('co2_reduced', 0),
+                'water_saved' => $request->input('water_saved', 0)
+            ]
+        );
         
         // Sync categories
         $product->categories()->sync($request->categories);
