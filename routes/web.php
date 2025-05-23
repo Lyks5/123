@@ -175,8 +175,10 @@ Route::group([], function () {
             Route::prefix('{attribute}/values')->name('values.')->group(function () {
                 Route::get('/', [AttributeController::class, 'values'])->name('index');
                 Route::get('/create', [AttributeController::class, 'createValue'])->name('create');
+                Route::get('/edit/{valueId}', [AttributeController::class, 'editValue'])->name('edit');
                 Route::post('/', [AttributeController::class, 'storeValue'])->name('store');
-                Route::delete('/{value}', [AttributeController::class, 'deleteValue'])->name('delete');
+                Route::put('/{valueId}', [AttributeController::class, 'updateValue'])->name('update');
+                Route::delete('/{valueId}', [AttributeController::class, 'deleteValue'])->name('delete');
             });
         });
         

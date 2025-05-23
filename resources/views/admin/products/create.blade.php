@@ -2,19 +2,64 @@
 
 @section('title', 'Добавление товара')
 
+@section('styles')
+@vite(['resources/css/components/spinner.css'])
+@endsection
+
+@section('scripts')
+<script>
+    window.closePreviewModal = () => {
+        document.getElementById('previewModal').classList.add('hidden');
+    };
+</script>
+@endsection
+
 @section('content')
+    <!-- Прелоадер -->
+    <div id="preloader" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center">
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <div class="loading-state__text dark:text-gray-300">
+                <div class="text-sm font-medium">Загрузка компонентов...</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Пожалуйста, подождите</div>
+            </div>
+        </div>
+    </div>
+
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <!-- Вкладки -->
+        <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button type="button"
+                    class="tab-button border-eco-500 text-eco-600 py-4 px-1 border-b-2 font-medium text-sm"
+                    data-tab="basic">
+                    Основное
+                </button>
+                <button type="button"
+                    class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm"
+                    data-tab="attributes">
+                    Атрибуты
+                </button>
+                <button type="button"
+                    class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 border-b-2 font-medium text-sm"
+                    data-tab="images">
+                    Изображения
+                </button>
+            </nav>
+        </div>
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Добавление товара</h1>
             <p class="text-gray-600 dark:text-gray-300 mt-1">Заполните информацию о новом товаре</p>
         </div>
 
-        <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" onsubmit="return validateForm(event)">
             @csrf
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Название товара</label>
+            <!-- Основная информация -->
+            <div data-section="basic" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="required-field">
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Название товара</label>
                     <input type="text" name="name" id="name" value="{{ old('name') }}" required
                         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
                 </div>
@@ -95,8 +140,9 @@
                 @endforeach
             </div>
             
-            <!-- Attributes Section -->
-            <div class="mb-6 border rounded-lg p-4 dark:border-gray-700">
+            <!-- Атрибуты -->
+            <div data-section="attributes" class="hidden space-y-6">
+                <div class="border rounded-lg p-4 dark:border-gray-700">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Атрибуты и варианты</h3>
                 
                 <div class="mb-4">
@@ -140,30 +186,85 @@
                 </div>
             </div>
             
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Изображения товара</label>
-                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
-                    <div class="space-y-1 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                            <label for="images" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-eco-600 hover:text-eco-500 focus-within:outline-none">
-                                <span>Загрузить изображения</span>
-                                <input id="images" name="images[]" type="file" class="sr-only" multiple accept="image/*">
-                            </label>
-                            <p class="pl-1">или перетащите файлы сюда</p>
+            <!-- Изображения -->
+            <div data-section="images" class="hidden space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Основное изображение</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md relative"
+                         id="main-image-dropzone">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                                <label for="main_image" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-eco-600 hover:text-eco-500 focus-within:outline-none">
+                                    <span>Загрузить основное изображение</span>
+                                    <input id="main_image" name="main_image" type="file" class="sr-only" accept="image/*">
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Рекомендуемый размер: 1200x1200px. PNG, JPG до 2MB</p>
                         </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF до 2MB</p>
+                        <!-- Индикатор загрузки -->
+                        <div id="main-image-progress" class="hidden absolute inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg p-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="spinner"></div>
+                                    <span class="text-sm font-medium">Загрузка...</span>
+                                </div>
+                                <div class="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="main-image-progress-bar" class="bg-eco-600 h-2.5 rounded-full w-0 transition-all"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Предпросмотр основного изображения -->
+                    <div id="main-image-preview" class="hidden mt-4">
+                        <div class="relative inline-block">
+                            <img src="" alt="Предпросмотр" class="max-w-full h-48 object-cover rounded-lg">
+                            <button type="button" onclick="window.imageHandler.removeMainImage()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-2">
-                    <input type="hidden" name="primary_image" id="primary_image" value="">
-                    <div id="preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2"></div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Дополнительные изображения</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md relative"
+                         id="additional-images-dropzone">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                                <label for="additional_images" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-eco-600 hover:text-eco-500 focus-within:outline-none">
+                                    <span>Загрузить дополнительные изображения</span>
+                                    <input id="additional_images" name="additional_images[]" type="file" class="sr-only" multiple accept="image/*">
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">До 5 изображений. PNG, JPG до 2MB каждое</p>
+                        </div>
+                        <!-- Индикатор загрузки -->
+                        <div id="additional-images-progress" class="hidden absolute inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+                            <div class="bg-white dark:bg-gray-700 rounded-lg p-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="spinner"></div>
+                                    <span class="text-sm font-medium">Загрузка...</span>
+                                </div>
+                                <div class="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="additional-images-progress-bar" class="bg-eco-600 h-2.5 rounded-full w-0 transition-all"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Контейнер для предпросмотра дополнительных изображений -->
+                    <div id="additional-images-preview" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
                 </div>
             </div>
             
-            <div class="mb-6">
+            <div data-section="basic" class="space-y-6">
                 <div class="flex items-center">
                     <input id="is_featured" name="is_featured" type="checkbox" value="1" {{ old('is_featured') ? 'checked' : '' }}
                         class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-eco-600 focus:ring-eco-500">
@@ -187,330 +288,78 @@
                 </div>
             </div>
             
-            <div class="flex justify-end">
-                <a href="{{ route('admin.products.index') }}" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-4 rounded mr-2">
-                    Отмена
-                </a>
-                <button type="submit" class="bg-eco-600 hover:bg-eco-700 text-white font-bold py-2 px-4 rounded">
-                    Создать товар
-                </button>
+            <!-- Фиксированная панель действий -->
+            <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 z-40">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <button type="button" id="previewButton"
+                            class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-2 px-4 rounded inline-flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            Предпросмотр
+                        </button>
+                        
+                        <button type="button" id="saveAsDraftButton"
+                            class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-2 px-4 rounded inline-flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                            </svg>
+                            Сохранить черновик
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <span id="autoSaveStatus" class="text-sm text-gray-500 dark:text-gray-400 hidden">
+                            Автосохранение...
+                        </span>
+                        <a href="{{ route('admin.products.index') }}"
+                            class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-4 rounded">
+                            Отмена
+                        </a>
+                        <button type="submit" class="bg-eco-600 hover:bg-eco-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Создать товар
+                        </button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
 
-    <script>
-        // Предпросмотр изображений
-        document.getElementById('images').addEventListener('change', function(event) {
-            const previewContainer = document.getElementById('preview-container');
-            previewContainer.innerHTML = '';
-            
-            Array.from(event.target.files).forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'relative';
-                    
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.className = 'w-full h-32 object-cover rounded';
-                    div.appendChild(img);
-                    
-                    const radioDiv = document.createElement('div');
-                    radioDiv.className = 'absolute bottom-2 right-2 bg-white dark:bg-gray-700 p-1 rounded-full shadow';
-                    
-                    const radioInput = document.createElement('input');
-                    radioInput.type = 'radio';
-                    radioInput.name = 'primary_image_selector';
-                    radioInput.value = index;
-                    radioInput.className = 'h-4 w-4 text-eco-600 focus:ring-eco-500';
-                    radioInput.addEventListener('change', function() {
-                        document.getElementById('primary_image').value = this.value;
-                    });
-                    
-                    if (index === 0) {
-                        radioInput.checked = true;
-                        document.getElementById('primary_image').value = 0;
-                    }
-                    
-                    radioDiv.appendChild(radioInput);
-                    div.appendChild(radioDiv);
-                    
-                    previewContainer.appendChild(div);
-                }
-                reader.readAsDataURL(file);
-            });
-        });
+    <!-- Модальное окно предпросмотра -->
+    <div id="previewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="absolute inset-10 bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium">Предпросмотр товара</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closePreviewModal()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto p-4">
+                <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div id="preview-gallery" class="splide">
+                            <div class="splide__track">
+                                <ul class="splide__list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <h2 id="preview-name" class="text-2xl font-bold"></h2>
+                        <div id="preview-price" class="text-xl font-medium text-eco-600"></div>
+                        <div id="preview-description" class="text-gray-600 dark:text-gray-300"></div>
+                        <div id="preview-attributes" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // Атрибуты и варианты товара
-        document.addEventListener('DOMContentLoaded', function() {
-            const attributeCheckboxes = document.querySelectorAll('.attribute-checkbox');
-            const selectedAttributesContainer = document.getElementById('selected-attributes');
-            const variantsContainer = document.getElementById('variants-container');
-            const variantsTableBody = document.getElementById('variants-table-body');
-            
-            // Структура для хранения выбранных атрибутов и их значений
-            let selectedAttributes = [];
-            
-            // Обработка выбора/отмены атрибутов
-            attributeCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const attributeId = this.value;
-                    const attributeName = this.dataset.attributeName;
-                    
-                    if (this.checked) {
-                        // Добавляем атрибут в массив выбранных
-                        selectedAttributes.push({
-                            id: attributeId,
-                            name: attributeName,
-                            values: []
-                        });
-                        
-                        // Создаем UI для выбора значений атрибута
-                        fetchAttributeValues(attributeId, attributeName);
-                    } else {
-                        // Удаляем атрибут из выбранных
-                        selectedAttributes = selectedAttributes.filter(attr => attr.id !== attributeId);
-                        
-                        // Удаляем соответствующий UI элемент
-                        const attributeElement = document.getElementById(`attribute-values-${attributeId}`);
-                        if (attributeElement) {
-                            attributeElement.remove();
-                        }
-                        
-                        // Обновляем варианты
-                        updateVariants();
-                    }
-                });
-            });
-            
-            // Получение значений атрибута с сервера
-            function fetchAttributeValues(attributeId, attributeName) {
-                // Запрос к API для получения значений атрибута
-                fetch(`/admin/attributes/${attributeId}/values/list`)
-                    .then(response => response.json())
-                    .then(data => {
-                        createAttributeValuesUI(attributeId, attributeName, data);
-                    })
-                    .catch(error => {
-                        console.error('Ошибка при загрузке значений атрибута:', error);
-                    });
-            }
-            
-            // Создание UI для выбора значений атрибута
-            function createAttributeValuesUI(attributeId, attributeName, values) {
-                const attributeDiv = document.createElement('div');
-                attributeDiv.id = `attribute-values-${attributeId}`;
-                attributeDiv.className = 'p-4 border rounded-md dark:border-gray-700';
-                
-                const attributeHeader = document.createElement('h4');
-                attributeHeader.className = 'font-medium text-gray-700 dark:text-gray-300 mb-2';
-                attributeHeader.textContent = attributeName;
-                
-                const valuesContainer = document.createElement('div');
-                valuesContainer.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3';
-                
-                values.forEach(value => {
-                    const valueLabel = document.createElement('label');
-                    valueLabel.className = 'inline-flex items-center';
-                    
-                    const valueCheckbox = document.createElement('input');
-                    valueCheckbox.type = 'checkbox';
-                    valueCheckbox.name = `attribute_values[${attributeId}][]`;
-                    valueCheckbox.value = value.id;
-                    valueCheckbox.className = 'rounded border-gray-300 dark:border-gray-600 text-eco-600 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50';
-                    
-                    valueCheckbox.addEventListener('change', function() {
-                        // Находим атрибут в массиве выбранных
-                        const attribute = selectedAttributes.find(attr => attr.id === attributeId);
-                        
-                        if (this.checked) {
-                            // Добавляем значение в массив
-                            attribute.values.push({
-                                id: value.id,
-                                value: value.value
-                            });
-                        } else {
-                            // Удаляем значение из массива
-                            attribute.values = attribute.values.filter(val => val.id !== value.id);
-                        }
-                        
-                        // Обновляем варианты
-                        updateVariants();
-                    });
-                    
-                    const valueText = document.createElement('span');
-                    valueText.className = 'ml-2 text-gray-700 dark:text-gray-300';
-                    valueText.textContent = value.value;
-                    
-                    valueLabel.appendChild(valueCheckbox);
-                    valueLabel.appendChild(valueText);
-                    valuesContainer.appendChild(valueLabel);
-                });
-                
-                attributeDiv.appendChild(attributeHeader);
-                attributeDiv.appendChild(valuesContainer);
-                
-                selectedAttributesContainer.appendChild(attributeDiv);
-            }
-            
-            // Генерация комбинаций вариантов товара
-            function generateVariantCombinations(attributes, index = 0, current = {}) {
-                // Базовый случай: достигли конца массива атрибутов
-                if (index === attributes.length) {
-                    return [current];
-                }
-                
-                // Если у атрибута нет выбранных значений, пропускаем его
-                if (attributes[index].values.length === 0) {
-                    return generateVariantCombinations(attributes, index + 1, current);
-                }
-                
-                let result = [];
-                
-                // Для каждого значения текущего атрибута создаем комбинацию
-                attributes[index].values.forEach(value => {
-                    // Копируем текущую комбинацию
-                    let newCombination = {...current};
-                    
-                    // Добавляем текущее значение атрибута
-                    newCombination[attributes[index].name] = value.value;
-                    newCombination[`attribute_${attributes[index].id}`] = value.id;
-                    
-                    // Рекурсивно генерируем комбинации для следующих атрибутов
-                    let combinations = generateVariantCombinations(attributes, index + 1, newCombination);
-                    result = result.concat(combinations);
-                });
-                
-                return result;
-            }
-            
-            // Обновление таблицы вариантов
-            function updateVariants() {
-                // Фильтруем атрибуты, чтобы использовать только те, у которых есть выбранные значения
-                const attributesWithValues = selectedAttributes.filter(attr => attr.values.length > 0);
-                
-                // Если нет атрибутов с выбранными значениями, скрываем таблицу вариантов
-                if (attributesWithValues.length === 0) {
-                    variantsContainer.classList.add('hidden');
-                    return;
-                }
-                
-                // Генерируем все возможные комбинации
-                const combinations = generateVariantCombinations(attributesWithValues);
-                
-                // Очищаем таблицу
-                variantsTableBody.innerHTML = '';
-                
-                // Заполняем таблицу вариантами
-                combinations.forEach((combination, index) => {
-                    const row = document.createElement('tr');
-                    row.className = index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700';
-                    
-                    // Ячейка с комбинацией атрибутов
-                    const combinationCell = document.createElement('td');
-                    combinationCell.className = 'px-4 py-2 text-sm text-gray-700 dark:text-gray-300';
-                    
-                    let combinationText = [];
-                    attributesWithValues.forEach(attr => {
-                        if (combination[attr.name]) {
-                            combinationText.push(`${attr.name}: ${combination[attr.name]}`);
-                            
-                            // Добавляем скрытые поля для отправки данных на сервер
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = `variants[${index}][attribute_values][]`;
-                            hiddenInput.value = combination[`attribute_${attr.id}`];
-                            row.appendChild(hiddenInput);
-                        }
-                    });
-                    
-                    combinationCell.textContent = combinationText.join(', ');
-                    row.appendChild(combinationCell);
-                    
-                    // Ячейка для SKU
-                    const skuCell = document.createElement('td');
-                    skuCell.className = 'px-4 py-2';
-                    
-                    const skuInput = document.createElement('input');
-                    skuInput.type = 'text';
-                    skuInput.name = `variants[${index}][sku]`;
-                    skuInput.required = true;
-                    skuInput.className = 'w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50';
-                    
-                    // Генерируем уникальный SKU на основе основного SKU и комбинации
-                    const baseSku = document.getElementById('sku').value || 'SKU';
-                    let variantSku = baseSku + '-';
-                    attributesWithValues.forEach(attr => {
-                        if (combination[attr.name]) {
-                            variantSku += combination[attr.name].substring(0, 3);
-                        }
-                    });
-                    skuInput.value = variantSku;
-                    
-                    skuCell.appendChild(skuInput);
-                    row.appendChild(skuCell);
-                    
-                    // Ячейка для цены
-                    const priceCell = document.createElement('td');
-                    priceCell.className = 'px-4 py-2';
-                    
-                    const priceInput = document.createElement('input');
-                    priceInput.type = 'number';
-                    priceInput.name = `variants[${index}][price]`;
-                    priceInput.min = '0';
-                    priceInput.step = '0.01';
-                    priceInput.value = document.getElementById('price').value || '';
-                    priceInput.className = 'w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50';
-                    
-                    priceCell.appendChild(priceInput);
-                    row.appendChild(priceCell);
-                    
-                    // Ячейка для цены со скидкой
-                    const salePriceCell = document.createElement('td');
-                    salePriceCell.className = 'px-4 py-2';
-                    
-                    const salePriceInput = document.createElement('input');
-                    salePriceInput.type = 'number';
-                    salePriceInput.name = `variants[${index}][sale_price]`;
-                    salePriceInput.min = '0';
-                    salePriceInput.step = '0.01';
-                    salePriceInput.value = document.getElementById('sale_price').value || '';
-                    salePriceInput.className = 'w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50';
-                    
-                    salePriceCell.appendChild(salePriceInput);
-                    row.appendChild(salePriceCell);
-                    
-                    // Ячейка для количества
-                    const stockCell = document.createElement('td');
-                    stockCell.className = 'px-4 py-2';
-                    
-                    const stockInput = document.createElement('input');
-                    stockInput.type = 'number';
-                    stockInput.name = `variants[${index}][stock_quantity]`;
-                    stockInput.min = '0';
-                    stockInput.value = document.getElementById('stock_quantity').value || '0';
-                    stockInput.className = 'w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50';
-                    
-                    stockCell.appendChild(stockInput);
-                    row.appendChild(stockCell);
-                    
-                    // Добавляем строку в таблицу
-                    variantsTableBody.appendChild(row);
-                });
-                
-                // Показываем таблицу вариантов
-                variantsContainer.classList.remove('hidden');
-            }
-            
-            // Обновляем варианты при изменении значений полей SKU, цены и количества
-            ['sku', 'price', 'sale_price', 'stock_quantity'].forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                field.addEventListener('input', () => {
-                    if (variantsTableBody.innerHTML !== '') {
-                        updateVariants();
-                    }
-                });
-            });
-        });
-    </script>
 @endsection
+           

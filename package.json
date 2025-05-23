@@ -16,6 +16,8 @@
         "vite": "^5.0"
     },
     "dependencies": {
-        "alpinejs": "^3.14.8"
+        "@splidejs/splide": "^4.1.4",
+        "alpinejs": "^3.14.8",
+        "sortablejs": "^1.15.6"
     }
 }

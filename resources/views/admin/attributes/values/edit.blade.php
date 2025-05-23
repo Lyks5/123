@@ -1,117 +1,128 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Редактировать значение для атрибута ' . $attribute->name)
+@section('title', 'Редактировать значение атрибута')
 
 @section('content')
-<div class="p-6 space-y-6">
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Редактировать значение для "{{ $attribute->name }}"</h2>
-        <a href="{{ route('admin.attributes.values.index', $attribute->id) }}" class="btn-secondary-admin">
-            Назад к значениям
-        </a>
-    </div>
-
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-                Редактирование значения
-            </h3>
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Заголовок и навигация -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        Редактировать значение атрибута "{{ $attribute->name }}"
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Измените значение атрибута и его параметры
+                    </p>
+                </div>
+                <a href="{{ route('admin.attributes.values.index', $attribute) }}"
+                   class="btn-secondary-admin transition-transform duration-200 ease-in-out transform hover:scale-105">
+                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                    </svg>
+                    Назад к списку
+                </a>
+            </div>
         </div>
-        <div class="p-6">
-            <form action="{{ route('admin.attributes.values.update', [$attribute->id, $value->id]) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="grid grid-cols-1 gap-6 max-w-md">
-                    <div>
-                        <label for="value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Значение</label>
-                        @if($attribute->type == 'color')
-                            <div class="flex items-center gap-4 mb-2">
-                                <div class="flex-shrink-0 relative">
-                                    <input type="color" name="color_picker" id="color_picker" class="h-16 w-16 rounded-lg border border-gray-300 dark:border-gray-700 cursor-pointer" value="{{ old('value', $value->value) }}">
-                                    <div class="absolute inset-0 rounded-lg shadow-sm pointer-events-none"></div>
-                                </div>
-                                <div class="flex-grow">
-                                    <input type="text" name="value" id="value" class="form-input-admin w-full @error('value') border-red-500 @enderror" value="{{ old('value', $value->value) }}" placeholder="#HEX код цвета" required>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">HEX-код цвета (например, #3498db)</p>
-                                </div>
-                            </div>
-                        @else
-                            <input type="text" name="value" id="value" class="form-input-admin w-full @error('value') border-red-500 @enderror" value="{{ old('value', $value->value) }}" required>
-                        @endif
-                        @error('value')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
 
-                    <div class="pt-4 flex items-center justify-between">
-                        <div>
-                            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
-                                Сохранить изменения
-                            </button>
-                            <a href="{{ route('admin.attributes.values.index', $attribute->id) }}" class="ml-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors">
-                                Отмена
-                            </a>
+        <!-- Основная карточка -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+            <div class="p-8">
+                <form action="{{ route('admin.attributes.values.update', ['attribute' => $attribute->id, 'valueId' => $value->id]) }}"
+                      method="POST"
+                      class="space-y-8">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Значение -->
+                        <div class="input-group">
+                            <label for="value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Значение
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text"
+                                   name="value"
+                                   id="value"
+                                   class="form-input-admin @error('value') border-red-500 @enderror"
+                                   value="{{ old('value', $value->value) }}"
+                                   required>
+                            @error('value')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
-                        
-                        @if($value->variants_count == 0)
-                        <form action="{{ route('admin.attributes.values.destroy', [$attribute->id, $value->id]) }}" method="POST" class="inline-block">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors" onclick="return confirm('Уверены, что хотите удалить это значение?')">
-                                Удалить значение
-                            </button>
-                        </form>
+
+                        <!-- Порядок отображения -->
+                        <div class="input-group">
+                            <label for="display_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Порядок отображения
+                            </label>
+                            <input type="number"
+                                   name="display_order"
+                                   id="display_order"
+                                   class="form-input-admin @error('display_order') border-red-500 @enderror"
+                                   value="{{ old('display_order', $value->display_order) }}"
+                                   min="0">
+                            @error('display_order')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        @if($attribute->type === 'color')
+                        <!-- Цвет -->
+                        <div class="input-group">
+                            <label for="hex_color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Цвет (HEX)
+                            </label>
+                            <div class="flex items-center space-x-2">
+                                <input type="color"
+                                       name="hex_color"
+                                       id="hex_color"
+                                       class="form-color-input @error('hex_color') border-red-500 @enderror"
+                                       value="{{ old('hex_color', $value->hex_color) }}">
+                                <input type="text"
+                                       id="hex_color_text"
+                                       class="form-input-admin"
+                                       value="{{ old('hex_color', $value->hex_color) }}"
+                                       readonly>
+                            </div>
+                            @error('hex_color')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
                         @endif
                     </div>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    @if($value->variants_count > 0)
-    <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800 p-4">
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200">Значение используется</h3>
-                <div class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                    Это значение используется в {{ $value->variants_count }} {{ trans_choice('вариантах|варианте|вариантах', $value->variants_count) }} товаров. Удаление невозможно.
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-</div>
-@endsection
 
-@if($attribute->type == 'color')
+                    <!-- Кнопки формы -->
+                    <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <button type="button"
+                                onclick="window.location.href='{{ route('admin.attributes.values.index', $attribute) }}'"
+                                class="btn-secondary-admin">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn-primary-admin">
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
-    const colorPicker = document.getElementById('color_picker');
-    const valueInput = document.getElementById('value');
-    
-    // Синхронизация цвета и текстового поля
-    colorPicker.addEventListener('input', function() {
-        valueInput.value = this.value;
-    });
-    
-    valueInput.addEventListener('input', function() {
-        // Проверяем, что введено корректное значение HEX цвета
-        const validHex = /^#([0-9A-F]{3}){1,2}$/i;
-        if (validHex.test(this.value)) {
-            colorPicker.value = this.value;
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorInput = document.getElementById('hex_color');
+        const textInput = document.getElementById('hex_color_text');
+
+        if (colorInput && textInput) {
+            colorInput.addEventListener('input', function(e) {
+                textInput.value = e.target.value.toUpperCase();
+            });
         }
     });
 </script>
 @endpush
-@endif
+@endsection

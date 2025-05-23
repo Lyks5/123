@@ -1,0 +1,113 @@
+/* Основные стили формы */
+.input-group {
+    position: relative;
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    transition: color 0.3s ease;
+    font-weight: 500;
+}
+
+.input-group:focus-within label {
+    color: #4F46E5;
+}
+
+/* Стили для инпутов */
+.form-input-admin {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    background-color: #FFFFFF;
+    font-size: 0.95rem;
+}
+
+.form-input-admin:hover {
+    border-color: #D1D5DB;
+}
+
+.form-input-admin:focus {
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+/* Стили для подсказок */
+.help-text {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-top: 0.5rem;
+    line-height: 1.25;
+}
+
+/* Предпросмотр типа атрибута */
+.type-preview {
+    margin-top: 1rem;
+    padding: 1.25rem;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    background-color: #F9FAFB;
+    transition: all 0.3s ease;
+}
+
+.type-preview:hover {
+    border-color: #D1D5DB;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Анимация для уведомлений */
+@keyframes slideIn {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Спиннер загрузки */
+.spinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 50%;
+    border-top-color: #4F46E5;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Состояние отключенной формы */
+.form-disabled {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Улучшенные стили для кнопок */
+.btn-primary-admin,
+.btn-secondary-admin {
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.btn-primary-admin:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+}
+
+.btn-secondary-admin:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}

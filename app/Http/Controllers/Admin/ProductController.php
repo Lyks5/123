@@ -10,12 +10,19 @@ use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\EcoFeature;
 use Illuminate\Http\Request;
+use App\Http\Requests\Admin\ProductRequest;
+use App\Services\ProductImageService;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 
 class ProductController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(ProductImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     /**
      * Show the product management page.
      */
@@ -92,52 +99,33 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $categories = Category::all();
-        $ecoFeatures = EcoFeature::all();
-        $attributes = Attribute::all();
+        // Кэширование часто используемых данных
+        $categories = cache()->remember('categories', 3600, function() {
+            return Category::all();
+        });
+        
+        $ecoFeatures = cache()->remember('eco_features', 3600, function() {
+            return EcoFeature::all();
+        });
+        
+        $attributes = cache()->remember('attributes', 3600, function() {
+            return Attribute::with('values')->get();
+        });
+
         return view('admin.products.create', compact('categories', 'ecoFeatures', 'attributes'));
     }
     
     /**
      * Store a new product.
      */
-    public function store(Request $request)
+    public function store(ProductRequest $request)
     {
-        $validated = $request->validate([
-            // Существующие правила валидации
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'short_description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'sku' => 'required|string|max:100|unique:products',
-            'stock_quantity' => 'required|integer|min:0',
-            'categories' => 'required|array',
-            'categories.*' => 'exists:categories,id',
-            'eco_features' => 'nullable|array',
-            'variants' => 'nullable|array',
-            'variants.*.sku' => 'required_with:variants|string|max:100|distinct',
-            'variants.*.price' => 'nullable|numeric|min:0',
-            'variants.*.sale_price' => 'nullable|numeric|min:0',
-            'variants.*.stock_quantity' => 'nullable|integer|min:0',
-            'variants.*.attributes' => 'nullable|array',
-            'is_featured' => 'nullable|boolean',
-            'is_active' => 'nullable|boolean',
-            'is_new' => 'nullable|boolean',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'primary_image' => 'nullable|integer',
-            // Добавляем правила для экологических показателей
-            'plastic_saved' => 'nullable|numeric|min:0',
-            'carbon_saved' => 'nullable|numeric|min:0',
-            'water_saved' => 'nullable|numeric|min:0',
-            'eco_description' => 'nullable|string|max:1000',
-        ]);
+        $validated = $request->validated();
     
         // Генерация slug
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
     
-        // Создаем продукт, передавая только нужные поля
+        // Создаем продукт
         $product = Product::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
@@ -165,36 +153,16 @@ class ProductController extends Controller
         // Прикрепляем категории
         $product->categories()->attach($validated['categories']);
     
-        // Обработка и сохранение изображений
-        if ($request->hasFile('images')) {
-            $imageBlobs = [];
-    
-            foreach ($request->file('images') as $imageFile) {
-                $image = Image::make($imageFile->getRealPath());
-    
-                // Изменяем размер по ширине 1680px с сохранением пропорций
-                $image->resize(1680, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-    
-                // Кодируем в WebP с качеством 80%
-                $imageContent = (string) $image->encode('webp', 80);
-    
-                $imageBlobs[] = $imageContent;
-            }
-    
-            // Сохраняем все изображения в JSON формате в отдельное поле
-            $product->image_blobs = json_encode($imageBlobs);
-    
-            // Если нужно, сохраняем первичное изображение отдельно
-            if (isset($validated['primary_image']) && isset($imageBlobs[$validated['primary_image']])) {
-                $product->image_blob = $imageBlobs[$validated['primary_image']];
-            } else {
-                // Если primary_image не указан, берем первое изображение
-                $product->image_blob = $imageBlobs[0];
-            }
-    
+        // Обработка основного изображения
+        if ($request->hasFile('main_image')) {
+            $mainImagePaths = $this->imageService->saveMainImage($request->file('main_image'));
+            $product->update($mainImagePaths);
+        }
+
+        // Обработка дополнительных изображений
+        if ($request->hasFile('additional_images')) {
+            $additionalImages = $this->imageService->saveAdditionalImages($request->file('additional_images'));
+            $product->additional_images = json_encode($additionalImages);
             $product->save();
         }
     
@@ -233,12 +201,10 @@ class ProductController extends Controller
             foreach ($variant->attributeValues as $value) {
                 $attributeId = $value->attribute_id;
                 
-                // Store used attributes
                 if (!in_array($attributeId, $productAttributes)) {
                     $productAttributes[] = $attributeId;
                 }
                 
-                // Store values for each attribute
                 if (!isset($productAttributeValues[$attributeId])) {
                     $productAttributeValues[$attributeId] = [];
                 }
@@ -263,46 +229,9 @@ class ProductController extends Controller
     /**
      * Update a product.
      */
-    public function update(Request $request, Product $product)
+    public function update(ProductRequest $request, Product $product)
     {
-        $validated = $request->validate([
-            // Существующие поля валидации
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'short_description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'sku' => 'required|string|max:100|unique:products,sku,' . $product->id,
-            'stock_quantity' => 'required|integer|min:0',
-            'categories' => 'required|array',
-            'categories.*' => 'exists:categories,id',
-            'eco_features' => 'nullable|array',
-            'eco_features.*' => 'exists:eco_features,id',
-            'product_attributes' => 'nullable|array',
-            'product_attributes.*' => 'exists:attributes,id',
-            'attribute_values' => 'nullable|array',
-            'variants' => 'nullable|array',
-            'variants.*.id' => 'nullable|exists:variants,id',
-            'variants.*.sku' => 'required_with:variants|string|max:100',
-            'variants.*.price' => 'nullable|numeric|min:0',
-            'variants.*.sale_price' => 'nullable|numeric|min:0',
-            'variants.*.stock_quantity' => 'nullable|integer|min:0',
-            'variants.*.attribute_values' => 'required_with:variants|array',
-            'delete_variants' => 'nullable|array',
-            'delete_variants.*' => 'exists:variants,id',
-            'is_featured' => 'nullable|boolean',
-            'is_active' => 'nullable|boolean',
-            'is_new' => 'nullable|boolean',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'primary_image' => 'nullable|integer',
-            'delete_images' => 'nullable|array',
-            'delete_images.*' => 'integer|exists:product_images,id',
-            // Экологические показатели
-            'plastic_reduced' => 'nullable|numeric|min:0',
-            'co2_reduced' => 'nullable|numeric|min:0',
-            'water_saved' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
         
         // Set boolean values
         $validated['is_featured'] = $request->has('is_featured');
@@ -310,7 +239,6 @@ class ProductController extends Controller
         $validated['is_new'] = $request->has('is_new');
         
         // Update product
-        // Обновляем основные данные продукта
         $product->update($validated);
 
         // Обновляем или создаем запись экологического эффекта
@@ -334,12 +262,33 @@ class ProductController extends Controller
             }
         }
         
-        // Handle variants delete
-        if ($request->has('delete_variants')) {
-            $product->variants()->whereIn('id', $request->delete_variants)->delete();
+        // Обработка основного изображения
+        if ($request->hasFile('main_image')) {
+            // Удаляем старое основное изображение если есть
+            if ($product->main_image) {
+                $this->imageService->deleteImage($product->main_image);
+            }
+            
+            $mainImagePaths = $this->imageService->saveMainImage($request->file('main_image'));
+            $product->update($mainImagePaths);
+        }
+
+        // Обработка дополнительных изображений
+        if ($request->hasFile('additional_images')) {
+            // Удаляем старые дополнительные изображения если есть
+            if ($product->additional_images) {
+                $oldImages = json_decode($product->additional_images, true);
+                foreach ($oldImages as $image) {
+                    $this->imageService->deleteImage($image['original']);
+                }
+            }
+            
+            $additionalImages = $this->imageService->saveAdditionalImages($request->file('additional_images'));
+            $product->additional_images = json_encode($additionalImages);
+            $product->save();
         }
         
-        // Handle product variants
+        // Handle variants
         if ($request->has('variants')) {
             foreach ($request->variants as $variantData) {
                 if (isset($variantData['id'])) {
@@ -352,7 +301,6 @@ class ProductController extends Controller
                         'stock_quantity' => $variantData['stock_quantity'] ?? 0,
                     ]);
                     
-                    // Sync attribute values
                     if (isset($variantData['attribute_values']) && is_array($variantData['attribute_values'])) {
                         $variant->attributeValues()->sync($variantData['attribute_values']);
                     }
@@ -366,20 +314,11 @@ class ProductController extends Controller
                         'is_active' => true,
                     ]);
                     
-                    // Attach attribute values
                     if (isset($variantData['attribute_values']) && is_array($variantData['attribute_values'])) {
                         $variant->attributeValues()->attach($variantData['attribute_values']);
                     }
                 }
             }
-        }
-        
-        // Handle new images
-        if ($request->hasFile('images')) {
-            $imageFile = $request->file('images')[0];
-            $imageContent = file_get_contents($imageFile->getRealPath());
-            $product->image_blob = $imageContent;
-            $product->save();
         }
         
         return redirect()->route('admin.products.index')
@@ -391,9 +330,16 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // Delete associated images from storage
-        foreach ($product->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
+        // Удаляем все изображения продукта
+        if ($product->main_image) {
+            $this->imageService->deleteImage($product->main_image);
+        }
+        
+        if ($product->additional_images) {
+            $additionalImages = json_decode($product->additional_images, true);
+            foreach ($additionalImages as $image) {
+                $this->imageService->deleteImage($image['original']);
+            }
         }
         
         $product->delete();
@@ -407,7 +353,37 @@ class ProductController extends Controller
      */
     public function getAttributeValues($attributeId)
     {
-        $values = AttributeValue::where('attribute_id', $attributeId)->get();
+        $values = cache()->remember("attribute_values_{$attributeId}", 3600, function() use ($attributeId) {
+            return AttributeValue::where('attribute_id', $attributeId)->get();
+        });
         return response()->json($values);
+    }
+
+    /**
+     * Дублировать существующий продукт.
+     */
+    public function duplicate(Product $product)
+    {
+        $newProduct = $product->replicate();
+        $newProduct->name = $product->name . ' (Копия)';
+        $newProduct->sku = $product->sku . '-copy-' . Str::random(5);
+        $newProduct->slug = Str::slug($newProduct->name) . '-' . Str::random(5);
+        $newProduct->save();
+
+        // Копируем связи
+        $newProduct->categories()->attach($product->categories->pluck('id'));
+        $newProduct->ecoFeatures()->attach($product->ecoFeatures->pluck('id'));
+
+        // Копируем варианты
+        foreach ($product->variants as $variant) {
+            $newVariant = $variant->replicate();
+            $newVariant->product_id = $newProduct->id;
+            $newVariant->sku = $variant->sku . '-copy';
+            $newVariant->save();
+            $newVariant->attributeValues()->attach($variant->attributeValues->pluck('id'));
+        }
+
+        return redirect()->route('admin.products.edit', $newProduct)
+            ->with('success', 'Товар успешно скопирован');
     }
 }

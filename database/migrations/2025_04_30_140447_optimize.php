@@ -30,11 +30,6 @@ public function up()
         $table->foreign('category_id')->references('id')->on('blog_categories');
     });
 
-    // Упрощение attributes
-    Schema::table('attributes', function (Blueprint $table) {
-        $table->dropColumn('type');
-    });
-
     // Объединение variant_attributes
     Schema::table('variants', function (Blueprint $table) {
         $table->json('attributes')->nullable()->after('stock_quantity'); // JSON: {attribute_id: value}
@@ -48,11 +43,7 @@ public function up()
     
     
 
-    // Интеграция изображений в products
-    Schema::table('products', function (Blueprint $table) {
-        $table->json('images')->nullable()->after('is_new'); 
-        // Формат: [{path: '...', alt: '...', is_primary: true}]
-    });
+
     Schema::table('users', function (Blueprint $table) {
         $table->json('wishlist_data')
               ->nullable()
@@ -90,9 +81,9 @@ public function down()
         $table->dropColumn('category_id');
     });
 
-    // Восстановление столбца type в attributes
+    // Удаление столбца type из attributes
     Schema::table('attributes', function (Blueprint $table) {
-        $table->string('type')->after('name');
+        $table->dropColumn('type');
     });
 
     // Удаление JSON-полей

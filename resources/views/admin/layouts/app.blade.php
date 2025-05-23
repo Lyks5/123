@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') - Админ-панель ЭкоМаркет</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+    @vite(['resources/js/app.js'])
+    <script defer>
         // Проверяем сохраненную тему
         if (localStorage.getItem('darkMode') === 'true') {
             document.documentElement.classList.add('dark');
@@ -172,8 +175,9 @@
                 </a>
                 
                 <div class="relative">
-                <button 
-                    @click="catalogOpen = !catalogOpen" 
+                <button
+                    x-data
+                    @click="$store.navigation.catalogOpen = !$store.navigation.catalogOpen"
                     class="flex items-center justify-between w-full px-3 py-2 my-1 rounded-md text-sm font-medium {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.attributes.*') || request()->routeIs('admin.eco-features.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}"
                 >
                     <div class="flex items-center">
@@ -185,8 +189,8 @@
                         <span>Каталог</span>
                     </div>
                     <svg 
-                        class="h-5 w-5 transition-transform" 
-                        :class="{'transform rotate-180': catalogOpen}"
+                        class="h-5 w-5 transition-transform"
+                        :class="{'transform rotate-180': $store.navigation.catalogOpen}"
                         xmlns="http://www.w3.org/2000/svg" 
                         viewBox="0 0 24 24" 
                         fill="none" 
@@ -199,7 +203,7 @@
                     </svg>
                 </button>
                 
-                <div x-show="catalogOpen" x-transition class="pl-8 mt-1 space-y-1">
+                <div x-show="$store.navigation.catalogOpen" x-transition class="pl-8 mt-1 space-y-1">
                     <!-- Products -->
                     <a href="{{ route('admin.products.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.products.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

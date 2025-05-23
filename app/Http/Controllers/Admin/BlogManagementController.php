@@ -17,10 +17,7 @@ class BlogManagementController extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-        $this->middleware(['auth', 'admin']);
-    }
+   
 
     /**
      * Display a listing of blog posts
