@@ -1,4 +1,4 @@
-import './bootstrap';
+
 
 // Стили
 import '../css/app.css';
@@ -26,16 +26,93 @@ Alpine.store('navigation', {
     catalogOpen: false
 });
 
+// Хранилище для управления вариантами
+Alpine.store('variants', {
+    loading: false,
+    hasSelectedAttributes: false,
+    hasVariants: false,
+    loadingAttributes: false,
+    selectedCount: 0,
+
+    setLoading(value) {
+        this.loading = value;
+    },
+
+    setLoadingAttributes(value) {
+        this.loadingAttributes = value;
+    },
+
+    setHasSelectedAttributes(value) {
+        this.hasSelectedAttributes = value;
+    },
+
+    setHasVariants(value) {
+        this.hasVariants = value;
+    },
+
+    setSelectedCount(value) {
+        this.selectedCount = value;
+    }
+});
+
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('alpine:init', async () => {
+    console.log('Alpine.js инициализирован, настройка store...');
+
+    // Инициализируем store до Alpine.start
+    // Инициализируем Alpine store
+    Alpine.store('variants', {
+        hasSelectedAttributes: false,
+        hasVariants: false,
+        loadingAttributes: false,
+        selectedCount: 0,
+
+        setLoadingAttributes(value) {
+            this.loadingAttributes = value;
+            console.log('LoadingAttributes установлен в:', value);
+        },
+
+        setHasSelectedAttributes(value) {
+            this.hasSelectedAttributes = value;
+            console.log('HasSelectedAttributes установлен в:', value);
+        },
+
+        setHasVariants(value) {
+            this.hasVariants = value;
+            console.log('HasVariants установлен в:', value);
+        }
+    });
+
+    console.log('Alpine store инициализирован:', Alpine.store('variants'));
+
+    // Инициализируем уведомления
+    initNotifications();
+    console.log('Уведомления инициализированы');
+
+    // Alpine компоненты
+    Alpine.data('productForm', () => ({
+        loading: true,
+        init() {
+            this.loading = false;
+            console.log('Alpine компонент productForm инициализирован');
+        }
+    }));
+
     // Инициализация формы атрибутов
     if (document.querySelector('#attribute-form')) {
-        initAttributeForm();
+        await initAttributeForm();
+        console.log('Форма атрибутов инициализирована');
     }
-    
+
     // Инициализация страницы продукта
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM загружен, начало инициализации компонентов...');
+
     if (document.querySelector('form[action*="products"]')) {
-        console.log('Инициализация страницы продукта');
+        console.log('Найдена форма продукта, начинаем инициализацию...');
+        console.log('Текущее состояние Alpine store:', Alpine.store('variants'));
         document.body.classList.add('loading');
 
         try {
@@ -44,9 +121,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.variantsManager = new VariantsManager();
             window.bulkEditManager = new BulkEditManager();
 
+            // Инициализируем компоненты последовательно
+            console.log('Инициализация ProductForm...');
             await window.productForm.initialize();
-            
-            console.log('Инициализация завершена успешно');
+
+            console.log('Инициализация ImageHandler...');
+            await window.imageHandler.initialize();
+
+            console.log('Инициализация VariantsManager...');
+            console.log('Состояние Alpine.store variants перед инициализацией VariantsManager:',
+                Alpine.store('variants'));
+            await window.variantsManager.initialize();
+            console.log('Состояние Alpine.store variants после инициализации VariantsManager:',
+                Alpine.store('variants'));
+
+            console.log('Инициализация BulkEditManager...');
+            await window.bulkEditManager.initialize();
+
+            document.body.classList.remove('loading');
+            console.log('Инициализация страницы продукта завершена успешно');
         } catch (error) {
             console.error('Ошибка при инициализации:', error);
             const preloader = document.getElementById('preloader');
@@ -63,23 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
-});
-
-// Глобальные компоненты
-Alpine.data('productForm', () => ({
-    loading: true,
-    init() {
-        this.loading = false;
-        console.log('Alpine компонент productForm инициализирован');
-    }
-}));
-
-// Инициализация при загрузке DOM
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM загружен, инициализация приложения...');
-    Alpine.start();
-    initNotifications();
-    console.log('Alpine.js и уведомления инициализированы');
 });
 
 // Экспорты для использования в других модулях

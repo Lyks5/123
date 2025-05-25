@@ -5,7 +5,12 @@ import { resolve } from 'path';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/js/app.js'],
+            input: [
+                'resources/js/app.js',
+                'resources/css/app.css',
+                'resources/css/admin/products/form.css',
+                'resources/js/admin/products/form-handler.js'
+            ],
             refresh: true,
         }),
     ],

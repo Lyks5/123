@@ -27,7 +27,9 @@ class ProductForm {
                 console.log('Инициализация ImageHandler...');
                 await window.imageHandler.initialize();
             }
-            
+
+            // Инициализируем вкладки
+            this.initializeTabs();
             if (window.variantsManager) {
                 console.log('Инициализация VariantsManager...');
                 await window.variantsManager.initialize();
@@ -73,6 +75,7 @@ class ProductForm {
             // Затем настраиваем обработчики событий и валидацию
             this.setupEventListeners();
             this.setupValidation();
+            this.setupFormButtons();
 
             // В конце настраиваем автосохранение
             this.initializeAutosave();
@@ -87,9 +90,9 @@ class ProductForm {
     setupValidation() {
         const form = document.querySelector('form');
         if (!form) return;
-        
-        // Определяем validateForm напрямую здесь
-        form.addEventListener('submit', (event) => {
+
+        window.validateForm = (event) => {
+            event.preventDefault();
             const form = event.target;
             let isValid = true;
             const errors = [];
@@ -101,6 +104,10 @@ class ProductForm {
                 'price': 'Цена',
                 'description': 'Описание'
             };
+
+            // Удаляем предыдущие сообщения об ошибках
+            const prevErrors = form.querySelectorAll('.error-message');
+            prevErrors.forEach(error => error.remove());
 
             for (const [field, label] of Object.entries(requiredFields)) {
                 const input = form.querySelector(`[name="${field}"]`);
@@ -123,11 +130,10 @@ class ProductForm {
                 form.querySelector('[name="sale_price"]').classList.add('border-red-500');
             }
 
-            // Если есть ошибки, отменяем отправку формы и показываем сообщения
+            // Если есть ошибки, показываем сообщения
             if (!isValid) {
-                event.preventDefault();
                 const errorContainer = document.createElement('div');
-                errorContainer.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+                errorContainer.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 error-message';
                 errorContainer.innerHTML = `
                     <p class="font-bold">Пожалуйста, исправьте следующие ошибки:</p>
                     <ul class="list-disc list-inside">
@@ -140,39 +146,101 @@ class ProductForm {
 
                 // Удаляем сообщение об ошибках через 5 секунд
                 setTimeout(() => errorContainer.remove(), 5000);
+                return false;
             }
-        });
+
+            // Добавляем индикатор загрузки
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalContent = submitButton.innerHTML;
+            submitButton.innerHTML = `
+                <div class="spinner mr-2"></div>
+                Сохранение...
+            `;
+            submitButton.disabled = true;
+
+            // Отправляем форму
+            form.submit();
+            return true;
+        };
     }
 
-    // Инициализация вкладок
     initializeTabs() {
-        const tabs = document.querySelectorAll('.tab-button');
+        if (window.imageHandler) {
+            window.imageHandler.initialize();
+        }
+    }
+
+    handleTabClick(clickedTab) {
+        if (!clickedTab || !clickedTab.dataset.tab) {
+            return;
+        }
+        
+        const targetTab = clickedTab.dataset.tab;
+
+        // Обновляем URL
+        const url = new URL(window.location);
+        url.searchParams.set('tab', targetTab);
+        window.history.pushState({}, '', url);
+
+        // Диспатчим событие для Alpine.js
+        window.dispatchEvent(new CustomEvent('tab-change', {
+            detail: { tab: targetTab }
+        }));
+
+        // Инициализируем imageHandler при необходимости
+        if (targetTab === 'images' && window.imageHandler) {
+            setTimeout(() => window.imageHandler.initialize(), 100);
+        }
+
+        // Получаем все секции
         const sections = document.querySelectorAll('[data-section]');
-        
-        // Показываем первую вкладку по умолчанию
-        document.querySelector('[data-section="basic"]').classList.remove('hidden');
-        
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const target = tab.dataset.tab;
-                
-                // Переключаем активную вкладку
-                tabs.forEach(t => {
-                    t.classList.remove('border-eco-500', 'text-eco-600');
-                    t.classList.add('border-transparent', 'text-gray-500');
+        sections.forEach(section => {
+            const shouldShow = section.dataset.section === targetTab;
+            
+            if (targetTab === 'attributes') {
+                console.log('Обработка секции атрибутов');
+                console.log('Состояние до изменения:', {
+                    shouldShow,
+                    classList: section.className,
+                    isHidden: section.classList.contains('hidden'),
+                    computedDisplay: window.getComputedStyle(section).display,
+                    alpineStore: Alpine.store('variants')
                 });
-                tab.classList.remove('border-transparent', 'text-gray-500');
-                tab.classList.add('border-eco-500', 'text-eco-600');
+
+                // Принудительно обновляем видимость через CSS
+                section.style.display = shouldShow ? 'block' : 'none';
                 
-                // Показываем соответствующий контент
-                sections.forEach(section => {
-                    if (section.dataset.section === target) {
-                        section.classList.remove('hidden');
-                    } else {
-                        section.classList.add('hidden');
-                    }
+                // Обновляем классы
+                section.classList.toggle('hidden', !shouldShow);
+                section.setAttribute('aria-hidden', !shouldShow);
+                
+                // Отправляем событие изменения видимости
+                section.dispatchEvent(new CustomEvent('section-visibility-changed', {
+                    detail: {
+                        section: 'attributes',
+                        visible: shouldShow,
+                        className: section.className,
+                        computedStyle: window.getComputedStyle(section).display
+                    },
+                    bubbles: true
+                }));
+
+                console.log('Состояние после изменения:', {
+                    classList: section.className,
+                    isHidden: section.classList.contains('hidden'),
+                    computedDisplay: window.getComputedStyle(section).display,
+                    style: section.style.display
                 });
-            });
+            } else {
+                // Для остальных секций стандартное поведение
+                section.classList.toggle('hidden', !shouldShow);
+                section.setAttribute('aria-hidden', !shouldShow);
+            }
+            
+            if (shouldShow) {
+                console.log('Отображаем секцию:', targetTab);
+                section.dispatchEvent(new CustomEvent('sectionShown'));
+            }
         });
     }
 
@@ -321,6 +389,22 @@ class ProductForm {
                 });
             }
         });
+    }
+
+    setupFormButtons() {
+        const saveAndContinueButton = document.getElementById('saveAndContinueButton');
+        if (saveAndContinueButton) {
+            saveAndContinueButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const form = document.querySelector('form');
+                const formData = new FormData(form);
+                formData.append('continue_editing', '1');
+                
+                if (window.validateForm(e)) {
+                    form.submit();
+                }
+            });
+        }
     }
 
     removePreloader() {

@@ -8,7 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
-    @vite(['resources/js/app.js'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
     <script defer>
         // Проверяем сохраненную тему
         if (localStorage.getItem('darkMode') === 'true') {
@@ -377,7 +379,13 @@
         
         <!-- Основной контент -->
         <main class="flex-1 bg-gray-100 dark:bg-gray-900">
+            @section('before-content')
+            @show
+            
             <div class="py-6 md:py-12 px-4 md:px-8">
+                @section('header-content')
+                @show
+
                 @if(session('success'))
                     <div class="bg-green-100 dark:bg-green-900 border-l-4 border-green-500 text-green-700 dark:text-green-300 p-4 mb-6" role="alert">
                         <p>{{ session('success') }}</p>
@@ -401,7 +409,12 @@
                     </div>
                 @endif
                 
-                @yield('content')
+                @hasSection('content')
+                    @yield('content')
+                @endif
+
+                @section('footer-content')
+                @show
             </div>
         </main>
     </div>
@@ -421,6 +434,12 @@
         // Обработчики событий для кнопок переключения темы
         document.getElementById('theme-toggle').addEventListener('click', toggleDarkMode);
         document.getElementById('mobile-theme-toggle').addEventListener('click', toggleDarkMode);
+    </script>
+    @stack('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            console.log('Alpine.js initialized');
+        });
     </script>
 </body>
 </html>

@@ -99,18 +99,14 @@ class ProductController extends Controller
      */
     public function create()
     {
-        // Кэширование часто используемых данных
-        $categories = cache()->remember('categories', 3600, function() {
-            return Category::all();
-        });
+        // Получаем все необходимые данные напрямую из базы данных
+        $categories = Category::active()->get();
+        $ecoFeatures = EcoFeature::all();
+        $attributes = Attribute::with('values')->get();
         
-        $ecoFeatures = cache()->remember('eco_features', 3600, function() {
-            return EcoFeature::all();
-        });
-        
-        $attributes = cache()->remember('attributes', 3600, function() {
-            return Attribute::with('values')->get();
-        });
+        // Используем dd() для отладки
+        \Log::info('Categories count: ' . $categories->count());
+        \Log::info('Attributes count: ' . $attributes->count());
 
         return view('admin.products.create', compact('categories', 'ecoFeatures', 'attributes'));
     }
@@ -179,6 +175,11 @@ class ProductController extends Controller
             }
         }
     
+        if ($request->has('continue_editing')) {
+            return redirect()->route('admin.products.edit', $product)
+                ->with('success', 'Товар успешно создан. Продолжайте редактирование.');
+        }
+        
         return redirect()->route('admin.products.index')
             ->with('success', 'Товар успешно создан.');
     }
