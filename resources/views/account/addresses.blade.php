@@ -213,7 +213,103 @@
                     </div>
                 </div>
                 
-                <!-- Modals for adding/editing addresses would go here -->
+                <!-- Edit Address Modal -->
+                <div id="edit-address-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                    <div class="bg-white rounded-lg max-w-lg w-full mx-4 max-h-90vh overflow-y-auto">
+                        <div class="p-6 border-b border-eco-100 flex justify-between items-center">
+                            <h3 class="text-lg font-medium text-eco-900">Редактировать адрес</h3>
+                            <button type="button" class="text-eco-500 hover:text-eco-700" onclick="document.getElementById('edit-address-modal').classList.add('hidden')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <form id="edit-address-form" method="POST" class="p-6">
+                            @csrf
+                            @method('PUT')
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="edit_first_name" class="block text-sm font-medium text-eco-700 mb-1">Имя</label>
+                                        <input type="text" name="first_name" id="edit_first_name" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    </div>
+                                    <div>
+                                        <label for="edit_last_name" class="block text-sm font-medium text-eco-700 mb-1">Фамилия</label>
+                                        <input type="text" name="last_name" id="edit_last_name" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="edit_address_line1" class="block text-sm font-medium text-eco-700 mb-1">Адрес</label>
+                                    <input type="text" name="address_line1" id="edit_address_line1" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                </div>
+                                
+                                <div>
+                                    <label for="edit_address_line2" class="block text-sm font-medium text-eco-700 mb-1">Дополнительная информация (кв./офис)</label>
+                                    <input type="text" name="address_line2" id="edit_address_line2" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500">
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="edit_city" class="block text-sm font-medium text-eco-700 mb-1">Город</label>
+                                        <input type="text" name="city" id="edit_city" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    </div>
+                                    <div>
+                                        <label for="edit_state" class="block text-sm font-medium text-eco-700 mb-1">Область/Регион</label>
+                                        <input type="text" name="state" id="edit_state" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="edit_postal_code" class="block text-sm font-medium text-eco-700 mb-1">Почтовый индекс</label>
+                                        <input type="text" name="postal_code" id="edit_postal_code" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    </div>
+                                    <div>
+                                        <label for="edit_country" class="block text-sm font-medium text-eco-700 mb-1">Страна</label>
+                                        <input type="text" name="country" id="edit_country" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="edit_phone" class="block text-sm font-medium text-eco-700 mb-1">Телефон</label>
+                                    <input type="text" name="phone" id="edit_phone" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-eco-700 mb-1">Тип адреса</label>
+                                    <div class="flex gap-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="type" value="shipping" class="h-4 w-4 text-eco-600 focus:ring-eco-500 border-eco-300">
+                                            <span class="ml-2 text-eco-700">Для доставки</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="type" value="billing" class="h-4 w-4 text-eco-600 focus:ring-eco-500 border-eco-300">
+                                            <span class="ml-2 text-eco-700">Для счетов</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="is_default" value="1" class="h-4 w-4 text-eco-600 focus:ring-eco-500 border-eco-300">
+                                        <span class="ml-2 text-eco-700">Установить как адрес по умолчанию</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button type="button" class="px-4 py-2 border border-eco-200 text-eco-700 rounded-lg hover:bg-eco-50 transition-colors" onclick="document.getElementById('edit-address-modal').classList.add('hidden')">
+                                    Отмена
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-eco-600 text-white rounded-lg hover:bg-eco-700 transition-colors">
+                                    Сохранить изменения
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
                 <!-- Add Address Modal -->
                 <div id="add-address-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
                     <div class="bg-white rounded-lg max-w-lg w-full mx-4 max-h-90vh overflow-y-auto">

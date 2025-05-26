@@ -18,20 +18,12 @@ return new class extends Migration
             $table->string('icon')->nullable();
             $table->timestamps();
         });
-        // Промежуточная таблица для эко-особенностей
-        Schema::create('eco_feature_product', function (Blueprint $table) {
-            $table->foreignId('eco_feature_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('value')->nullable();
-            $table->timestamps();
-            // Составной первичный ключ
-            $table->primary(['eco_feature_id', 'product_id']);
-        });
     }
 
     
     public function down(): void
     {
+        Schema::dropIfExists('eco_feature_product');
         Schema::dropIfExists('eco_features');
     }
 };

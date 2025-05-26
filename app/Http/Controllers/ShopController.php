@@ -14,7 +14,7 @@ class ShopController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['categories', 'ecoFeatures', 'images'])
-            ->where('is_active', true);
+            ->where('status', 'published');
         
 
 
@@ -73,8 +73,8 @@ class ShopController extends Controller
     
             // Получаем мин и макс цены для фильтра
             $priceRange = [
-                'min' => Product::where('is_active', true)->min('price'),
-                'max' => Product::where('is_active', true)->max('price')
+                'min' => Product::where('status', 'published')->min('price'),
+                'max' => Product::where('status', 'published')->max('price')
             ];
     
             return view('pages.shop', compact(
@@ -90,7 +90,7 @@ class ShopController extends Controller
             $products = Product::whereHas('categories', function ($query) use ($category) {
                     $query->where('categories.id', $category->id);
                 })
-                ->where('is_active', true)
+                ->where('status', 'published')
                 ->paginate(12);
     
             return view('pages.category', compact('category', 'products'));

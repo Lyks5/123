@@ -2,26 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ProductImage extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'product_id',
-        'image_path',
-        'alt_text',
-        'is_primary',
-        'sort_order',
+        'url',
+        'original_name',
+        'mime_type',
+        'size'
     ];
 
-    /**
-     * Get the product that owns the image.
-     */
-    public function product()
+    public function products(): BelongsToMany
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsToMany(Product::class, 'product_image_pivot')
+            ->withPivot('order');
     }
 }

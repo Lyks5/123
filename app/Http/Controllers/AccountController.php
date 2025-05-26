@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Wishlist;
@@ -118,7 +119,24 @@ class AccountController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date',
+            'gender' => 'nullable|string|in:male,female,other',
+            'bio' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'preferences' => 'nullable|array',
+            'preferences.*' => 'string|in:eco_friendly,vegan,organic,local'
         ]);
+
+        // Обработка загрузки аватара
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        // Обработка preferences
+        $validated['preferences'] = json_encode($request->input('preferences', []));
         
         $user->update($validated);
         
@@ -133,7 +151,18 @@ class AccountController extends Controller
     {
         $validated = $request->validate([
             'current_password' => 'required|current_password',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/[A-Z]/',      // Минимум 1 заглавная буква
+                'regex:/[a-z]/',      // Минимум 1 строчная буква
+                'regex:/[0-9]/',      // Минимум 1 цифра
+                'regex:/[^A-Za-z0-9]/' // Минимум 1 спецсимвол
+            ]
+        ], [
+            'password.regex' => 'Пароль должен содержать минимум 1 заглавную букву, 1 строчную букву, 1 цифру и 1 спецсимвол'
         ]);
         
         Auth::user()->update([
@@ -190,7 +219,15 @@ class AccountController extends Controller
                 ->update(['is_default' => false]);
         }
         
-        Address::create($validated);
+        $address = Address::create($validated);
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Адрес успешно добавлен',
+                'data' => $address->load('user'),
+            ], 201);
+        }
         
         return redirect()->route('account.addresses')
             ->with('success', 'Адрес успешно добавлен.');

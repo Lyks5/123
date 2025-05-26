@@ -120,6 +120,14 @@ Route::group([], function () {
             Route::get('/{product}/edit', [AdminProductController::class, 'edit'])->name('edit');
             Route::put('/{product}', [AdminProductController::class, 'update'])->name('update');
             Route::delete('/{product}', [AdminProductController::class, 'destroy'])->name('delete');
+            
+            // Работа с черновиками
+            Route::post('/{product}/draft', [AdminProductController::class, 'saveDraft'])->name('draft');
+            
+            // Работа с изображениями
+            Route::post('/images/upload', [AdminProductController::class, 'uploadImage'])->name('images.upload');
+            Route::post('/{product}/images/reorder', [AdminProductController::class, 'reorderImages'])->name('images.reorder');
+            Route::delete('/{product}/images/{image}', [AdminProductController::class, 'deleteImage'])->name('images.delete');
         });
         
         // Категории товаров

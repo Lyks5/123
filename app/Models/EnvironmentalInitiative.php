@@ -18,7 +18,7 @@ class EnvironmentalInitiative extends Model
         'current_progress',
         'start_date',
         'end_date',
-        'is_active',
+        'status',
     ];
 
     protected $casts = [
@@ -26,7 +26,7 @@ class EnvironmentalInitiative extends Model
         'end_date' => 'date',
         'goal' => 'decimal:2',
         'current_progress' => 'decimal:2',
-        'is_active' => 'boolean',
+        'status' => 'string',
     ];
 
     /**
@@ -46,6 +46,6 @@ class EnvironmentalInitiative extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'active');
     }
 }

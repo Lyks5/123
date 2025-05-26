@@ -68,7 +68,7 @@ private function normalizeCartData($cartData)
 
 private function validateAvailability($product, $variant, $quantity)
 {
-    if (!$product->is_active) {
+    if ($product->status !== 'published') {
         throw ValidationException::withMessages([
             'product_id' => 'Этот товар больше не доступен.'
         ]);
@@ -205,6 +205,6 @@ protected function getCart()
     
     protected function getRecommendedProducts()
     {
-        return Product::where('is_active', true)->take(4)->get(); // Example logic
+        return Product::where('status', 'published')->take(4)->get(); // Example logic
     }
 }

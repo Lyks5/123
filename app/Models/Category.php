@@ -2,63 +2,40 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Category extends Model
 {
-    use HasFactory;
+    use HasSlug;
 
     protected $fillable = [
-        'parent_id',
         'name',
         'slug',
         'description',
-        'image',
-        'is_active',
+        'parent_id',
+        'is_active'
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
 
-    /**
-     * Get the parent category.
-     */
-    public function parent()
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    /**
-     * Get the subcategories.
-     */
-    public function children()
+    public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id');
-    }
-
-    /**
-     * Get the products for the category.
-     */
-    public function products()
-    {
-        return $this->belongsToMany(Product::class);
-    }
-
-    /**
-     * Get active categories.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Get only parent categories.
-     */
-    public function scopeParents($query)
-    {
-        return $query->whereNull('parent_id');
     }
 }

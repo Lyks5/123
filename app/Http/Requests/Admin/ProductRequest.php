@@ -7,62 +7,69 @@ use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
-        $productId = $this->route('product');
-        
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'image' => [
+                'sometimes',
+                'image',
+                'mimes:jpeg,png,webp',
+                'max:' . config('images.products.max_size'),
+            ],
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'description' => ['required', 'string', 'min:10'],
             'sku' => [
                 'required',
                 'string',
+                'min:4',
                 'max:50',
-                Rule::unique('products', 'sku')->ignore($productId)
+                Rule::unique('products')->ignore($this->route('product')),
             ],
-            'description' => ['required', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
-            'quantity' => ['required', 'integer', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0.01'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
+            'is_featured' => ['boolean'],
             
-            // Валидация изображений
-            'images.*' => [
-                'image',
-                'mimes:jpeg,png,jpg',
-                'max:2048', // 2MB максимум
-                'dimensions:min_width=600,min_height=600'
-            ],
+            'attributes' => ['sometimes', 'array'],
+            'attributes.*.attribute_id' => ['required', 'integer', 'exists:attributes,id'],
+            'attributes.*.value' => ['required', 'string', 'max:255'],
             
-            // Валидация вариантов
-            'variants' => ['sometimes', 'array'],
-            'variants.*.price' => ['required_with:variants', 'numeric', 'min:0'],
-            'variants.*.sale_price' => ['nullable', 'numeric', 'min:0', 'lt:variants.*.price'],
-            'variants.*.quantity' => ['required_with:variants', 'integer', 'min:0'],
-            'variants.*.attribute_values' => ['required_with:variants', 'array'],
-            'variants.*.attribute_values.*' => ['required', 'integer', 'exists:attribute_values,id'],
+            'images' => ['sometimes', 'array'],
+            'images.*.id' => ['required', 'integer', 'exists:product_images,id'],
+            'images.*.order' => ['required', 'integer', 'min:0'],
         ];
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
-            'name.required' => 'Название продукта обязательно',
-            'sku.required' => 'SKU продукта обязателен',
-            'sku.unique' => 'Такой SKU уже существует',
-            'price.required' => 'Цена продукта обязательна',
-            'price.numeric' => 'Цена должна быть числом',
-            'price.min' => 'Цена не может быть отрицательной',
-            'images.*.image' => 'Файл должен быть изображением',
-            'images.*.mimes' => 'Допустимые форматы: jpeg, png, jpg',
-            'images.*.max' => 'Размер изображения не должен превышать 2MB',
-            'images.*.dimensions' => 'Минимальный размер изображения 600x600 пикселей',
-            'variants.*.price.required_with' => 'Цена варианта обязательна',
-            'variants.*.quantity.required_with' => 'Количество варианта обязательно',
-            'variants.*.attribute_values.required_with' => 'Атрибуты варианта обязательны',
+            'image.image' => 'Файл должен быть изображением',
+            'image.mimes' => 'Допустимые форматы изображений: jpeg, png, webp',
+            'image.max' => 'Размер изображения не должен превышать :max КБ',
+            'name.required' => 'Название товара обязательно для заполнения',
+            'name.min' => 'Название товара должно содержать минимум :min символа',
+            'description.required' => 'Описание товара обязательно для заполнения',
+            'description.min' => 'Описание товара должно содержать минимум :min символов',
+            'sku.required' => 'Артикул обязателен для заполнения',
+            'sku.min' => 'Артикул должен содержать минимум :min символа',
+            'sku.unique' => 'Товар с таким артикулом уже существует',
+            'price.required' => 'Цена обязательна для заполнения',
+            'price.min' => 'Цена должна быть больше :min',
+            'category_id.required' => 'Выберите категорию товара',
+            'category_id.exists' => 'Выбранная категория не существует',
+            'status.required' => 'Статус товара обязателен',
+            'status.in' => 'Недопустимый статус товара',
+            'attributes.*.attribute_id.required' => 'ID характеристики обязателен',
+            'attributes.*.attribute_id.exists' => 'Характеристика не существует',
+            'attributes.*.value.required' => 'Значение характеристики обязательно',
+            'images.*.id.required' => 'ID изображения обязателен',
+            'images.*.id.exists' => 'Изображение не существует',
+            'images.*.order.required' => 'Порядок изображения обязателен',
         ];
     }
 }

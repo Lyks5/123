@@ -71,9 +71,9 @@
             
             <div class="mb-6">
                 <div class="flex items-center">
-                    <input id="is_active" name="is_active" type="checkbox" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
+                    <input id="status" name="status" type="checkbox" value="active" {{ old('status', $category->status) === 'active' ? 'checked' : '' }}
                         class="h-4 w-4 rounded border-gray-300 text-eco-600 focus:ring-eco-500">
-                    <label for="is_active" class="ml-2 block text-sm text-gray-700">Категория активна</label>
+                    <label for="status" class="ml-2 block text-sm text-gray-700">Категория активна</label>
                 </div>
             </div>
             

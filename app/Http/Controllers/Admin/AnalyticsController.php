@@ -329,7 +329,7 @@ class AnalyticsController extends Controller
                 'review_stats' => $this->getReviewStatistics(),
                 'stock_levels' => $stockLevels,
                 'total_products' => Product::count(),
-                'active_products' => Product::where('is_active', true)->count(),
+                'active_products' => Product::where('status', 'published')->count(),
             ];
 
             if ($topProducts->isNotEmpty()) {

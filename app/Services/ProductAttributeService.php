@@ -2,126 +2,133 @@
 
 namespace App\Services;
 
-use App\Models\Attribute;
-use App\Models\AttributeValue;
 use App\Models\Product;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
+use App\Models\Attribute;
+use App\Models\ProductAttribute;
 use Illuminate\Support\Facades\DB;
 
 class ProductAttributeService
 {
-    /**
-     * Получает все значения атрибутов с кэшированием
-     */
-    public function getCachedAttributeValues(int $attributeId): Collection
+    public function saveAttributes(Product $product, array $attributes)
     {
-        $cacheKey = "attribute_{$attributeId}_values";
-        
-        return Cache::remember($cacheKey, now()->addDay(), function () use ($attributeId) {
-            return AttributeValue::where('attribute_id', $attributeId)
-                ->orderBy('value')
-                ->get();
-        });
+        foreach ($attributes as $attributeData) {
+            ProductAttribute::create([
+                'product_id' => $product->id,
+                'attribute_id' => $attributeData['attribute_id'],
+                'value' => json_encode($attributeData['value'])
+            ]);
+        }
     }
 
-    /**
-     * Проверяет уникальность комбинации атрибутов
-     */
-    public function isUniqueCombination(Product $product, array $combination): bool
+    public function updateAttributes(Product $product, array $attributes)
     {
-        $existingVariants = $product->variants()
-            ->with('attributeValues')
-            ->get();
+        // Получаем текущие атрибуты
+        $currentAttributes = $product->attributes()->pluck('attribute_id')->toArray();
+        $newAttributes = collect($attributes)->pluck('attribute_id')->toArray();
 
-        foreach ($existingVariants as $variant) {
-            $variantAttributes = $variant->attributeValues
-                ->map(fn($av) => [
-                    'attribute_id' => $av->pivot->attribute_id,
-                    'value_id' => $av->id
-                ])
-                ->toArray();
+        // Удаляем отсутствующие атрибуты
+        $toDelete = array_diff($currentAttributes, $newAttributes);
+        if (!empty($toDelete)) {
+            $product->attributes()->whereIn('attribute_id', $toDelete)->delete();
+        }
 
-            if ($this->compareCombinations($combination, $variantAttributes)) {
-                return false;
+        // Обновляем или создаем атрибуты
+        foreach ($attributes as $attributeData) {
+            ProductAttribute::updateOrCreate(
+                [
+                    'product_id' => $product->id,
+                    'attribute_id' => $attributeData['attribute_id']
+                ],
+                [
+                    'value' => json_encode($attributeData['value'])
+                ]
+            );
+        }
+    }
+
+    public function validateAttributeValues(array $attributes)
+    {
+        $errors = [];
+
+        foreach ($attributes as $attributeData) {
+            $attribute = Attribute::find($attributeData['attribute_id']);
+            if (!$attribute) {
+                $errors[] = "Атрибут не найден: {$attributeData['attribute_id']}";
+                continue;
+            }
+
+            $value = $attributeData['value'];
+
+            // Проверяем значение в зависимости от типа атрибута
+            switch ($attribute->type) {
+                case 'TEXT':
+                    if (!is_string($value)) {
+                        $errors[] = "Значение атрибута {$attribute->name} должно быть строкой";
+                    }
+                    break;
+
+                case 'NUMBER':
+                    if (!is_numeric($value)) {
+                        $errors[] = "Значение атрибута {$attribute->name} должно быть числом";
+                    }
+                    // Проверяем диапазон если есть
+                    if ($attribute->validation) {
+                        $validation = json_decode($attribute->validation);
+                        if (isset($validation->min) && $value < $validation->min) {
+                            $errors[] = "Значение атрибута {$attribute->name} должно быть не меньше {$validation->min}";
+                        }
+                        if (isset($validation->max) && $value > $validation->max) {
+                            $errors[] = "Значение атрибута {$attribute->name} должно быть не больше {$validation->max}";
+                        }
+                    }
+                    break;
+
+                case 'SELECT':
+                    if ($attribute->options) {
+                        $options = json_decode($attribute->options);
+                        if (!in_array($value, $options)) {
+                            $errors[] = "Недопустимое значение для атрибута {$attribute->name}";
+                        }
+                    }
+                    break;
+
+                case 'MULTI_SELECT':
+                    if (!is_array($value)) {
+                        $errors[] = "Значение атрибута {$attribute->name} должно быть массивом";
+                    } elseif ($attribute->options) {
+                        $options = json_decode($attribute->options);
+                        foreach ($value as $val) {
+                            if (!in_array($val, $options)) {
+                                $errors[] = "Недопустимое значение '{$val}' для атрибута {$attribute->name}";
+                            }
+                        }
+                    }
+                    break;
             }
         }
 
-        return true;
+        return $errors;
     }
 
-    /**
-     * Сравнивает две комбинации атрибутов
-     */
-    private function compareCombinations(array $combination1, array $combination2): bool
+    public function saveDraftAttributes(Product $product, array $attributes)
     {
-        if (count($combination1) !== count($combination2)) {
-            return false;
+        // Для черновика используем тот же метод обновления
+        $this->updateAttributes($product, $attributes);
+    }
+
+    public function getAttributesByType($type = null)
+    {
+        $query = Attribute::query();
+        
+        if ($type) {
+            $query->where('type', $type);
         }
 
-        $sorted1 = collect($combination1)->sortBy(['attribute_id', 'value_id'])->values()->toArray();
-        $sorted2 = collect($combination2)->sortBy(['attribute_id', 'value_id'])->values()->toArray();
-
-        return $sorted1 == $sorted2;
+        return $query->get();
     }
 
-    /**
-     * Управляет зависимостями атрибутов
-     */
-    public function getDependentValues(int $attributeId, array $selectedValues): Collection
+    public function getVariantAttributes()
     {
-        $cacheKey = "dependent_values_{$attributeId}_" . md5(serialize($selectedValues));
-
-        return Cache::remember($cacheKey, now()->addHour(), function () use ($attributeId, $selectedValues) {
-            return DB::table('variant_attribute_value as vav1')
-                ->join('variant_attribute_value as vav2', 'vav1.variant_id', '=', 'vav2.variant_id')
-                ->join('attribute_values as av', 'vav2.value_id', '=', 'av.id')
-                ->whereIn('vav1.value_id', $selectedValues)
-                ->where('vav2.attribute_id', $attributeId)
-                ->select('av.id', 'av.value')
-                ->distinct()
-                ->get();
-        });
-    }
-
-    /**
-     * Создает новое значение атрибута
-     */
-    public function createAttributeValue(int $attributeId, string $value): AttributeValue
-    {
-        $attributeValue = AttributeValue::create([
-            'attribute_id' => $attributeId,
-            'value' => $value
-        ]);
-
-        // Очищаем кэш для этого атрибута
-        Cache::forget("attribute_{$attributeId}_values");
-
-        return $attributeValue;
-    }
-
-    /**
-     * Копирует значения атрибутов между вариантами
-     */
-    public function copyAttributeValues(int $fromVariantId, int $toVariantId): void
-    {
-        $sourceVariant = DB::table('variant_attribute_value')
-            ->where('variant_id', $fromVariantId)
-            ->get();
-
-        $attributeValues = $sourceVariant->map(function ($item) use ($toVariantId) {
-            return [
-                'variant_id' => $toVariantId,
-                'attribute_id' => $item->attribute_id,
-                'value_id' => $item->value_id
-            ];
-        })->toArray();
-
-        DB::table('variant_attribute_value')
-            ->where('variant_id', $toVariantId)
-            ->delete();
-
-        DB::table('variant_attribute_value')
-            ->insert($attributeValues);
+        return Attribute::where('is_variant', true)->get();
     }
 }

@@ -10,120 +10,13 @@
     <div class="container mx-auto px-4">
         <!-- Page header -->
         <div class="mb-10 max-w-3xl mx-auto text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-eco-900 mb-3">Личный кабинет</h1>
-            <p class="text-eco-600 text-lg max-w-2xl mx-auto">Управляйте своим профилем и просматривайте заказы</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-eco-900 mb-3">Мой профиль</h1>
+            <p class="text-eco-600 text-lg max-w-2xl mx-auto">Управляйте личными данными и просматривайте заказы</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             <!-- Sidebar navigation -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-sm overflow-hidden sticky top-24">
-                    <div class="p-6 border-b border-eco-100">
-                        <div class="flex items-center">
-                            <div class="w-16 h-16 bg-eco-100 rounded-full flex items-center justify-center text-eco-600 mr-4">
-                                @if(auth()->user()->avatar)
-                                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}" class="w-full h-full rounded-full object-cover">
-                                @else
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                @endif
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-eco-900">{{ auth()->user()->name }}</h3>
-                                <p class="text-sm text-eco-600">{{ auth()->user()->email }}</p>
-                                @if(auth()->user()->is_admin)
-                                    <span class="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                        Администратор
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <nav class="p-3">
-                        <div class="space-y-1">
-                            <a href="{{ route('account') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                    </svg>
-                                    <span class="font-medium">Обзор</span>
-                                </div>
-                            </a>
-                            
-                            <a href="{{ route('account.orders') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                                        <path d="M16 10a4 4 0 0 1-8 0"></path>
-                                    </svg>
-                                    <span class="font-medium">Мои заказы</span>
-                                </div>
-                            </a>
-                            
-                            <a href="{{ route('account.profile') }}" class="block px-4 py-2.5 rounded-lg bg-eco-100 text-eco-900 transition-colors">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                    <span class="font-medium">Профиль</span>
-                                </div>
-                            </a>
-
-                            <a href="{{ route('account.wishlists') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                    </svg>
-                                    <span class="font-medium">Избранное</span>
-                                </div>
-                            </a>
-        
-                            <a href="{{ route('account.addresses') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                    <span class="font-medium">Адреса</span>
-                                </div>
-                            </a>
-                            
-                            @if(auth()->user()->is_admin)
-                                <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 rounded-lg text-eco-700 hover:bg-eco-50 transition-colors mt-4 border-t border-eco-100 pt-4">
-                                    <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                            <line x1="3" y1="9" x2="21" y2="9"></line>
-                                            <line x1="9" y1="21" x2="9" y2="9"></line>
-                                        </svg>
-                                        <span class="font-medium">Админ-панель</span>
-                                    </div>
-                                </a>
-                            @endif
-                            
-                            <form method="POST" action="{{ route('logout') }}" class="mt-4 border-t border-eco-100 pt-4">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
-                                    <div class="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                            <polyline points="16 17 21 12 16 7"></polyline>
-                                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                                        </svg>
-                                        <span class="font-medium">Выйти</span>
-                                    </div>
-                                </button>
-                            </form>
-                        </div>
-                    </nav>
-                </div>
-            </div>
+            @include('account.partials.sidebar')
 
             <!-- Main content -->
             <div class="lg:col-span-3 space-y-8">
@@ -138,7 +31,7 @@
                     </div>
                 </div>
                 @endif
-                
+
                 <!-- Personal Info -->
                 <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
                     <div class="p-6 border-b border-eco-100">
@@ -153,18 +46,43 @@
                     </div>
                     
                     <div class="p-6">
-                        <form action="{{ route('account.update') }}" method="POST" class="space-y-6">
+                        <form action="{{ route('account.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                             @csrf
+                            
+                            <!-- Avatar Upload -->
+                            <div class="flex items-center space-x-6 mb-6">
+                                <div class="shrink-0">
+                                    <div class="relative w-24 h-24">
+                                        <img class="w-24 h-24 rounded-full object-cover" src="{{ $user->avatar ? asset('storage/' . $user->avatar) : asset('images/default-avatar.png') }}" alt="{{ $user->name }}">
+                                        <label for="avatar" class="absolute bottom-0 right-0 bg-eco-600 text-white rounded-full p-2 cursor-pointer hover:bg-eco-700 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                                <circle cx="12" cy="13" r="4"/>
+                                            </svg>
+                                        </label>
+                                        <input type="file" id="avatar" name="avatar" class="hidden" accept="image/*">
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-eco-900 font-medium">Фото профиля</h3>
+                                    <p class="text-sm text-eco-600">JPG, PNG или GIF. Максимальный размер 2MB</p>
+                                </div>
+                            </div>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="name" class="block text-sm font-medium text-eco-800 mb-1.5">
                                         Имя
+                                        <span class="text-red-500">*</span>
                                     </label>
                                     <input 
                                         id="name" 
                                         name="name" 
                                         type="text" 
+                                        required
+                                        minlength="2"
+                                        maxlength="255"
+                                        pattern="[A-Za-zА-Яа-яЁё\s-]+"
                                         value="{{ old('name', $user->name) }}" 
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
@@ -176,11 +94,13 @@
                                 <div>
                                     <label for="email" class="block text-sm font-medium text-eco-800 mb-1.5">
                                         Email
+                                        <span class="text-red-500">*</span>
                                     </label>
                                     <input 
                                         id="email" 
                                         name="email" 
                                         type="email" 
+                                        required
                                         value="{{ old('email', $user->email) }}" 
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
@@ -196,7 +116,9 @@
                                     <input 
                                         id="phone" 
                                         name="phone" 
-                                        type="text" 
+                                        type="tel"
+                                        pattern="^\+7\d{10}$"
+                                        placeholder="+7XXXXXXXXXX"
                                         value="{{ old('phone', $user->phone) }}" 
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
@@ -213,6 +135,7 @@
                                         id="birth_date" 
                                         name="birth_date" 
                                         type="date" 
+                                        max="{{ date('Y-m-d') }}"
                                         value="{{ old('birth_date', $user->birth_date ? $user->birth_date->format('Y-m-d') : '') }}" 
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
@@ -239,6 +162,26 @@
                                         <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
+
+                                <div>
+                                    <label for="preferences" class="block text-sm font-medium text-eco-800 mb-1.5">
+                                        Предпочтения
+                                    </label>
+                                    <select 
+                                        id="preferences" 
+                                        name="preferences[]" 
+                                        multiple
+                                        class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
+                                    >
+                                        <option value="eco_friendly" {{ in_array('eco_friendly', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Экологичные товары</option>
+                                        <option value="vegan" {{ in_array('vegan', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Веганские товары</option>
+                                        <option value="organic" {{ in_array('organic', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Органические товары</option>
+                                        <option value="local" {{ in_array('local', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Локальные производители</option>
+                                    </select>
+                                    @error('preferences')
+                                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             
                                 <div class="md:col-span-2">
                                     <label for="bio" class="block text-sm font-medium text-eco-800 mb-1.5">
@@ -247,7 +190,8 @@
                                     <textarea 
                                         id="bio" 
                                         name="bio" 
-                                        rows="3" 
+                                        rows="3"
+                                        maxlength="1000"
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >{{ old('bio', $user->bio) }}</textarea>
                                     @error('bio')
@@ -290,11 +234,13 @@
                             <div>
                                 <label for="current_password" class="block text-sm font-medium text-eco-800 mb-1.5">
                                     Текущий пароль
+                                    <span class="text-red-500">*</span>
                                 </label>
                                 <input 
                                     id="current_password" 
                                     name="current_password" 
                                     type="password" 
+                                    required
                                     class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                 >
                                 @error('current_password')
@@ -306,11 +252,16 @@
                                 <div>
                                     <label for="password" class="block text-sm font-medium text-eco-800 mb-1.5">
                                         Новый пароль
+                                        <span class="text-red-500">*</span>
                                     </label>
                                     <input 
                                         id="password" 
                                         name="password" 
-                                        type="password" 
+                                        type="password"
+                                        required
+                                        minlength="8"
+                                        pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+                                        title="Минимум 8 символов, должен содержать буквы и цифры"
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
                                     @error('password')
@@ -321,11 +272,13 @@
                                 <div>
                                     <label for="password_confirmation" class="block text-sm font-medium text-eco-800 mb-1.5">
                                         Подтверждение нового пароля
+                                        <span class="text-red-500">*</span>
                                     </label>
                                     <input 
                                         id="password_confirmation" 
                                         name="password_confirmation" 
-                                        type="password" 
+                                        type="password"
+                                        required 
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
                                 </div>
@@ -412,3 +365,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.getElementById('avatar').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+        if (e.target.files[0].size > 2 * 1024 * 1024) {
+            alert('Размер файла превышает 2MB');
+            e.target.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.querySelector('.shrink-0 img').src = e.target.result;
+        }
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+</script>
+@endpush

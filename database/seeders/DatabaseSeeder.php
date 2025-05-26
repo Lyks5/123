@@ -15,7 +15,11 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         
-        $this->call(EcoFeaturesSeeder::class);
+        $this->call([
+            CategorySeeder::class,
+            AttributeSeeder::class,
+            EcoFeaturesSeeder::class,
+        ]);
 
         User::factory()->create([
             'name' => 'root',

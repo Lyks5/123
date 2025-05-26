@@ -15,14 +15,14 @@ class Variant extends Model
         'price',
         'sale_price',
         'stock_quantity',
-        'is_active',
+        'status',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
         'stock_quantity' => 'integer',
-        'is_active' => 'boolean',
+        'status' => 'string',
     ];
 
     /**
@@ -62,6 +62,6 @@ class Variant extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'active');
     }
 }

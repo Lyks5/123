@@ -11,7 +11,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         // Проверяем активность товара
-        if (!$product->is_active) {
+        if ($product->status !== 'published') {
             abort(404);
         }
 
@@ -29,7 +29,7 @@ class ProductController extends Controller
                 $query->whereIn('categories.id', $product->categories->pluck('id'));
             })
             ->where('id', '!=', $product->id)
-            ->where('is_active', true)
+            ->where('status', 'published')
             ->take(4)
             ->get();
 
@@ -170,7 +170,7 @@ class ProductController extends Controller
                 $query->whereIn('categories.id', $product->categories->pluck('id'));
             })
             ->where('id', '!=', $product->id)
-            ->where('is_active', true)
+            ->where('status', 'published')
             ->take(4)
             ->get();
 

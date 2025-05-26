@@ -41,7 +41,7 @@
                                 <td class="py-3 px-4">{{ $category->name }}</td>
                                 <td class="py-3 px-4">{{ $category->parent ? $category->parent->name : '—' }}</td>
                                 <td class="py-3 px-4">
-                                    @if($category->is_active)
+                                    @if($category->status === 'active')
                                         <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Активна</span>
                                     @else
                                         <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Неактивна</span>

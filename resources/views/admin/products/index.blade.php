@@ -51,7 +51,7 @@
                                 </td>
                                 <td class="py-3 px-4">{{ $product->stock_quantity }}</td>
                                 <td class="py-3 px-4">
-                                    @if($product->is_active)
+                                    @if($product->status === 'active')
                                         <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Активен</span>
                                     @else
                                         <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Неактивен</span>

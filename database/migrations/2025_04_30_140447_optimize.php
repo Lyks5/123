@@ -30,11 +30,6 @@ public function up()
         $table->foreign('category_id')->references('id')->on('blog_categories');
     });
 
-    // Объединение variant_attributes
-    Schema::table('variants', function (Blueprint $table) {
-        $table->json('attributes')->nullable()->after('stock_quantity'); // JSON: {attribute_id: value}
-    });
-
     // Интеграция корзины в users
     Schema::table('users', function (Blueprint $table) {
         $table->json('cart_data')->nullable()->after('eco_impact_score'); 
@@ -56,22 +51,9 @@ public function down()
 {
     // Восстановление удалённых таблиц потребует отдельного подхода
     // Здесь показан пример для blog_post_categories
-    Schema::create('blog_post_categories', function (Blueprint $table) {
-        $table->id();
-        $table->unsignedBigInteger('post_id');
-        $table->unsignedBigInteger('category_id');
-        $table->foreign('post_id')->references('id')->on('blog_posts');
-        $table->foreign('category_id')->references('id')->on('blog_categories');
-    });
+    
 
-    Schema::create('contact_requests', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('email');
-        $table->string('subject');
-        $table->text('message');
-        $table->timestamps();
-    });
+   
 
     // Восстановление других таблиц аналогично...
 
@@ -87,16 +69,10 @@ public function down()
     });
 
     // Удаление JSON-полей
-    Schema::table('variants', function (Blueprint $table) {
-        $table->dropColumn('attributes');
-    });
-
     Schema::table('users', function (Blueprint $table) {
         $table->dropColumn('cart_data');
     });
 
-    Schema::table('products', function (Blueprint $table) {
-        $table->dropColumn('images');
-    });
+    
 }
 };

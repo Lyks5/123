@@ -15,19 +15,18 @@ class HomeController extends Controller
     {
         // Избранные товары (без изменений)
         $featuredProducts = Product::where('is_featured', true)
-            ->where('is_active', true)
+            ->where('status', 'published')
             ->take(4)
             ->get();
 
-        // Новые товары (без изменений)
-        $newProducts = Product::where('is_new', true)
-            ->where('is_active', true)
+        // Новые товары (последние добавленные)
+        $newProducts = Product::where('status', 'published')
             ->latest()
             ->take(8)
             ->get();
 
-        // Основные категории (без изменений)
-        $categories = Category::where('is_active', true)
+        // Основные категории (обновлено)
+        $categories = Category::whereNull('parent_id')
             ->whereNull('parent_id')
             ->take(6)
             ->get();

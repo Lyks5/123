@@ -12,13 +12,13 @@ class Newsletter extends Model
     protected $fillable = [
         'email',
         'name',
-        'is_active',
+        'status',
         'preferences',
     ];
 
     protected $casts = [
         'preferences' => 'json',
-        'is_active' => 'boolean',
+        'status' => 'string',
     ];
 
     /**
@@ -26,6 +26,6 @@ class Newsletter extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'active');
     }
 }
