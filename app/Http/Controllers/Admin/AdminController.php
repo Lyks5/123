@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-use App\Models\BlogPost;
 use App\Models\EcoFeature;
 use Illuminate\Http\Request;
 
@@ -47,7 +46,7 @@ class AdminController extends Controller
             'products' => Product::count(),
             'orders' => Order::count(),
             'users' => User::count(),
-            'posts' => BlogPost::count()
+            'total_products' => Product::count()
         ];
 
         $recentOrders = Order::with('user')

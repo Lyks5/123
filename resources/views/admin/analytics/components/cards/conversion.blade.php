@@ -9,10 +9,11 @@
         <div>
             <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Конверсия</p>
             <p class="text-2xl font-bold dark:text-white animate-fade-in">{{ number_format($salesData['conversion_rates']['current'] ?? 0, 1) }}%</p>
-            <p class="text-xs text-green-500">+{{ number_format($salesData['conversion_rates']['change'] ?? 0, 1) }}% к пред. периоду</p>
+            <p class="text-xs text-green-500 dark:text-green-400">+{{ number_format($salesData['conversion_rates']['change'] ?? 0, 1) }}% к пред. периоду</p>
         </div>
     </div>
-    <div class="mt-4 h-2 bg-gray-200 rounded-full">
-        <div class="h-2 bg-amber-600 rounded-full" style="width: {{ ($salesData['conversion_rates']['current'] ?? 0) }}%"></div>
+    <div class="mt-4 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-2 bg-amber-600 dark:bg-amber-500 rounded-full transition-all duration-500 ease-out"
+             style="width: {{ ($salesData['conversion_rates']['current'] ?? 0) }}%"></div>
     </div>
 </div>

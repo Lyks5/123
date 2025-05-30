@@ -16,11 +16,11 @@ class EcoFeature extends Model
         'slug',
         'description',
         'icon',
-        'status',
+        'is_active',
     ];
 
     protected $casts = [
-        'status' => 'string',
+        'is_active' => 'boolean',
     ];
 
     /**

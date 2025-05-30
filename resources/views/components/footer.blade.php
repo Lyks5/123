@@ -38,8 +38,6 @@
                     <li><a href="{{ route('shop') }}" class="hover:text-white transition-colors">Магазин</a></li>
                     <li><a href="{{ route('about') }}" class="hover:text-white transition-colors">О нас</a></li>
                     <li><a href="{{ route('sustainability') }}" class="hover:text-white transition-colors">Экология</a></li>
-                    <li><a href="{{ route('blog') }}" class="hover:text-white transition-colors">Блог</a></li>
-                    <li><a href="{{ route('contact') }}" class="hover:text-white transition-colors">Контакты</a></li>
                 </ul>
             </div>
             

@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('eco_feature_product', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->foreignId('eco_feature_id')->constrained()->onDelete('cascade');
+            $table->string('value')->nullable();
             $table->timestamps();
+
+            $table->unique(['product_id', 'eco_feature_id']);
         });
     }
 

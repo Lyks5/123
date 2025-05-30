@@ -16,6 +16,10 @@ export const productSchema = z.object({
     id: z.number().optional(),
     url: z.string(),
     order: z.number()
+  })),
+  eco_features: z.array(z.object({
+    id: z.number(),
+    value: z.string().optional()
   }))
 });
 

@@ -205,28 +205,10 @@
                             Заказы
                         </a>
                         
-                        <div class="sb-sidenav-menu-heading">Контент</div>
-                        <a class="nav-link {{ request()->routeIs('admin.blog.posts.*') ? 'active' : '' }}" href="{{ route('admin.blog.posts.index') }}">
-                            <div class="sb-nav-link-icon"><i class="bi bi-file-text"></i></div>
-                            Статьи блога
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.blog.categories.*') ? 'active' : '' }}" href="{{ route('admin.blog.categories.index') }}">
-                            <div class="sb-nav-link-icon"><i class="bi bi-bookmark"></i></div>
-                            Категории блога
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.initiatives.*') ? 'active' : '' }}" href="{{ route('admin.initiatives.index') }}">
-                            <div class="sb-nav-link-icon"><i class="bi bi-tree"></i></div>
-                            Эко-инициативы
-                        </a>
-                        
                         <div class="sb-sidenav-menu-heading">Пользователи</div>
                         <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                             <div class="sb-nav-link-icon"><i class="bi bi-people"></i></div>
                             Пользователи
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.contact-requests.*') ? 'active' : '' }}" href="{{ route('admin.contact-requests.index') }}">
-                            <div class="sb-nav-link-icon"><i class="bi bi-envelope"></i></div>
-                            Обращения
                         </a>
                     </div>
                 </div>
@@ -237,69 +219,92 @@
             </nav>
         </div>
         
-        <div id="layoutSidenav_content">
-            <main>
+        <!-- Основной контент -->
+        <main class="flex-1 bg-gray-100 dark:bg-gray-900 overflow-y-auto">
+            <div class="py-6 px-4 sm:px-6 lg:px-8">
                 @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show m-4" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="mb-4 bg-green-100 dark:bg-green-900 border-l-4 border-green-500 text-green-700 dark:text-green-300 p-4" role="alert">
+                        <p class="font-medium">{{ session('success') }}</p>
                     </div>
                 @endif
                 
                 @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show m-4" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="mb-4 bg-red-100 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-4" role="alert">
+                        <p class="font-medium">{{ session('error') }}</p>
                     </div>
                 @endif
                 
                 @if ($errors->any())
-                    <div class="alert alert-danger alert-dismissible fade show m-4" role="alert">
-                        <ul class="mb-0">
+                    <div class="mb-4 bg-red-100 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-4" role="alert">
+                        <p class="font-bold">Произошла ошибка:</p>
+                        <ul class="mt-2 list-disc list-inside">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 @endif
                 
                 @yield('content')
-            </main>
+            </div>
             
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; {{ config('app.name') }} {{ date('Y') }}</div>
-                    </div>
+            <footer class="mt-auto bg-white dark:bg-gray-800 shadow">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+                        &copy; {{ date('Y') }} {{ config('app.name') }}. Все права защищены.
+                    </p>
                 </div>
             </footer>
-        </div>
+        </main>
     </div>
-    
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- DataTables -->
     <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.tailwind.min.js"></script>
     
     <script>
-        // Toggle sidebar
-        window.addEventListener('DOMContentLoaded', event => {
-            const sidebarToggle = document.body.querySelector('#sidebarToggle');
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', event => {
-                    event.preventDefault();
-                    document.body.classList.toggle('sb-sidenav-toggled');
-                    localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
-                });
+        // Переключение темной темы
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+            }
+        }
+        
+        // Инициализация DataTables
+        if (document.querySelector('.datatable')) {
+            $('.datatable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/ru.json'
+                }
+            });
+        }
+        
+        // Обработчики событий
+        document.addEventListener('DOMContentLoaded', () => {
+            // Переключатель темы
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleDarkMode);
             }
             
-            // Initialize DataTables
-            if (document.querySelector('.datatable')) {
-                $('.datatable').DataTable({
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/ru.json'
+            // Пользовательское меню
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenu = document.getElementById('user-menu');
+            
+            if (userMenuButton && userMenu) {
+                userMenuButton.addEventListener('click', () => {
+                    userMenu.classList.toggle('hidden');
+                });
+                
+                // Закрытие меню при клике вне его
+                document.addEventListener('click', (event) => {
+                    if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                        userMenu.classList.add('hidden');
                     }
                 });
             }

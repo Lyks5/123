@@ -7,9 +7,12 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/js/index.tsx'
+                'resources/js/product-page.js',
+                'resources/js/components/notification.js',
+                'resources/js/wishlist.js',
+                'resources/js/shop.js'
             ],
-            refresh: true,
+            refresh: true
         }),
         react(),
     ],

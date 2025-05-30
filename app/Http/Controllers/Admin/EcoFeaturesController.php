@@ -44,6 +44,7 @@ class EcoFeaturesController extends Controller
             'description' => 'required|string',
             'icon' => 'nullable|string|max:50',
             'impact_score' => 'required|integer|min:1|max:100',
+            'is_active' => 'boolean',
             'products' => 'nullable|array',
             'products.*' => 'exists:products,id'
         ]);
@@ -87,6 +88,7 @@ class EcoFeaturesController extends Controller
             'description' => 'required|string',
             'icon' => 'nullable|string|max:50',
             'impact_score' => 'required|integer|min:1|max:100',
+            'is_active' => 'boolean',
             'products' => 'nullable|array',
             'products.*' => 'exists:products,id'
         ]);

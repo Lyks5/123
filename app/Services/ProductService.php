@@ -12,7 +12,9 @@ class ProductService
             'raw_category_id' => [
                 'value' => $data['category_id'],
                 'type' => gettype($data['category_id'])
-            ]
+            ],
+            'quantity' => $data['quantity'] ?? 0,
+            'status' => $data['status'] ?? 'draft'
         ]);
         
         // Валидация и приведение типов
@@ -32,8 +34,26 @@ class ProductService
         if (isset($data['images'])) {
             $this->syncImages($product, $data['images']);
         }
+
+        if (isset($data['eco_features']) && is_array($data['eco_features'])) {
+            $ecoFeatures = collect($data['eco_features'])
+                ->mapWithKeys(function ($featureId) use ($data) {
+                    return [
+                        $featureId => isset($data['eco_feature_values'][$featureId])
+                            ? ['value' => $data['eco_feature_values'][$featureId]]
+                            : ['value' => null]
+                    ];
+                })
+                ->filter(function ($value) {
+                    // Оставляем только характеристики с непустыми значениями
+                    return $value['value'] !== null && $value['value'] !== '';
+                })
+                ->toArray();
+
+            $this->syncEcoFeaturesWithValues($product, $ecoFeatures);
+        }
         
-        return $product->fresh(['attributes', 'images']);
+        return $product->fresh(['attributes', 'images', 'ecoFeatures']);
     }
     
     public function update(Product $product, array $data): Product
@@ -62,8 +82,26 @@ class ProductService
         if (isset($data['images'])) {
             $this->syncImages($product, $data['images']);
         }
+
+        if (isset($data['eco_features']) && is_array($data['eco_features'])) {
+            $ecoFeatures = collect($data['eco_features'])
+                ->mapWithKeys(function ($featureId) use ($data) {
+                    return [
+                        $featureId => isset($data['eco_feature_values'][$featureId])
+                            ? ['value' => $data['eco_feature_values'][$featureId]]
+                            : ['value' => null]
+                    ];
+                })
+                ->filter(function ($value) {
+                    // Оставляем только характеристики с непустыми значениями
+                    return $value['value'] !== null && $value['value'] !== '';
+                })
+                ->toArray();
+
+            $this->syncEcoFeaturesWithValues($product, $ecoFeatures);
+        }
         
-        return $product->fresh(['attributes', 'images']);
+        return $product->fresh(['attributes', 'images', 'ecoFeatures']);
     }
     
     public function createDraft(array $data): Product
@@ -93,28 +131,26 @@ class ProductService
         
         try {
             // Валидация и нормализация атрибутов
-            $normalizedAttributes = collect($attributes)->map(function ($item) {
-                // Проверяем наличие необходимых полей
-                if (!isset($item['attribute_id']) || !isset($item['value'])) {
-                    throw new \InvalidArgumentException(
-                        'Attribute must have both attribute_id and value fields'
-                    );
-                }
-                
-                // Приводим attribute_id к целому числу
-                $attributeId = (int)$item['attribute_id'];
-                
-                \Log::debug('ProductService: Normalizing attribute', [
-                    'raw_id' => $item['attribute_id'],
-                    'normalized_id' => $attributeId,
-                    'value' => $item['value']
-                ]);
-                
-                return [
-                    'attribute_id' => $attributeId,
-                    'value' => trim((string)$item['value'])
-                ];
-            });
+            $normalizedAttributes = collect($attributes)
+                ->filter(function ($item) {
+                    // Фильтруем атрибуты без ID или значения
+                    return isset($item['attribute_id']) && !empty($item['value']);
+                })
+                ->map(function ($item) {
+                    // Приводим attribute_id к целому числу
+                    $attributeId = (int)$item['attribute_id'];
+                    
+                    \Log::debug('ProductService: Normalizing attribute', [
+                        'raw_id' => $item['attribute_id'],
+                        'normalized_id' => $attributeId,
+                        'value' => $item['value']
+                    ]);
+                    
+                    return [
+                        'attribute_id' => $attributeId,
+                        'value' => trim((string)$item['value'])
+                    ];
+                });
             
             // Проверяем уникальность атрибутов
             $duplicateIds = $normalizedAttributes
@@ -174,10 +210,36 @@ class ProductService
     
     protected function syncImages(Product $product, array $images): void
     {
+        // Если передан массив файлов, создаем новые изображения
+        if (isset($images[0]) && !isset($images[0]['id'])) {
+            return;
+        }
+        
+        // Иначе синхронизируем существующие изображения
         $product->images()->sync(
             collect($images)->mapWithKeys(fn($item) => [
-                $item['id'] => ['order' => $item['order']]
+                $item['id'] => ['order' => $item['order'] ?? 0]
             ])
         );
+    }
+
+    protected function syncEcoFeaturesWithValues(Product $product, array $ecoFeatures): void
+    {
+        try {
+            \Log::info('ProductService: Syncing eco features with values', [
+                'product_id' => $product->id,
+                'eco_features' => $ecoFeatures
+            ]);
+
+            $product->ecoFeatures()->sync($ecoFeatures);
+
+        } catch (\Exception $e) {
+            \Log::error('ProductService: Error syncing eco features', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+                'eco_features' => $ecoFeatures
+            ]);
+            throw $e;
+        }
     }
 }

@@ -6,14 +6,12 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AboutController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\BlogController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AnalyticsController;
-use App\Http\Controllers\Admin\BlogManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\CategoryManagementController;
 use App\Http\Controllers\SustainabilityController;
@@ -26,9 +24,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\EcoFeaturesController;
-use App\Http\Controllers\Admin\ContactRequestController;
 use App\Http\Controllers\Admin\OrderManagementController;
-use App\Http\Controllers\Admin\InitiativesController;
 use App\Http\Controllers\Admin\AttributeController;
 
 // Главная страница
@@ -38,10 +34,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 Route::get('/shop/category/{category}', [ShopController::class, 'category'])->name('shop.category');
 Route::get('/shop/tag/{tag}', [ShopController::class, 'tag'])->name('shop.tag');
-Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 
 // Товары
-Route::get('/product/review/{product:slug}', [ProductController::class, 'show'])->name('product.review');
+Route::get('/product/review/{product:sku}', [ProductController::class, 'show'])->name('product.review');
+Route::get('/product/{product:sku}', [ProductController::class, 'show'])->name('product.show');
 
 Route::middleware('auth')->group(function () {
     Route::post('/product/review/{product:slug}', [ProductController::class, 'submitReview'])->name('product.review.submit');
@@ -52,22 +48,13 @@ Route::middleware('auth')->group(function () {
 // Корзина
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::PATCH('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::PATCH('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+Route::patch('/cart/update', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.apply-coupon');
 
 // Информационные страницы
 Route::get('/about', [AboutController::class, 'index'])->name('about');
-Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 Route::get('/sustainability', [SustainabilityController::class, 'index'])->name('sustainability');
-
-// Блог
-Route::get('/blog/search', [BlogController::class, 'search'])->name('blog.search');
-Route::get('/blog', [BlogController::class, 'index'])->name('blog');
-Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
-Route::get('/blog/category/{category:slug}', [BlogController::class, 'category'])->name('blog.category');
-Route::get('/blog/tag/{tag:slug}', [BlogController::class, 'tag'])->name('blog.tag');
 
 // Аутентификация
 Route::middleware(['guest'])->group(function () {
@@ -88,6 +75,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     Route::get('/account', [AccountController::class, 'index'])->name('account');
     Route::get('/account/orders', [AccountController::class, 'orders'])->name('account.orders');
+    Route::get('/account/orders/{order}', [AccountController::class, 'showOrder'])->name('account.orders.show');
     Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
     Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.update');
     Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
@@ -95,7 +83,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/account/addresses', [AccountController::class, 'storeAddress'])->name('account.addresses.store');
     Route::put('/account/addresses/{address}', [AccountController::class, 'updateAddress'])->name('account.addresses.update');
     Route::delete('/account/addresses/{address}', [AccountController::class, 'deleteAddress'])->name('account.addresses.delete');
-    Route::get('/account/wishlists', [AccountController::class, 'wishlists'])->name('account.wishlists');
+    
+    // Избранное
+    Route::get('/account/wishlists', [WishlistController::class, 'index'])->name('account.wishlists');
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
 // Оформление заказа
@@ -137,7 +128,7 @@ Route::group([], function () {
             Route::post('/', [CategoryManagementController::class, 'store'])->name('store');
             Route::get('/{category}/edit', [CategoryManagementController::class, 'edit'])->name('edit');
             Route::put('/{category}', [CategoryManagementController::class, 'update'])->name('update');
-            Route::delete('/{category}', [CategoryManagementController::class, 'destroy'])->name('delete');
+            Route::delete('/{category}', [CategoryManagementController::class, 'destroy'])->name('destroy');
         });
 
         // Эко-характеристики
@@ -150,25 +141,6 @@ Route::group([], function () {
             Route::delete('/{ecoFeature}', [EcoFeaturesController::class, 'destroy'])->name('delete');
         });
 
-        // Блог - Записи
-        Route::prefix('blog/posts')->name('blog.posts.')->group(function () {
-            Route::get('/', [BlogManagementController::class, 'index'])->name('index');
-            Route::get('/create', [BlogManagementController::class, 'create'])->name('create');
-            Route::post('/', [BlogManagementController::class, 'store'])->name('store');
-            Route::get('/{post}/edit', [BlogManagementController::class, 'edit'])->name('edit');
-            Route::put('/{post}', [BlogManagementController::class, 'update'])->name('update');
-            Route::delete('/{post}', [BlogManagementController::class, 'destroy'])->name('delete');
-        });
-        
-        // Блог - Категории
-        Route::prefix('blog/categories')->name('blog.categories.')->group(function () {
-            Route::get('/', [BlogManagementController::class, 'blogCategories'])->name('index');
-            Route::get('/create', [BlogManagementController::class, 'createBlogCategory'])->name('create');
-            Route::post('/', [BlogManagementController::class, 'storeBlogCategory'])->name('store');
-            Route::get('/{category}/edit', [BlogManagementController::class, 'editBlogCategory'])->name('edit');
-            Route::put('/{category}', [BlogManagementController::class, 'updateBlogCategory'])->name('update');
-            Route::delete('/{category}', [BlogManagementController::class, 'deleteBlogCategory'])->name('delete');
-        });
 
         // Атрибуты товаров
         Route::prefix('attributes')->name('attributes.')->group(function () {
@@ -206,24 +178,6 @@ Route::group([], function () {
             Route::get('/{id}/packing-slip', [OrderManagementController::class, 'printPackingSlip'])->name('print.packing-slip');
         });
         
-        // Экологические инициативы
-        Route::prefix('initiatives')->name('initiatives.')->group(function () {
-            Route::get('/', [InitiativesController::class, 'index'])->name('index');
-            Route::get('/create', [InitiativesController::class, 'create'])->name('create');
-            Route::post('/', [InitiativesController::class, 'store'])->name('store');
-            Route::get('/{initiative}/edit', [InitiativesController::class, 'edit'])->name('edit');
-            Route::put('/{initiative}', [InitiativesController::class, 'update'])->name('update');
-            Route::delete('/{initiative}', [InitiativesController::class, 'destroy'])->name('delete');
-        });
-
-        // Обращения пользователей
-        Route::prefix('contact-requests')->name('contact-requests.')->group(function () {
-            Route::get('/', [ContactRequestController::class, 'index'])->name('index');
-            Route::get('/{contactRequest}', [ContactRequestController::class, 'show'])->name('show');
-            Route::put('/{contactRequest}/status', [ContactRequestController::class, 'updateStatus'])->name('update.status');
-            Route::post('/{contactRequest}/notes', [ContactRequestController::class, 'addNote'])->name('add.note');
-            Route::delete('/{contactRequest}', [ContactRequestController::class, 'destroy'])->name('destroy');
-        });
 
         // Аналитика
         Route::prefix('analytics')->name('analytics.')->group(function () {

@@ -52,20 +52,6 @@
             </div>
         </div>
         
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/20 p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 mr-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Блог</p>
-                    <p class="text-2xl font-bold dark:text-white">{{ $stats['posts'] }}</p>
-                    <a href="{{ route('admin.blog.posts.index') }}" class="text-xs text-eco-700 dark:text-eco-400 hover:underline">Управление →</a>
-                </div>
-            </div>
-        </div>
     </div>
 
     
@@ -238,16 +224,6 @@
                             </svg>
                         </span>
                         <span class="dark:text-white">Добавить эко-характеристику</span>
-                    </div>
-                </a>
-                <a href="{{ route('admin.blog.posts.create') }}" class="block p-4 bg-eco-50 dark:bg-eco-900/10 hover:bg-eco-100 dark:hover:bg-eco-900/20 rounded-lg transition">
-                    <div class="flex items-center">
-                        <span class="p-2 rounded-full bg-eco-700 dark:bg-eco-600 text-white mr-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                            </svg>
-                        </span>
-                        <span class="dark:text-white">Написать статью</span>
                     </div>
                 </a>
             </div>

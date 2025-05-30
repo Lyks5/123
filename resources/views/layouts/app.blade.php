@@ -5,16 +5,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title')</title>
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <title>{{ config('app.name', 'EcoSport') }} - @yield('title', 'Экологичные спортивные товары')</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    <title>{{ config('app.name', 'EcoSport') }} - @yield('title', 'Экологичные спортивные товары')</title>
     <link rel="icon" href="./favicon.ico" />
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    @vite([
+        'resources/css/app.css',
+        'resources/js/product-page.js',
+        'resources/js/components/notification.js',
+        'resources/js/wishlist.js'
+    ])
 </head>
 <style>
     .menu {
@@ -32,14 +34,20 @@
         
         @include('components.footer')
     </div>
-    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
-    
-    @if (session('success'))
-        <div class="toast toast-success">{{ session('success') }}</div>
-    @endif
+    <div id="notifications" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
-    @if (session('error'))
-        <div class="toast toast-error">{{ session('error') }}</div>
+    @if (session('success') || session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                @if(session('success'))
+                    window.notificationManager.show('success', '{{ session('success') }}');
+                @endif
+                
+                @if(session('error'))
+                    window.notificationManager.show('error', '{{ session('error') }}');
+                @endif
+            });
+        </script>
     @endif
 </body>
 

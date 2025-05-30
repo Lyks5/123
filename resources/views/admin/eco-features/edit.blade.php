@@ -76,6 +76,17 @@
                     @endif
                 </div>
             </div>
+
+            <div class="mb-4">
+                <label for="is_active" class="inline-flex items-center">
+                    <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $ecoFeature->is_active) ? 'checked' : '' }}
+                        class="rounded border-gray-300 text-eco-600 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
+                    <span class="ml-2 text-sm font-medium text-gray-700">Активна</span>
+                </label>
+                @error('is_active')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
             
             <div class="flex justify-end mt-6">
                 <a href="{{ route('admin.eco-features.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded mr-2">

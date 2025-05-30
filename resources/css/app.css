@@ -111,5 +111,5 @@
 
 /* Импорт компонентов */
 @import './components/notification.css';
+@import './components/product.css';
 @import './admin/attributes/form.css';
-@import './components/product-form.css';

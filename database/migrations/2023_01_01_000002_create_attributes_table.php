@@ -15,11 +15,20 @@ return new class extends Migration
             $table->string('type')->default('text');
             $table->timestamps();
         });
+
+        Schema::create('attribute_values', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('attribute_id')->constrained()->onDelete('cascade');
+            $table->string('value');
+            $table->integer('display_order')->default(0);
+            $table->timestamps();
+        });
     }
 
     
     public function down(): void
     {
+        Schema::dropIfExists('attribute_values');
         Schema::dropIfExists('attributes');
     }
 };

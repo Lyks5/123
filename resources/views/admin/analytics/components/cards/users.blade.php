@@ -8,10 +8,11 @@
         <div>
             <p class="text-sm text-gray-500 dark:text-gray-400 uppercase">Пользователи</p>
             <p class="text-2xl font-bold dark:text-white animate-fade-in">{{ $userData['total_users'] ?? 0 }}</p>
-            <p class="text-xs text-green-500">+{{ $userData['new_users_30d'] ?? 0 }} за 30 дней</p>
+            <p class="text-xs text-green-500 dark:text-green-400">+{{ $userData['new_users_30d'] ?? 0 }} за 30 дней</p>
         </div>
     </div>
-    <div class="mt-4 h-2 bg-gray-200 rounded-full">
-        <div class="h-2 bg-purple-600 rounded-full" style="width: {{ ($userData['users_goal_progress'] ?? 0) }}%"></div>
+    <div class="mt-4 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-2 bg-purple-600 dark:bg-purple-500 rounded-full transition-all duration-500 ease-out"
+             style="width: {{ ($userData['users_goal_progress'] ?? 0) }}%"></div>
     </div>
 </div>

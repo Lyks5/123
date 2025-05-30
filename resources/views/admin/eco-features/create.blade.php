@@ -41,6 +41,17 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <div class="mb-4">
+                    <label for="is_active" class="inline-flex items-center">
+                        <input type="checkbox" name="is_active" id="is_active" value="1" checked
+                            class="rounded border-gray-300 text-eco-600 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Активна</span>
+                    </label>
+                    @error('is_active')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
             
             <div class="flex justify-end mt-6">

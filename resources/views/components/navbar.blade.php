@@ -1,7 +1,14 @@
 
-<nav 
-    x-data="{ isOpen: false, isScrolled: false }"
-    x-init="window.addEventListener('scroll', () => { isScrolled = window.scrollY > 20 })"
+<nav
+    x-data="{
+        isOpen: false,
+        isScrolled: false,
+        cartCount: {{ auth()->check() ? collect(auth()->user()->cart_data ?? [])->sum('quantity') : collect(session('guest_cart', []))->sum('quantity') }}
+    }"
+    x-init="
+        window.addEventListener('scroll', () => { isScrolled = window.scrollY > 20 });
+        window.addEventListener('cart-updated', (e) => { cartCount = e.detail.count });
+    "
     :class="isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm' : 'bg-transparent'"
     class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
 >
@@ -27,12 +34,6 @@
                     <a href="{{ route('sustainability') }}" class="text-foreground hover:text-eco-600 transition-colors">
                         Экология
                     </a>
-                    <a href="{{ route('blog') }}" class="text-foreground hover:text-eco-600 transition-colors">
-                        Блог
-                    </a>
-                    <a href="{{ route('contact') }}" class="text-foreground hover:text-eco-600 transition-colors">
-                        Контакты
-                    </a>
                 </div>
             </div>
             
@@ -42,15 +43,18 @@
                 </a>
                 <a href="{{ route('cart') }}" aria-label="Корзина" class="p-2 text-foreground hover:text-eco-600 transition-colors relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                    @if (session()->has('cart') && count(session('cart')) > 0)
-                        <span class="absolute -top-1 -right-1 bg-eco-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                            {{ count(session('cart')) }}
-                        </span>
-                    @else
-                        <span class="absolute -top-1 -right-1 bg-eco-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                            0
-                        </span>
-                    @endif
+                    <span
+                        x-show="cartCount > 0"
+                        x-text="cartCount"
+                        class="cart-counter absolute -top-1 -right-1 bg-eco-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center"
+                        :class="{ 'scale-110': cartCount > 0 }"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 scale-90"
+                        x-transition:enter-end="opacity-100 scale-110"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 scale-110"
+                        x-transition:leave-end="opacity-0 scale-90"
+                    ></span>
                 </a>
             </div>
             
@@ -83,27 +87,24 @@
             <a href="{{ route('sustainability') }}" class="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-eco-50">
                 Экология
             </a>
-            <a href="{{ route('blog') }}" class="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-eco-50">
-                Блог
-            </a>
-            <a href="{{ route('contact') }}" class="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-eco-50">
-                Контакты
-            </a>
             <div class="flex items-center space-x-4 px-3 py-2">
                 <a href="{{ route('account') }}" aria-label="Аккаунт" class="p-1 text-foreground hover:text-eco-600 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </a>
                 <a href="{{ route('cart') }}" aria-label="Корзина" class="p-1 text-foreground hover:text-eco-600 transition-colors relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                    @if (session()->has('cart') && count(session('cart')) > 0)
-                        <span class="absolute -top-1 -right-1 bg-eco-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                            {{ count(session('cart')) }}
-                        </span>
-                    @else
-                        <span class="absolute -top-1 -right-1 bg-eco-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                            0
-                        </span>
-                    @endif
+                    <span
+                        x-show="cartCount > 0"
+                        x-text="cartCount"
+                        class="cart-counter absolute -top-1 -right-1 bg-eco-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center"
+                        :class="{ 'scale-110': cartCount > 0 }"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 scale-90"
+                        x-transition:enter-end="opacity-100 scale-110"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 scale-110"
+                        x-transition:leave-end="opacity-0 scale-90"
+                    ></span>
                 </a>
             </div>
         </div>

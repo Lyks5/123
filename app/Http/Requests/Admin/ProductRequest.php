@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
@@ -15,61 +14,61 @@ class ProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'image' => [
-                'sometimes',
-                'image',
-                'mimes:jpeg,png,webp',
-                'max:' . config('images.products.max_size'),
-            ],
-            'name' => ['required', 'string', 'min:3', 'max:255'],
-            'description' => ['required', 'string', 'min:10'],
-            'sku' => [
-                'required',
-                'string',
-                'min:4',
-                'max:50',
-                Rule::unique('products')->ignore($this->route('product')),
-            ],
-            'price' => ['required', 'numeric', 'min:0.01'],
-            'category_id' => ['required', 'integer', 'exists:categories,id'],
-            'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
-            'is_featured' => ['boolean'],
-            
-            'attributes' => ['sometimes', 'array'],
-            'attributes.*.attribute_id' => ['required', 'integer', 'exists:attributes,id'],
-            'attributes.*.value' => ['required', 'string', 'max:255'],
-            
-            'images' => ['sometimes', 'array'],
-            'images.*.id' => ['required', 'integer', 'exists:product_images,id'],
-            'images.*.order' => ['required', 'integer', 'min:0'],
+            'name' => 'required|string|max:255',
+            'sku' => 'required|string|max:50|unique:products,sku,' . $this->product?->id,
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'category_id' => 'required|exists:categories,id',
+            'status' => 'required|in:draft,published',
+            'quantity' => 'required|integer|min:0',
+            'eco_features' => 'nullable|array',
+            'eco_features.*' => 'exists:eco_features,id',
+            'eco_feature_values' => 'nullable|array',
+            'eco_feature_values.*' => 'required_with:eco_features.*|numeric|min:0',
+            'attributes' => 'nullable|array',
+            'attributes.*.attribute_id' => 'nullable|exists:attributes,id',
+            'attributes.*.value' => 'required_with:attributes.*.attribute_id|string',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120|dimensions:min_width=200,min_height=200',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'image.image' => 'Файл должен быть изображением',
-            'image.mimes' => 'Допустимые форматы изображений: jpeg, png, webp',
-            'image.max' => 'Размер изображения не должен превышать :max КБ',
-            'name.required' => 'Название товара обязательно для заполнения',
-            'name.min' => 'Название товара должно содержать минимум :min символа',
-            'description.required' => 'Описание товара обязательно для заполнения',
-            'description.min' => 'Описание товара должно содержать минимум :min символов',
-            'sku.required' => 'Артикул обязателен для заполнения',
-            'sku.min' => 'Артикул должен содержать минимум :min символа',
-            'sku.unique' => 'Товар с таким артикулом уже существует',
-            'price.required' => 'Цена обязательна для заполнения',
-            'price.min' => 'Цена должна быть больше :min',
-            'category_id.required' => 'Выберите категорию товара',
+            'name.required' => 'Название продукта обязательно',
+            'name.max' => 'Название продукта не должно превышать 255 символов',
+            
+            'sku.required' => 'SKU обязателен',
+            'sku.max' => 'SKU не должен превышать 50 символов',
+            'sku.unique' => 'Такой SKU уже существует',
+            
+            'price.required' => 'Цена обязательна',
+            'price.numeric' => 'Цена должна быть числом',
+            'price.min' => 'Цена не может быть отрицательной',
+            
+            'category_id.required' => 'Выберите категорию',
             'category_id.exists' => 'Выбранная категория не существует',
-            'status.required' => 'Статус товара обязателен',
-            'status.in' => 'Недопустимый статус товара',
-            'attributes.*.attribute_id.required' => 'ID характеристики обязателен',
-            'attributes.*.attribute_id.exists' => 'Характеристика не существует',
-            'attributes.*.value.required' => 'Значение характеристики обязательно',
-            'images.*.id.required' => 'ID изображения обязателен',
-            'images.*.id.exists' => 'Изображение не существует',
-            'images.*.order.required' => 'Порядок изображения обязателен',
+            
+            'status.required' => 'Статус обязателен',
+            'status.in' => 'Некорректный статус',
+            
+            'images.*.image' => 'Файл должен быть изображением',
+            'images.*.mimes' => 'Поддерживаются форматы: jpeg, png, jpg, gif',
+            'images.*.max' => 'Размер изображения не должен превышать 5MB',
+            'images.*.dimensions' => 'Минимальный размер изображения 200x200px',
+            
+            'quantity.required' => 'Количество товара обязательно',
+            'quantity.integer' => 'Количество должно быть целым числом',
+            'quantity.min' => 'Количество не может быть отрицательным',
+            
+            'eco_features.array' => 'Некорректный формат экохарактеристик',
+            'eco_features.*.exists' => 'Выбранная экохарактеристика не существует',
+            'eco_feature_values.*.required_with' => 'Укажите значение для выбранной экохарактеристики',
+            'eco_feature_values.*.numeric' => 'Значение экохарактеристики должно быть числом',
+            'eco_feature_values.*.min' => 'Значение экохарактеристики не может быть отрицательным',
+            'attributes.array' => 'Некорректный формат атрибутов',
+            'attributes.*.attribute_id.exists' => 'Выбранный атрибут не существует',
+            'attributes.*.value.required_with' => 'Для выбранного атрибута необходимо указать значение',
         ];
     }
 }

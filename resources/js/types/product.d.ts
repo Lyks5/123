@@ -12,6 +12,7 @@ interface Product {
     is_featured: boolean;
     attributes: ProductAttribute[];
     images: ProductImage[];
+    eco_features: EcoFeature[];
 }
 
 interface ProductAttribute {
@@ -38,12 +39,23 @@ interface Attribute extends ProductAttribute {
     options?: string[];
 }
 
+interface EcoFeature {
+    id: number;
+    name: string;
+    description: string;
+    icon?: string;
+    value?: string;
+    category?: string;
+    unit?: string;
+}
+
 type ProductFormData = Omit<Product, 'id'>;
 
 interface ProductFormProps {
     product?: Product;
     categories: Category[];
     attributes: Attribute[];
+    ecoFeatures: EcoFeature[];
     onSubmit: (data: ProductFormData) => Promise<void>;
     isSubmitting?: boolean;
 }
@@ -98,12 +110,13 @@ export interface ApiErrorResponse {
 export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 export { 
-    Product, 
-    ProductAttribute, 
-    ProductImage, 
+    Product,
+    ProductAttribute,
+    ProductImage,
     ProductFormData,
     Category,
     Attribute,
+    EcoFeature,
     ProductFormProps,
     ImageUploadProps,
     PriceManagerProps,

@@ -9,7 +9,7 @@
             <p class="text-gray-600 mt-1">{{ $category->name }}</p>
         </div>
 
-        <form action="{{ route('admin.categories.update', $category->id) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.categories.update', $category->slug) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             
@@ -71,9 +71,9 @@
             
             <div class="mb-6">
                 <div class="flex items-center">
-                    <input id="status" name="status" type="checkbox" value="active" {{ old('status', $category->status) === 'active' ? 'checked' : '' }}
+                    <input id="is_active" name="is_active" type="checkbox" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
                         class="h-4 w-4 rounded border-gray-300 text-eco-600 focus:ring-eco-500">
-                    <label for="status" class="ml-2 block text-sm text-gray-700">Категория активна</label>
+                    <label for="is_active" class="ml-2 block text-sm text-gray-700">Категория активна</label>
                 </div>
             </div>
             

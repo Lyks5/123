@@ -8,8 +8,6 @@ use App\Models\Product;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Review;
-use App\Models\EnvironmentalInitiative;
-use App\Models\BlogPost;
 use App\Models\EcoFeature;
 use App\Models\EcoImpactRecord;
 use Carbon\Carbon;
@@ -66,8 +64,8 @@ class AnalyticsController extends Controller
             // Статистика по продуктам с оптимизированной выборкой
             $productStats = Product::select(
                 DB::raw('COUNT(*) as total'),
-                DB::raw('COUNT(CASE WHEN stock_quantity = 0 THEN 1 END) as out_of_stock'),
-                DB::raw('COUNT(CASE WHEN stock_quantity > 0 AND stock_quantity <= 5 THEN 1 END) as low_stock')
+                DB::raw('COUNT(CASE WHEN quantity = 0 THEN 1 END) as out_of_stock'),
+                DB::raw('COUNT(CASE WHEN quantity > 0 AND quantity <= 5 THEN 1 END) as low_stock')
             )->first();
 
             // Получаем базовую статистику пользователей
@@ -150,12 +148,10 @@ class AnalyticsController extends Controller
                 'products.sku',
                 DB::raw('SUM(order_items.quantity) as total_quantity'),
                 DB::raw('SUM(order_items.quantity * order_items.price) as total_revenue'),
-                DB::raw('COUNT(DISTINCT orders.id) as order_count'),
-                DB::raw('AVG(reviews.rating) as average_rating')
+                DB::raw('COUNT(DISTINCT orders.id) as order_count')
             )
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->leftJoin('reviews', 'products.id', '=', 'reviews.product_id')
             ->where('orders.status', 'completed')
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->orderByDesc('total_revenue')
@@ -170,8 +166,7 @@ class AnalyticsController extends Controller
                 DB::raw('COUNT(DISTINCT order_items.product_id) as unique_products'),
                 DB::raw('AVG(order_items.quantity * order_items.price) as avg_order_value')
             )
-            ->join('category_product', 'categories.id', '=', 'category_product.category_id')
-            ->join('products', 'category_product.product_id', '=', 'products.id')
+            ->join('products', 'categories.id', '=', 'products.category_id')
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('orders.status', 'completed')
@@ -270,7 +265,6 @@ class AnalyticsController extends Controller
                 'users.name',
                 'users.email',
                 DB::raw('SUM(orders.total_amount) as total_spent'),
-
                 DB::raw('COUNT(orders.id) as order_count')
             )
             ->groupBy('users.id', 'users.name', 'users.email')
@@ -308,7 +302,6 @@ class AnalyticsController extends Controller
                 'products.sku',
                 DB::raw('SUM(order_items.quantity) as total_quantity'),
                 DB::raw('SUM(order_items.subtotal) as total_revenue')
-
             )
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->orderBy('total_quantity', 'desc')
@@ -317,11 +310,11 @@ class AnalyticsController extends Controller
             
         // Stock-level products
         $stockLevels = [
-            'out_of_stock' => Product::where('stock_quantity', 0)->count(),
-            'low_stock' => Product::where('stock_quantity', '>', 0)
-                ->where('stock_quantity', '<=', 5)
+            'out_of_stock' => Product::where('quantity', 0)->count(),
+            'low_stock' => Product::where('quantity', '>', 0)
+                ->where('quantity', '<=', 5)
                 ->count(),
-            'in_stock' => Product::where('stock_quantity', '>', 5)->count(),
+            'in_stock' => Product::where('quantity', '>', 5)->count(),
         ];
         
         try {
@@ -329,7 +322,7 @@ class AnalyticsController extends Controller
                 'review_stats' => $this->getReviewStatistics(),
                 'stock_levels' => $stockLevels,
                 'total_products' => Product::count(),
-                'active_products' => Product::where('status', 'published')->count(),
+                'active_products' => Product::where('is_active', true)->count(),
             ];
 
             if ($topProducts->isNotEmpty()) {
@@ -347,12 +340,6 @@ class AnalyticsController extends Controller
                 'top_products' => []
             ];
         }
-
-        if ($topProducts->isNotEmpty()) {
-            $data['top_products'] = $topProducts;
-        }
-
-        return $data;
     }
 
     /**
@@ -360,46 +347,13 @@ class AnalyticsController extends Controller
      */
     private function getReviewStatistics(): array
     {
-        try {
-            return cache()->remember('review_statistics', 3600, function () {
-                try {
-                    $total = Review::count();
-                    $avgRating = Review::avg('rating') ?: 0;
-                    
-                    $distribution = [
-                        5 => Review::where('rating', 5)->count(),
-                        4 => Review::where('rating', 4)->count(),
-                        3 => Review::where('rating', 3)->count(),
-                        2 => Review::where('rating', 2)->count(),
-                        1 => Review::where('rating', 1)->count(),
-                    ];
-
-                    return [
-                        'total' => $total,
-                        'average' => $avgRating,
-                        'distribution' => $distribution
-                    ];
-                } catch (\Exception $e) {
-                    Log::error('Error calculating review statistics: ' . $e->getMessage());
-                    return [
-                        'total' => 0,
-                        'average' => 0,
-                        'distribution' => [
-                            5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0
-                        ]
-                    ];
-                }
-            });
-        } catch (\Exception $e) {
-            Log::error('Error retrieving cached review statistics: ' . $e->getMessage());
-            return [
-                'total' => 0,
-                'average' => 0,
-                'distribution' => [
-                    5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0
-                ]
-            ];
-        }
+        return [
+            'total' => 0,
+            'average' => 0,
+            'distribution' => [
+                5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0
+            ]
+        ];
     }
     
     /**
@@ -425,10 +379,10 @@ class AnalyticsController extends Controller
             
         $regularSales = $totalSales - $ecoSales;
         
-        // Environmental initiatives
-        $activeInitiatives = EnvironmentalInitiative::where('is_active', true)->count();
-        $totalInitiatives = EnvironmentalInitiative::count();
-        
+        // Eco features statistics
+        $activeFeatures = EcoFeature::where('is_active', true)->count();
+        $totalFeatures = EcoFeature::count();
+
         // Calculate impact if data is available
         // This is placeholder data - in a real app, you would use actual impact data
         // Получаем суммарные экологические показатели
@@ -445,8 +399,8 @@ class AnalyticsController extends Controller
             'total_sales' => $totalSales,
             'eco_percentage' => $totalSales > 0 ? ($ecoSales / $totalSales) * 100 : 0,
             'initiatives' => [
-                'active' => $activeInitiatives,
-                'total' => $totalInitiatives,
+                'active' => $activeFeatures,
+                'total' => $totalFeatures,
             ],
             'impact' => [
                 'plastic_reduced' => $ecoStats->plastic_saved ?? 0,
@@ -585,5 +539,4 @@ class AnalyticsController extends Controller
             return back()->with('error', 'Ошибка при экспорте данных');
         }
     }
-
 }

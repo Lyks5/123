@@ -163,7 +163,7 @@ const initAttributeForm = () => {
             try {
                 const formData = new FormData(form);
                 const response = await fetch(form.action, {
-                    method: 'POST',
+                    method: form.method,
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json',

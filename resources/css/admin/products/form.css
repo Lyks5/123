@@ -1,108 +1,53 @@
-/* Form Layout */
-.product-form-container {
-    @apply bg-white dark:bg-gray-800 shadow rounded-lg p-6;
+.form-group {
+    @apply mb-4;
 }
 
-.section-title {
-    @apply text-2xl font-bold text-gray-800 dark:text-white;
+.form-input,
+.form-textarea,
+.form-select {
+    @apply mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 
+           shadow-sm focus:border-eco-500 focus:ring-eco-500 
+           dark:bg-gray-800 dark:text-gray-200;
 }
 
-.form-grid-2 {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-6 mb-6;
+.error-message {
+    @apply text-red-600 dark:text-red-400 text-sm mt-1 block;
 }
 
-.form-grid-3 {
-    @apply grid grid-cols-1 md:grid-cols-3 gap-6 mb-6;
+.has-error .form-input,
+.has-error .form-textarea,
+.has-error .form-select {
+    @apply border-red-500 dark:border-red-500;
 }
 
-/* Form Elements */
-.form-label {
-    @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+.drop-zone-active {
+    @apply border-eco-500 dark:border-eco-400;
 }
 
-.form-input {
-    @apply mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50;
+.image-preview-item {
+    @apply relative rounded-md overflow-hidden;
 }
 
-.form-textarea {
-    @apply mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50;
+.image-preview-item img {
+    @apply w-full h-32 object-cover;
 }
 
-/* Price Input Group */
-.price-input-group {
-    @apply mt-1 relative rounded-md shadow-sm;
+.image-preview-item .remove-image {
+    @apply absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white 
+           hover:bg-red-600 transition-colors duration-200;
 }
 
-.price-input-group input {
-    @apply block w-full pr-12 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50;
-}
-
-.price-input-group .currency {
-    @apply absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 sm:text-sm;
-}
-
-/* Checkboxes */
-.checkbox-group {
-    @apply flex items-center;
-}
-
-.checkbox-input {
-    @apply h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-eco-600 focus:ring-eco-500;
-}
-
-.checkbox-label {
-    @apply ml-2 block text-sm text-gray-700 dark:text-gray-300;
-}
-
-/* Image Upload */
-.image-upload-container {
-    @apply mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md;
-}
-
-/* Variants Table */
-.variants-table {
-    @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
-}
-
-.variants-table th {
-    @apply px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
-}
-
-.variants-table td {
-    @apply px-4 py-2;
-}
-
-/* Buttons */
 .btn {
-    @apply font-bold py-2 px-4 rounded;
+    @apply inline-flex justify-center py-2 px-4 border border-transparent 
+           rounded-md shadow-sm text-sm font-medium focus:outline-none 
+           focus:ring-2 focus:ring-offset-2 transition-colors duration-200;
 }
 
 .btn-primary {
-    @apply bg-eco-600 hover:bg-eco-700 text-white;
+    @apply bg-eco-600 text-white hover:bg-eco-700 focus:ring-eco-500;
 }
 
 .btn-secondary {
-    @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white;
-}
-
-/* Attributes Section */
-.attributes-container {
-    @apply mb-6 border rounded-lg p-4 dark:border-gray-700;
-}
-
-.attributes-grid {
-    @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
-}
-
-.attribute-checkbox {
-    @apply rounded border-gray-300 dark:border-gray-600 text-eco-600 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50;
-}
-
-/* Preview Images */
-.preview-container {
-    @apply grid grid-cols-2 md:grid-cols-4 gap-4 mt-2;
-}
-
-.preview-image {
-    @apply w-full h-32 object-cover rounded;
+    @apply bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-500
+           dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600;
 }

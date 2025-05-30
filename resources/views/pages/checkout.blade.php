@@ -490,9 +490,9 @@
                                                 <p class="text-sm text-gray-500">Кол-во: {{ $item->quantity }}</p>
                                                 <p class="mt-1 text-sm font-medium text-gray-900">
                                                     @if($item->variant)
-                                                        {{ number_format($item->variant->current_price * $item->quantity, 0, '.', ' ') }} ₽
+                                                        {{ number_format($item->variant->price * $item->quantity, 0, '.', ' ') }} ₽
                                                     @else
-                                                        {{ number_format($item->product->current_price * $item->quantity, 0, '.', ' ') }} ₽
+                                                        {{ number_format($item->product->price * $item->quantity, 0, '.', ' ') }} ₽
                                                     @endif
                                                 </p>
                                             </div>
@@ -503,67 +503,23 @@
                                 <div class="border-t border-gray-200 pt-4 mt-4">
                                     <div class="flex justify-between mb-2">
                                         <span class="text-sm text-gray-600">Промежуточный итог:</span>
-                                        <span class="text-sm font-medium">{{ number_format($subtotal, 0, '.', ' ') }} ₽</span>
+                                        <span class="text-sm font-medium">{{ number_format($checkout->subtotal, 0, '.', ' ') }} ₽</span>
                                     </div>
                                     
                                     <div class="flex justify-between mb-2">
                                         <span class="text-sm text-gray-600">НДС ({{ config('settings.tax_rate', 0.2) * 100 }}%):</span>
-                                        <span class="text-sm font-medium">{{ number_format($taxAmount, 0, '.', ' ') }} ₽</span>
+                                        <span class="text-sm font-medium">{{ number_format($checkout->tax_amount, 0, '.', ' ') }} ₽</span>
                                     </div>
                                     
                                     <div class="flex justify-between mb-2">
                                         <span class="text-sm text-gray-600">Доставка:</span>
-                                        <span class="text-sm font-medium">{{ number_format($shippingAmount, 0, '.', ' ') }} ₽</span>
+                                        <span class="text-sm font-medium">{{ number_format($checkout->shipping_amount, 0, '.', ' ') }} ₽</span>
                                     </div>
-                                    
-                                    @if($discountAmount > 0)
-                                        <div class="flex justify-between mb-2">
-                                            <span class="text-sm text-gray-600">Скидка:</span>
-                                            <span class="text-sm font-medium text-red-600">-{{ number_format($discountAmount, 0, '.', ' ') }} ₽</span>
-                                        </div>
-                                    @endif
                                     
                                     <div class="flex justify-between mb-4 pt-2 border-t border-gray-200">
                                         <span class="text-base font-semibold">Итого:</span>
-                                        <span class="text-base font-semibold">{{ number_format($totalAmount, 0, '.', ' ') }} ₽</span>
+                                        <span class="text-base font-semibold">{{ number_format($checkout->total_amount, 0, '.', ' ') }} ₽</span>
                                     </div>
-                                </div>
-                                
-                                <!-- Промокод -->
-                                <div class="mt-4 pt-4 border-t border-gray-200">
-                                    @if($coupon)
-                                        <div class="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
-                                            <div class="flex justify-between items-center">
-                                                <div>
-                                                    <p class="text-sm font-medium text-green-800">Купон применен: {{ $coupon->code }}</p>
-                                                    <p class="text-xs text-green-700">Скидка: {{ $coupon->type === 'percentage' ? $coupon->value . '%' : number_format($coupon->value, 0, '.', ' ') . ' ₽' }}</p>
-                                                </div>
-                                                <form action="{{ route('checkout.coupon.remove') }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-green-700 hover:text-green-900">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div>
-                                            <form action="{{ route('checkout.coupon') }}" method="POST" class="flex">
-                                                @csrf
-                                                <input type="text" name="coupon_code" placeholder="Введите промокод" 
-                                                    class="flex-1 rounded-l-md border-gray-300 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
-                                                <button type="submit" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 rounded-r-md">
-                                                    Применить
-                                                </button>
-                                            </form>
-                                            @error('coupon_code')
-                                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-                                    @endif
                                 </div>
                                 
                                 <div class="mt-6">

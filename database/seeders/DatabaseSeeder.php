@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             AttributeSeeder::class,
             EcoFeaturesSeeder::class,
+            ProductSeeder::class,
         ]);
 
         User::factory()->create([

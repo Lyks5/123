@@ -24,19 +24,37 @@
                 <!-- Sidebar Filters -->
                 <div class="lg:col-span-1">
                     <div class="sticky top-24 space-y-8">
+                        <!-- Активные фильтры -->
+                        <div id="active-filters" class="flex flex-wrap gap-2"></div>
+
                         <!-- Categories -->
                         <div class="bg-eco-50 rounded-xl p-6">
                             <h3 class="text-lg font-semibold text-eco-900 mb-4">Категории</h3>
                             <div class="space-y-2">
                                 <div class="flex items-center">
-                                    <input type="checkbox" id="category-all" name="category[]" value="all" class="rounded border-eco-300 text-eco-600 focus:ring-eco-500">
+                                    <input type="checkbox" 
+                                        id="category-all" 
+                                        name="category[]" 
+                                        value="all" 
+                                        class="rounded border-eco-300 text-eco-600 focus:ring-eco-500"
+                                        {{ request()->category == 'all' ? 'checked' : '' }}
+                                    >
                                     <label for="category-all" class="ml-2 text-eco-800">Все категории</label>
                                 </div>
                                 
                                 @foreach($categories as $category)
                                 <div class="flex items-center">
-                                    <input type="checkbox" id="category-{{ $category->id }}" name="category[]" value="{{ $category->id }}" class="rounded border-eco-300 text-eco-600 focus:ring-eco-500">
-                                    <label for="category-{{ $category->id }}" class="ml-2 text-eco-800">{{ $category->name }}</label>
+                                    <input type="checkbox" 
+                                        id="category-{{ $category->id }}" 
+                                        name="category[]" 
+                                        value="{{ $category->id }}" 
+                                        class="rounded border-eco-300 text-eco-600 focus:ring-eco-500"
+                                        {{ in_array($category->id, explode(',', request()->category ?? '')) ? 'checked' : '' }}
+                                    >
+                                    <label for="category-{{ $category->id }}" class="ml-2 text-eco-800">
+                                        {{ $category->name }}
+                                        <span class="text-eco-600 text-sm">({{ $category->products_count }})</span>
+                                    </label>
                                 </div>
                                 @endforeach
                             </div>
@@ -46,14 +64,42 @@
                         <div class="bg-eco-50 rounded-xl p-6">
                             <h3 class="text-lg font-semibold text-eco-900 mb-4">Цена</h3>
                             <div class="space-y-4">
+                                <div id="price-range" class="mb-4"></div>
                                 <div class="flex items-center justify-between">
-                                    <input type="number" placeholder="От" class="w-[45%] rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500">
+                                    <input type="number" 
+                                        id="min-price" 
+                                        name="min_price" 
+                                        min="{{ $priceRange['min'] }}" 
+                                        max="{{ $priceRange['max'] }}" 
+                                        value="{{ request()->min_price ?? $priceRange['min'] }}"
+                                        placeholder="От" 
+                                        class="w-[45%] rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
+                                    >
                                     <span class="text-eco-800">—</span>
-                                    <input type="number" placeholder="До" class="w-[45%] rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500">
+                                    <input type="number" 
+                                        id="max-price" 
+                                        name="max_price" 
+                                        min="{{ $priceRange['min'] }}" 
+                                        max="{{ $priceRange['max'] }}" 
+                                        value="{{ request()->max_price ?? $priceRange['max'] }}"
+                                        placeholder="До" 
+                                        class="w-[45%] rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
+                                    >
                                 </div>
-                                <button class="w-full py-2 bg-eco-600 hover:bg-eco-700 text-white rounded-lg transition-colors">
-                                    Применить
-                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Eco Score -->
+                        <div class="bg-eco-50 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold text-eco-900 mb-4">Эко-рейтинг</h3>
+                            <div class="space-y-2">
+                                <select id="eco-score" name="eco_score" class="w-full rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500">
+                                    <option value="">Все</option>
+                                    <option value="90" {{ request()->eco_score == '90' ? 'selected' : '' }}>90+ Отлично</option>
+                                    <option value="80" {{ request()->eco_score == '80' ? 'selected' : '' }}>80+ Очень хорошо</option>
+                                    <option value="70" {{ request()->eco_score == '70' ? 'selected' : '' }}>70+ Хорошо</option>
+                                    <option value="60" {{ request()->eco_score == '60' ? 'selected' : '' }}>60+ Удовлетворительно</option>
+                                </select>
                             </div>
                         </div>
                         
@@ -63,15 +109,24 @@
                             <div class="space-y-2">
                                 @foreach($ecoFeatures as $feature)
                                 <div class="flex items-center">
-                                    <input type="checkbox" id="feature-{{ $feature->id }}" name="features[]" value="{{ $feature->id }}" class="rounded border-eco-300 text-eco-600 focus:ring-eco-500">
-                                    <label for="feature-{{ $feature->id }}" class="ml-2 text-eco-800">{{ $feature->name }}</label>
+                                    <input type="checkbox" 
+                                        id="feature-{{ $feature->id }}" 
+                                        name="features[]" 
+                                        value="{{ $feature->id }}" 
+                                        class="rounded border-eco-300 text-eco-600 focus:ring-eco-500"
+                                        {{ in_array($feature->id, explode(',', request()->eco_features ?? '')) ? 'checked' : '' }}
+                                    >
+                                    <label for="feature-{{ $feature->id }}" class="ml-2 text-eco-800">
+                                        {{ $feature->name }}
+                                        <span class="text-eco-600 text-sm">({{ $feature->products_count }})</span>
+                                    </label>
                                 </div>
                                 @endforeach
                             </div>
                         </div>
                         
                         <!-- Clear Filters -->
-                        <button class="w-full py-2 border border-eco-300 hover:bg-eco-50 text-eco-800 rounded-lg transition-colors">
+                        <button id="clear-filters" class="w-full py-2 border border-eco-300 hover:bg-eco-50 text-eco-800 rounded-lg transition-colors">
                             Очистить фильтры
                         </button>
                     </div>
@@ -82,24 +137,26 @@
                     <!-- Sort Options -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-eco-100">
                         <div class="mb-4 sm:mb-0">
-                            <span class="text-eco-800">Показано {{ $products->firstItem() }} - {{ $products->lastItem() }} из {{ $products->total() }} товаров</span>
+                            <span id="products-count" class="text-eco-800">
+                                Показано {{ $products->firstItem() }} - {{ $products->lastItem() }} из {{ $products->total() }} товаров
+                            </span>
                         </div>
                         <div class="flex items-center">
                             <span class="text-eco-800 mr-2">Сортировать по:</span>
-                            <select class="rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500">
-                                <option>Популярности</option>
-                                <option>Новизне</option>
-                                <option>Цене: низкая-высокая</option>
-                                <option>Цене: высокая-низкая</option>
+                            <select id="sort" name="sort" class="rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500">
+                                <option value="default" {{ request()->sort == 'default' ? 'selected' : '' }}>По умолчанию</option>
+                                <option value="popular" {{ request()->sort == 'popular' ? 'selected' : '' }}>Популярности</option>
+                                <option value="newest" {{ request()->sort == 'newest' ? 'selected' : '' }}>Новизне</option>
+                                <option value="price-low" {{ request()->sort == 'price-low' ? 'selected' : '' }}>Цене: низкая-высокая</option>
+                                <option value="price-high" {{ request()->sort == 'price-high' ? 'selected' : '' }}>Цене: высокая-низкая</option>
+                                <option value="eco-high" {{ request()->sort == 'eco-high' ? 'selected' : '' }}>Эко-рейтингу</option>
                             </select>
                         </div>
                     </div>
                     
                     <!-- Products -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach($products as $product)
-                            @include('components.product-card', ['product' => $product])
-                        @endforeach
+                    <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @include('components.product-grid', ['products' => $products])
                     </div>
                     
                     <!-- Pagination -->
@@ -111,58 +168,15 @@
         </div>
     </section>
     
-    <!-- Eco Benefits Section -->
-    <section class="section-padding bg-eco-50">
-        <div class="container-width px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <span class="inline-block bg-eco-100 text-eco-800 px-4 py-1 rounded-full text-sm font-medium mb-4">
-                    Наши преимущества
-                </span>
-                <h2 class="text-3xl md:text-4xl font-bold text-eco-900 mb-6">
-                    Почему стоит выбрать экологичное снаряжение
-                </h2>
-                <p class="text-eco-700">
-                    Наши продукты не только помогают вам достичь лучших результатов, но и вносят вклад в сохранение окружающей среды.
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Benefit 1 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm">
-                    <div class="w-16 h-16 bg-eco-100 rounded-full flex items-center justify-center mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="text-eco-700" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2Z"></path><path d="M12 2a10 10 0 0 1 10 10"></path><circle cx="12" cy="12" r="2"></circle></svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-eco-900 mb-4">Снижение углеродного следа</h3>
-                    <p class="text-eco-700">
-                        Наши продукты производятся с использованием возобновляемых источников энергии и оптимизированных производственных процессов.
-                    </p>
-                </div>
-                
-                <!-- Benefit 2 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm">
-                    <div class="w-16 h-16 bg-eco-100 rounded-full flex items-center justify-center mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="text-eco-700" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-eco-900 mb-4">Переработанные материалы</h3>
-                    <p class="text-eco-700">
-                        Мы используем переработанный пластик, органический хлопок и другие экологичные материалы, чтобы уменьшить потребление новых ресурсов.
-                    </p>
-                </div>
-                
-                <!-- Benefit 3 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm">
-                    <div class="w-16 h-16 bg-eco-100 rounded-full flex items-center justify-center mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="text-eco-700" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 18.5h-19"></path><path d="M12 18.5V5.7"></path><path d="M7 11.5 12 7l5 4.5"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-eco-900 mb-4">Справедливая торговля</h3>
-                    <p class="text-eco-700">
-                        Мы поддерживаем справедливые условия труда для всех работников в нашей цепочке поставок и сотрудничаем с поставщиками, разделяющими наши ценности.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
     <!-- Newsletter Section -->
     @include('components.newsletter')
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css">
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
+    @vite(['resources/js/shop.js'])
+@endpush

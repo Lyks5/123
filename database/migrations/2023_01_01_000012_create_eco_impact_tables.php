@@ -20,26 +20,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
         });
-
-        Schema::create('environmental_initiatives', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->string('slug')->unique();
-            $table->text('description');
-            $table->string('image')->nullable();
-            $table->text('goal');
-            $table->decimal('current_progress', 10, 2)->default(0);
-            $table->date('start_date');
-            $table->date('end_date')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
     }
 
     
     public function down(): void
     {
-        Schema::dropIfExists('environmental_initiatives');
         Schema::dropIfExists('eco_impact_records');
     }
 };

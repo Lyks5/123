@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from './ImageUpload'
 import { AttributesManager } from './AttributesManager'
 import { PriceManager } from './PriceManager'
+import { EcoFeaturesManager } from './EcoFeaturesManager'
 import { StatusBar } from './StatusBar'
-import { Category, Attribute, ProductFormProps, ProductFormData } from '@/types/product'
+import { Category, Attribute, EcoFeature, ProductFormProps, ProductFormData } from '@/types/product'
 import { productSchema } from '@/lib/validations/product'
 import { FormStorage } from '@/lib/storage'
 import { ApiError } from '@/lib/api'
@@ -19,11 +20,12 @@ import { ApiError } from '@/lib/api'
 interface Props {
   categories: Category[];
   attributes: Attribute[];
+  ecoFeatures: EcoFeature[];
   onSubmit: (data: ProductFormData) => Promise<void>;
   isSubmitting?: boolean;
 }
 
-export function ProductForm({ categories, attributes, onSubmit, isSubmitting = false }: Props) {
+export function ProductForm({ categories, attributes, ecoFeatures, onSubmit, isSubmitting = false }: Props) {
   const [formError, setFormError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   
@@ -38,7 +40,8 @@ export function ProductForm({ categories, attributes, onSubmit, isSubmitting = f
       status: 'draft',
       is_featured: false,
       attributes: [],
-      images: []
+      images: [],
+      eco_features: []
     },
     mode: 'onChange',
     shouldUnregister: false
@@ -216,6 +219,12 @@ export function ProductForm({ categories, attributes, onSubmit, isSubmitting = f
                         <span className="ml-2 text-red-500">●</span>
                       )}
                     </TabsTrigger>
+                    <TabsTrigger value="eco-features" className="tab-trigger">
+                      Эко-характеристики
+                      {form.formState.errors.eco_features && (
+                        <span className="ml-2 text-red-500">●</span>
+                      )}
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="basic" className="space-y-4 mt-4">
@@ -363,7 +372,9 @@ export function ProductForm({ categories, attributes, onSubmit, isSubmitting = f
                       error={fieldErrors.price?.[0]}
                       onPriceChange={(price) => {
                         if (fieldErrors.price) {
-                          setFieldErrors({ ...fieldErrors, price: undefined });
+                          const newErrors = { ...fieldErrors };
+                          delete newErrors.price;
+                          setFieldErrors(newErrors);
                         }
                       }}
                     />
@@ -376,7 +387,24 @@ export function ProductForm({ categories, attributes, onSubmit, isSubmitting = f
                       error={fieldErrors.attributes?.[0]}
                       onAttributeChange={(attr) => {
                         if (fieldErrors.attributes) {
-                          setFieldErrors({ ...fieldErrors, attributes: undefined });
+                          const newErrors = { ...fieldErrors };
+                          delete newErrors.attributes;
+                          setFieldErrors(newErrors);
+                        }
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="eco-features">
+                    <EcoFeaturesManager
+                      form={form}
+                      ecoFeatures={ecoFeatures}
+                      error={fieldErrors.eco_features?.[0]}
+                      onEcoFeatureChange={(feature) => {
+                        if (fieldErrors.eco_features) {
+                          const newErrors = { ...fieldErrors };
+                          delete newErrors.eco_features;
+                          setFieldErrors(newErrors);
                         }
                       }}
                     />

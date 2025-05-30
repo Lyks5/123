@@ -24,14 +24,14 @@
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                         <div class="p-6">
-                            <h2 class="text-xl font-semibold mb-6">Товары в корзине ({{ $cart->items->count() }})</h2>
+                            <h2 class="text-xl font-semibold mb-6">Товары в корзине ({{ $cart->count() }})</h2>
                             
                             <div class="divide-y divide-gray-200">
-                                @foreach($cart->items as $item)
+                                @foreach($cart->getItems() as $item)
                                     <div class="py-6 flex flex-col sm:flex-row">
                                         <div class="flex-shrink-0 w-full sm:w-24 h-24 mb-4 sm:mb-0">
-                                            @if($item->product->primaryImage)
-                                                <img src="{{ asset('storage/' . $item->product->primaryImage->image_path) }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover rounded-md">
+                                            @if($item['product']->primaryImage)
+                                                <img src="{{ asset('storage/' . $item['product']->primaryImage->image_path) }}" alt="{{ $item['product']->name }}" class="w-full h-full object-cover rounded-md">
                                             @else
                                                 <div class="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
                                                     <span class="text-gray-500 text-xs">Нет фото</span>
@@ -43,32 +43,32 @@
                                             <div class="flex flex-wrap justify-between mb-2">
                                                 <div>
                                                     <h3 class="text-lg font-medium text-gray-900">
-                                                        <a href="{{ route('product.show', $item->product->slug) }}" class="hover:text-eco-600">
-                                                            {{ $item->product->name }}
+                                                        <a href="{{ route('product.show', $item['product']->sku) }}" class="hover:text-eco-600">
+                                                            {{ $item['product']->name }}
                                                         </a>
                                                     </h3>
-                                                    <p class="text-sm text-gray-500">Артикул: {{ $item->product->sku }}</p>
+                                                    <p class="text-sm text-gray-500">Артикул: {{ $item['product']->sku }}</p>
                                                 </div>
                                                 <div class="text-right">
-                                                    @if($item->product->sale_price)
+                                                    @if($item['product']->sale_price)
                                                         <p class="text-eco-600 font-semibold">
-                                                            {{ number_format($item->product->sale_price, 0, '.', ' ') }} ₽
+                                                            {{ number_format($item['product']->sale_price, 0, '.', ' ') }} ₽
                                                         </p>
                                                         <p class="text-sm text-gray-500 line-through">
-                                                            {{ number_format($item->product->price, 0, '.', ' ') }} ₽
+                                                            {{ number_format($item['product']->price, 0, '.', ' ') }} ₽
                                                         </p>
                                                     @else
                                                         <p class="font-semibold">
-                                                            {{ number_format($item->product->price, 0, '.', ' ') }} ₽
+                                                            {{ number_format($item['product']->price, 0, '.', ' ') }} ₽
                                                         </p>
                                                     @endif
                                                 </div>
                                             </div>
                                             
-                                            @if($item->variant)
+                                            @if($item['variant'])
                                                 <div class="text-sm text-gray-700 mb-4">
-                                                    <span class="font-medium">Вариант:</span> 
-                                                    {{ $item->variant->name }}
+                                                    <span class="font-medium">Вариант:</span>
+                                                    {{ $item['variant']->name }}
                                                 </div>
                                             @endif
                                             
@@ -77,28 +77,32 @@
 <form action="{{ route('cart.update') }}" method="POST" class="inline-flex">
     @csrf
     @method('PATCH')
-    <input type="hidden" name="items[0][id]" value="{{ $item->id }}">
-    <input type="hidden" name="items[0][quantity]" value="{{ max(1, $item->quantity - 1) }}">
+    <input type="hidden" name="items[{{ $loop->index }}][product_id]" value="{{ $item['product']->id }}">
+    <input type="hidden" name="items[{{ $loop->index }}][variant_id]" value="{{ $item['variant'] ? $item['variant']->id : '' }}">
+    <input type="hidden" name="items[{{ $loop->index }}][quantity]" value="{{ max(1, $item['quantity'] - 1) }}">
     <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100">−</button>
 </form>
 
                                                     
-                                                    <span class="px-3 py-1 text-gray-700 font-medium">{{ $item->quantity }}</span>
+                                                    <span class="px-3 py-1 text-gray-700 font-medium">{{ $item['quantity'] }}</span>
                                                     
 <form action="{{ route('cart.update') }}" method="POST" class="inline-flex">
     @csrf
     @method('PATCH')
-    <input type="hidden" name="items[0][id]" value="{{ $item->id }}">
-    <input type="hidden" name="items[0][quantity]" value="{{ min($item->product->stock_quantity, $item->quantity + 1) }}">
-    <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" {{ $item->quantity >= $item->product->stock_quantity ? 'disabled' : '' }}>+</button>
+    <input type="hidden" name="items[{{ $loop->index }}][product_id]" value="{{ $item['product']->id }}">
+    <input type="hidden" name="items[{{ $loop->index }}][variant_id]" value="{{ $item['variant'] ? $item['variant']->id : '' }}">
+    <input type="hidden" name="items[{{ $loop->index }}][quantity]" value="{{ min($item['product']->stock_quantity, $item['quantity'] + 1) }}">
+    <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" {{ $item['quantity'] >= $item['product']->stock_quantity ? 'disabled' : '' }}>+</button>
 </form>
 
                                                 </div>
                                                 
                                                 <div class="mt-4 sm:mt-0 flex items-center gap-4">
-                                                    <form action="{{ route('cart.remove', $item->id) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этот товар из корзины?');">
+                                                    <form action="{{ route('cart.remove') }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить этот товар из корзины?');">
                                                         @csrf
                                                         @method('DELETE')
+                                                        <input type="hidden" name="product_id" value="{{ $item['product']->id }}">
+                                                        <input type="hidden" name="variant_id" value="{{ $item['variant'] ? $item['variant']->id : '' }}">
                                                         <button type="submit" class="text-sm text-red-600 hover:text-red-700 flex items-center">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -141,20 +145,17 @@
                             <div class="space-y-4">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Стоимость товаров:</span>
-                                    <span class="font-medium">{{ number_format($cart->getTotalAttribute(), 0, '.', ' ') }} ₽</span>
+                                    <span class="font-medium">{{ number_format($cart->getItems()->sum(function($item) {
+                                        return $item['product']->price * $item['quantity'];
+                                    }), 0, '.', ' ') }} ₽</span>
                                 </div>
-                                
-                                @if($cart->discount_amount > 0)
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Скидка:</span>
-                                        <span class="font-medium text-red-600">-{{ number_format($cart->discount_amount, 0, '.', ' ') }} ₽</span>
-                                    </div>
-                                @endif
                                 
                                 <div class="border-t border-gray-200 pt-4">
                                     <div class="flex justify-between text-lg font-semibold">
                                         <span>Итого к оплате:</span>
-                                        <span>{{ number_format($cart->getTotalAttribute(), 0, '.', ' ') }} ₽</span>
+                                        <span>{{ number_format($cart->getItems()->sum(function($item) {
+                                            return $item['product']->price * $item['quantity'];
+                                        }), 0, '.', ' ') }} ₽</span>
                                     </div>
                                 </div>
                                 

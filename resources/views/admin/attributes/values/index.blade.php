@@ -97,7 +97,7 @@
                         </td>
                         <td class="admin-table-body-cell">
                             <div class="flex space-x-4">
-                                <a href="{{ route('admin.attributes.values.update', [$attribute->id, $value->id]) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                <a href="{{ route('admin.attributes.values.edit', ['attribute' => $attribute->id, 'valueId' => $value->id]) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                                     Изменить
                                 </a>
                                 <form action="{{ route('admin.attributes.values.delete', [$attribute->id, $value->id]) }}" method="POST" class="inline" onsubmit="return confirm('Вы уверены?');">

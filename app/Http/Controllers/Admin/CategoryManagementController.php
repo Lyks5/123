@@ -46,9 +46,6 @@ class CategoryManagementController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
         
-        // Generate slug
-        $validated['slug'] = Str::slug($validated['name']);
-        
         // Set boolean values
         $validated['is_active'] = $request->has('is_active');
         
@@ -89,9 +86,6 @@ class CategoryManagementController extends Controller
         if ($validated['parent_id'] == $category->id) {
             return back()->withErrors(['parent_id' => 'Категория не может быть родителем самой себя.']);
         }
-        
-        // Generate slug
-        $validated['slug'] = Str::slug($validated['name']);
         
         // Set boolean values
         $validated['is_active'] = $request->has('is_active');

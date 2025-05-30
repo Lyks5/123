@@ -16,7 +16,17 @@ class ProductController extends Controller
         }
 
         // Загружаем связанные данные
-        $product->load('categories', 'ecoFeatures', 'images', 'variants.attributeValues.attribute');
+        $product->load(['category', 'ecoFeatures', 'images', 'variants.attributeValues.attribute']);
+        
+        // Получаем изображения продукта
+        $images = $product->images;
+        $mainImage = $product->primaryImage()->first();
+        
+        \Log::debug("Product images loaded:", [
+            'product_id' => $product->id,
+            'images_count' => $images->count(),
+            'main_image' => $mainImage ? $mainImage->url : null
+        ]);
 
         // Получаем отзывы
         $reviews = $product->reviews()
@@ -25,9 +35,7 @@ class ProductController extends Controller
             ->paginate(5);
 
         // Получаем связанные товары
-        $relatedProducts = Product::whereHas('categories', function ($query) use ($product) {
-                $query->whereIn('categories.id', $product->categories->pluck('id'));
-            })
+        $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'published')
             ->take(4)
@@ -109,7 +117,9 @@ class ProductController extends Controller
             'reviews',
             'relatedProducts',
             'productAttributes',
-            'ecoFeatures'
+            'ecoFeatures',
+            'mainImage',
+            'images'
         ));
     }
 
@@ -117,7 +127,7 @@ class ProductController extends Controller
     {
         $existingReview = $product->reviews()->where('user_id', auth()->id())->first();
         if ($existingReview) {
-            return redirect()->route('product.review.edit', $product->slug);
+            return redirect()->route('product.review.edit', $product->sku);
         }
 
         $request->validate([
@@ -151,7 +161,7 @@ class ProductController extends Controller
         $review = $product->reviews()->where('user_id', auth()->id())->firstOrFail();
 
         // Load related data for the product page
-        $product->load('categories', 'ecoFeatures', 'images', 'variants.attributeValues.attribute');
+        $product->load('category', 'ecoFeatures', 'images', 'variants.attributeValues.attribute');
 
         // Get reviews including user's own unapproved review
         $reviews = $product->reviews()
@@ -166,9 +176,7 @@ class ProductController extends Controller
             ->paginate(5);
 
         // Related products
-        $relatedProducts = Product::whereHas('categories', function ($query) use ($product) {
-                $query->whereIn('categories.id', $product->categories->pluck('id'));
-            })
+        $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'published')
             ->take(4)
@@ -266,6 +274,6 @@ class ProductController extends Controller
             'is_approved' => true, // Automatically approve review after edit
         ]);
 
-        return redirect()->route('product.show', $product->slug)->with('success', 'Ваш отзыв успешно обновлен и будет опубликован после проверки.');
+        return redirect()->route('product.show', $product->sku)->with('success', 'Ваш отзыв успешно обновлен и будет опубликован после проверки.');
     }
 }

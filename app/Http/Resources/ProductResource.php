@@ -21,6 +21,12 @@ class ProductResource extends JsonResource
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
             
+            // Основное изображение (первое из загруженных)
+            'image' => $this->whenLoaded('images', function() {
+                $firstImage = $this->images->sortBy('order')->first();
+                return $firstImage ? $firstImage->url : null;
+            }),
+            
             'category' => $this->whenLoaded('category'),
             'attributes' => $this->whenLoaded('attributes', function() {
                 return $this->attributes->map(function($attribute) {
@@ -35,7 +41,7 @@ class ProductResource extends JsonResource
                     return [
                         'id' => $image->id,
                         'url' => $image->url,
-                        'order' => $image->pivot->order,
+                        'order' => $image->order,
                     ];
                 });
             }),

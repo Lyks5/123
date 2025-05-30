@@ -19,6 +19,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Products filter API endpoint
+Route::get('products/filter', [App\Http\Controllers\ShopController::class, 'filter']);
+
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::post('products', [ProductController::class, 'store']);
     Route::put('products/{product}', [ProductController::class, 'update']);

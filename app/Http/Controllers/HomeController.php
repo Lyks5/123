@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
-use App\Models\BlogPost;
-use App\Models\EcoFeature; // Заменяем EnvironmentalInitiative на EcoFeature
+use App\Models\EcoFeature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -46,11 +45,11 @@ class HomeController extends Controller
             ->take(2)
             ->get();
 
-        // Блог-посты (обновлённая логика связи с категориями)
-        $blogPosts = BlogPost::with('category') // Предполагается наличие связи belongsTo
+        // Получение популярных продуктов
+        $popularProducts = Product::withCount('orders')
+            ->orderBy('orders_count', 'desc')
             ->where('status', 'published')
-            ->where('published_at', '<=', now())
-            ->latest('published_at')
+            ->latest()
             ->take(3)
             ->get();
 
@@ -59,7 +58,7 @@ class HomeController extends Controller
             'newProducts',
             'categories',
             'initiatives',
-            'blogPosts'
+            'popularProducts'
         ));
     }
 }

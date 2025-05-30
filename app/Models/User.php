@@ -23,6 +23,7 @@ class User extends Authenticatable
         'is_admin',
         'birth_date',
         'gender',
+        'cart_data',
     ];
 
     protected $hidden = [
@@ -34,6 +35,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'birth_date' => 'date',
+        'wishlist_data' => 'array',
+        'cart_data' => 'array',
     ];
 
     public function addresses()
@@ -49,11 +52,6 @@ class User extends Authenticatable
     public function reviews()
     {
         return $this->hasMany(Review::class);
-    }
-
-    public function blogPosts()
-    {
-        return $this->hasMany(BlogPost::class, 'author_id');
     }
 
     public function getDefaultShippingAddress()
@@ -93,5 +91,59 @@ class User extends Authenticatable
     public function isAdmin()
     {
         return $this->is_admin === 1;
+    }
+
+    // Методы для работы с избранным
+    public function getWishlist(string $name = 'Избранное'): Wishlist
+    {
+        $lists = $this->wishlist_data ?? [];
+        
+        foreach ($lists as $list) {
+            if ($list['list_name'] === $name) {
+                return new Wishlist($name, $list['items'] ?? []);
+            }
+        }
+
+        return new Wishlist($name);
+    }
+
+    public function saveWishlist(Wishlist $wishlist): void
+    {
+        $lists = $this->wishlist_data ?? [];
+        $updated = false;
+
+        foreach ($lists as &$list) {
+            if ($list['list_name'] === $wishlist->toArray()['list_name']) {
+                $list = $wishlist->toArray();
+                $updated = true;
+                break;
+            }
+        }
+
+        if (!$updated) {
+            $lists[] = $wishlist->toArray();
+        }
+
+        $this->wishlist_data = $lists;
+        $this->save();
+    }
+
+    public function addToWishlist(int $productId, ?int $variantId = null, string $listName = 'Избранное'): void
+    {
+        $wishlist = $this->getWishlist($listName);
+        $wishlist->addItem($productId, $variantId);
+        $this->saveWishlist($wishlist);
+    }
+
+    public function removeFromWishlist(int $productId, ?int $variantId = null, string $listName = 'Избранное'): void
+    {
+        $wishlist = $this->getWishlist($listName);
+        $wishlist->removeItem($productId, $variantId);
+        $this->saveWishlist($wishlist);
+    }
+
+    public function isInWishlist(int $productId, ?int $variantId = null, string $listName = 'Избранное'): bool
+    {
+        return $this->getWishlist($listName)->hasItem($productId, $variantId);
     }
 }

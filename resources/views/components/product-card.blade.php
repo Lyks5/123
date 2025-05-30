@@ -31,8 +31,8 @@
     </div>
     
     <div class="p-4">
-        <div class="text-xs text-muted-foreground mb-1">{{ $product->category }}</div>
-        <a href="{{ route('product.show', $product->slug) }}" class="hover:text-eco-600 transition-colors">
+        <div class="text-xs text-muted-foreground mb-1">{{ $product->category->name }}</div>
+        <a href="{{ route('product.show', $product->sku) }}" class="hover:text-eco-600 transition-colors">
             <h3 class="font-medium text-foreground mb-2 line-clamp-1">{{ $product->name }}</h3>
         </a>
         <div class="flex items-center justify-between">

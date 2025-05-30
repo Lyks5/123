@@ -11,7 +11,8 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">За все время</p>
         </div>
     </div>
-    <div class="mt-4 h-2 bg-gray-200 rounded-full">
-        <div class="h-2 bg-blue-600 rounded-full" style="width: {{ ($salesData['revenue_goal_progress'] ?? 0) }}%"></div>
+    <div class="mt-4 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-2 bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-500 ease-out"
+             style="width: {{ ($salesData['revenue_goal_progress'] ?? 0) }}%"></div>
     </div>
 </div>

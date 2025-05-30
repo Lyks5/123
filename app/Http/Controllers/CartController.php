@@ -1,67 +1,105 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+
 
 class CartController extends Controller
 {
     public function index()
-{
-    // Получаем корзину из JSON-поля пользователя
-    $cartData = auth()->user()->cart_data ?? [];
-    $recommendedProducts = $this->getRecommendedProducts();
+    {
+        $cart = $this->getCart();
+        $recommendedProducts = $this->getRecommendedProducts();
 
-    return view('pages.cart', [
-        'cart' => $this->normalizeCartData($cartData),
-        'recommendedProducts' => $recommendedProducts
-    ]);
-}
+        return view('pages.cart', [
+            'cart' => $cart,
+            'recommendedProducts' => $recommendedProducts
+        ]);
+    }
 
 public function add(Request $request)
 {
-    $request->validate([
-        'product_id' => 'required|exists:products,id',
-        'variant_id' => 'nullable|exists:variants,id',
-        'quantity' => 'required|integer|min:1',
-    ]);
+    try {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:variants,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
 
-    $product = Product::findOrFail($request->product_id);
-    $variant = $request->variant_id ? Variant::findOrFail($request->variant_id) : null;
+        $product = Product::findOrFail($request->product_id);
+        $variant = $request->variant_id ? Variant::findOrFail($request->variant_id) : null;
 
-    // Проверка доступности
-    $this->validateAvailability($product, $variant, $request->quantity);
+        // Проверка доступности
+        $this->validateAvailability($product, $variant, $request->quantity);
 
-    // Обновляем корзину
-    $user = auth()->user();
-    $cartData = $user->cart_data ?? [];
-    
-    $cartData = $this->updateCartItems(
-        $cartData,
-        $request->product_id,
-        $request->variant_id,
-        $request->quantity
-    );
+        // Получаем текущую корзину
+        $cart = $this->getCart();
 
-    // Сохраняем обновлённую корзину
-    $user->update(['cart_data' => $cartData]);
+        try {
+            $cart->addItem($request->product_id, $request->variant_id, $request->quantity);
 
-    return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
+            // Сохраняем обновленную корзину
+            if (auth()->check()) {
+                auth()->user()->update(['cart_data' => $cart->toArray()['items']]);
+            } else {
+                session()->put('guest_cart', $cart->toArray()['items']);
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Ошибка при добавлении товара в корзину');
+        }
+
+        // Получаем общее количество товаров в корзине
+        $cartCount = collect($cart->toArray()['items'])->sum('quantity');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Товар добавлен в корзину',
+                'cartCount' => $cartCount,
+                'cartData' => $cart->getItems()
+            ]);
+        }
+
+        return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
+    } catch (\Exception $e) {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
+        return redirect()->back()->with('error', $e->getMessage());
+    }
 }
 
 private function normalizeCartData($cartData)
 {
-    // Преобразуем JSON-данные в коллекцию с моделями
+    // Преобразуем JSON-данные в коллекцию с моделями и проверяем наличие товаров
     return collect($cartData)->map(function($item) {
+        if (!isset($item['product_id'])) {
+            return null;
+        }
+
+        $product = Product::find($item['product_id']);
+        if (!$product || $product->status !== 'published') {
+            return null;
+        }
+
+        $variant = isset($item['variant_id']) ? Variant::find($item['variant_id']) : null;
+        if (isset($item['variant_id']) && !$variant) {
+            return null;
+        }
+
         return [
-            'product' => Product::find($item['product_id']),
-            'variant' => $item['variant_id'] ? Variant::find($item['variant_id']) : null,
-            'quantity' => $item['quantity']
+            'product' => $product,
+            'variant' => $variant,
+            'quantity' => min($item['quantity'], $product->stock_quantity)
         ];
     })->filter();
 }
@@ -92,8 +130,7 @@ public function update(Request $request)
         'items.*.quantity' => 'required|integer|min:0',
     ]);
 
-    $user = auth()->user();
-    $cartData = $user->cart_data ?? [];
+    $cartData = auth()->check() ? (auth()->user()->cart_data ?? []) : (session()->get('guest_cart', []));
     $hasErrors = false;
 
     foreach ($request->items as $requestItem) {
@@ -110,7 +147,9 @@ public function update(Request $request)
         $product = Product::find($requestItem['product_id']);
         $variant = $requestItem['variant_id'] ? Variant::find($requestItem['variant_id']) : null;
 
-        if (!$this->isItemValid($product, $variant, $requestItem['quantity'])) {
+        try {
+            $this->validateAvailability($product, $variant, $requestItem['quantity']);
+        } catch (ValidationException $e) {
             $hasErrors = true;
             continue;
         }
@@ -123,9 +162,14 @@ public function update(Request $request)
         }
     }
 
-    $user->update(['cart_data' => $cartData]);
+    // Сохраняем обновленную корзину
+    if (auth()->check()) {
+        auth()->user()->update(['cart_data' => $cartData]);
+    } else {
+        session()->put('guest_cart', $cartData);
+    }
 
-    return $hasErrors 
+    return $hasErrors
         ? redirect()->back()->with('error', 'Некоторые товары не были обновлены')
         : redirect()->back()->with('success', 'Корзина обновлена');
 }
@@ -137,8 +181,7 @@ public function remove(Request $request)
         'variant_id' => 'nullable|exists:variants,id',
     ]);
 
-    $user = auth()->user();
-    $cartData = $user->cart_data ?? [];
+    $cartData = auth()->check() ? (auth()->user()->cart_data ?? []) : (session()->get('guest_cart', []));
     
     $foundIndex = $this->findCartItemIndex(
         $cartData,
@@ -148,10 +191,35 @@ public function remove(Request $request)
 
     if ($foundIndex !== null) {
         array_splice($cartData, $foundIndex, 1);
-        $user->update(['cart_data' => $cartData]);
+        
+        if (auth()->check()) {
+            auth()->user()->update(['cart_data' => $cartData]);
+        } else {
+            session()->put('guest_cart', $cartData);
+        }
     }
 
     return redirect()->back()->with('success', 'Товар удален из корзины');
+}
+
+public function applyCoupon(Request $request)
+{
+    $request->validate([
+        'coupon_code' => 'required|string'
+    ]);
+
+    // TODO: Implement coupon logic
+    return redirect()->back()->with('error', 'Функционал купонов временно недоступен');
+}
+
+private function findCartItemIndex($cartData, $productId, $variantId)
+{
+    foreach ($cartData as $index => $item) {
+        if ($item['product_id'] == $productId && $item['variant_id'] == $variantId) {
+            return $index;
+        }
+    }
+    return null;
 }
 
     
@@ -194,12 +262,18 @@ protected function getCart()
             session()->forget('guest_cart');
         }
 
-        return $this->normalizeCartData($cartData);
+        $items = $this->normalizeCartData($cartData);
+        $cart = new Cart(auth()->id(), $cartData);
+        $cart->items = $items;
+        return $cart;
 
     // Для гостей
     } else {
         $guestCart = session('guest_cart', []);
-        return $this->normalizeCartData($guestCart);
+        $items = $this->normalizeCartData($guestCart);
+        $cart = new Cart(null, $guestCart);
+        $cart->items = $items;
+        return $cart;
     }
 }
     

@@ -23,6 +23,10 @@ return new class extends Migration
             $table->string('gender')->nullable();
             $table->json('preferences')->nullable();
             $table->decimal('eco_impact_score', 10, 2)->default(0);
+            $table->json('cart_data')->nullable();
+            $table->json('wishlist_data')
+                   ->nullable()
+                   ->comment('Формат: [{list_name: "Мой список", items: [{product_id: 1, variant_id: 2}]}]');
             $table->rememberToken();
             $table->timestamps();
         });

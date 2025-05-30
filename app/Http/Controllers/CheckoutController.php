@@ -6,8 +6,10 @@ use App\Models\Cart;
 use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Coupon;
+use App\Models\Checkout;
 use App\Models\EcoImpactRecord;
+use App\Models\Product;
+use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -19,26 +21,15 @@ class CheckoutController extends Controller
         $cart = $this->getCart();
         
         // Проверяем, что корзина не пуста
-        if ($cart->items->isEmpty()) {
+        if ($cart->isEmpty()) {
             return redirect()->route('shop')->with('error', 'Ваша корзина пуста. Добавьте товары перед оформлением заказа.');
         }
 
+        // Получаем или создаем сессию оформления заказа
+        $checkout = $this->getOrCreateCheckout($cart);
+        
         // Получаем адреса пользователя, если он авторизован
         $addresses = auth()->check() ? auth()->user()->addresses : collect();
-        
-        // Проверяем применение купона
-        $coupon = session('checkout.coupon');
-        
-        // Рассчитываем сумму заказа
-        $subtotal = $cart->total_amount;
-        $taxRate = config('settings.tax_rate', 0.2); // 20% НДС
-        $taxAmount = $subtotal * $taxRate;
-        
-        // Скидка по купону
-        $discountAmount = 0;
-        if ($coupon) {
-            $discountAmount = $coupon->calculateDiscount($subtotal);
-        }
         
         // Доставка
         $shippingMethods = [
@@ -58,77 +49,17 @@ class CheckoutController extends Controller
                 'days' => '1-2 дня',
             ],
         ];
-        
-        $selectedShippingMethod = session('checkout.shipping_method', 'standard');
-        $shippingAmount = $shippingMethods[$selectedShippingMethod]['price'];
-        
-        // Общая сумма
-        $totalAmount = $subtotal + $taxAmount + $shippingAmount - $discountAmount;
-        
+
         // Расчет экологического вклада
         $ecoImpact = $this->calculateEcoImpact($cart);
         
         return view('pages.checkout', compact(
             'cart',
+            'checkout',
             'addresses',
-            'subtotal',
-            'taxAmount',
-            'discountAmount',
-            'shippingAmount',
-            'totalAmount',
             'shippingMethods',
-            'selectedShippingMethod',
-            'coupon',
             'ecoImpact'
         ));
-    }
-
-    public function applyCoupon(Request $request)
-    {
-        $request->validate([
-            'coupon_code' => 'required|string|max:50',
-        ]);
-
-        $coupon = Coupon::where('code', $request->coupon_code)
-            ->where('is_active', true)
-            ->first();
-
-        if (!$coupon) {
-            return redirect()->back()->with('error', 'Купон не найден или неактивен.');
-        }
-
-        // Проверяем срок действия купона
-        if ($coupon->starts_at && now()->lt($coupon->starts_at)) {
-            return redirect()->back()->with('error', 'Купон еще не активен.');
-        }
-
-        if ($coupon->expires_at && now()->gt($coupon->expires_at)) {
-            return redirect()->back()->with('error', 'Срок действия купона истек.');
-        }
-
-        // Проверяем количество использований
-        if ($coupon->max_uses && $coupon->used_count >= $coupon->max_uses) {
-            return redirect()->back()->with('error', 'Лимит использования купона исчерпан.');
-        }
-
-        // Проверяем минимальную сумму заказа
-        $cart = $this->getCart();
-        $subtotal = $cart->total;
-
-        if ($coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
-            return redirect()->back()->with('error', "Купон действует для заказов от {$coupon->min_order_amount} руб.");
-        }
-
-        // Сохраняем купон в сессии
-        session(['checkout.coupon' => $coupon]);
-
-        return redirect()->back()->with('success', 'Купон успешно применен.');
-    }
-
-    public function removeCoupon()
-    {
-        session()->forget('checkout.coupon');
-        return redirect()->back()->with('success', 'Купон удален.');
     }
 
     public function updateShipping(Request $request)
@@ -183,7 +114,8 @@ class CheckoutController extends Controller
         $cart = $this->getCart();
         
         // Проверяем, что корзина не пуста
-        if ($cart->items->isEmpty()) {
+        $cartData = auth()->check() ? (auth()->user()->cart_data ?? []) : (session()->get('guest_cart', []));
+        if (empty($cartData)) {
             return redirect()->route('shop')->with('error', 'Ваша корзина пуста.');
         }
 
@@ -197,8 +129,7 @@ class CheckoutController extends Controller
                 $shippingAddressId = $request->shipping_address_id;
             } else {
                 // Создаем новый адрес доставки
-                $shippingAddress = Address::create([
-                    'user_id' => auth()->id(),
+                $addressData = [
                     'type' => 'shipping',
                     'is_default' => false,
                     'first_name' => $request->shipping_first_name,
@@ -210,7 +141,13 @@ class CheckoutController extends Controller
                     'postal_code' => $request->shipping_postal_code,
                     'country' => $request->shipping_country,
                     'phone' => $request->shipping_phone,
-                ]);
+                ];
+
+                if (auth()->check()) {
+                    $addressData['user_id'] = auth()->id();
+                }
+
+                $shippingAddress = Address::create($addressData);
                 
                 $shippingAddressId = $shippingAddress->id;
             }
@@ -224,8 +161,7 @@ class CheckoutController extends Controller
                 $billingAddressId = $shippingAddressId;
             } else {
                 // Создаем новый платежный адрес
-                $billingAddress = Address::create([
-                    'user_id' => auth()->id(),
+                $addressData = [
                     'type' => 'billing',
                     'is_default' => false,
                     'first_name' => $request->billing_first_name,
@@ -237,7 +173,13 @@ class CheckoutController extends Controller
                     'postal_code' => $request->billing_postal_code,
                     'country' => $request->billing_country,
                     'phone' => $request->billing_phone,
-                ]);
+                ];
+
+                if (auth()->check()) {
+                    $addressData['user_id'] = auth()->id();
+                }
+
+                $billingAddress = Address::create($addressData);
                 
                 $billingAddressId = $billingAddress->id;
             }
@@ -246,14 +188,6 @@ class CheckoutController extends Controller
             $subtotal = $cart->getSubtotal();
             $taxRate = config('settings.tax_rate', 0.2); // 20% НДС
             $taxAmount = $subtotal * $taxRate;
-            
-            // Скидка по купону
-            $discountAmount = 0;
-            $coupon = session('checkout.coupon');
-            
-            if ($coupon) {
-                $discountAmount = $coupon->calculateDiscount($subtotal);
-            }
             
             // Доставка
             $shippingMethod = session('checkout.shipping_method', 'standard');
@@ -265,7 +199,7 @@ class CheckoutController extends Controller
             $shippingAmount = $shippingMethods[$shippingMethod];
             
             // Общая сумма
-            $totalAmount = $subtotal + $taxAmount + $shippingAmount - $discountAmount;
+            $totalAmount = $subtotal + $taxAmount + $shippingAmount;
             
             // Создаем заказ
             $order = Order::create([
@@ -275,7 +209,6 @@ class CheckoutController extends Controller
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount,
                 'shipping_amount' => $shippingAmount,
-                'discount_amount' => $discountAmount,
                 'shipping_address_id' => $shippingAddressId,
                 'billing_address_id' => $billingAddressId,
                 'payment_method' => $request->payment_method,
@@ -289,7 +222,7 @@ class CheckoutController extends Controller
                 $product = $item->product;
                 $variant = $item->variant;
                 
-                $price = $variant ? $variant->current_price : $product->current_price;
+                $price = $variant ? $variant->price : $product->price;
                 $itemTax = $price * $taxRate;
                 
                 // Создаем элемент заказа
@@ -311,17 +244,8 @@ class CheckoutController extends Controller
                 if ($variant) {
                     $variant->decrement('stock_quantity', $item->quantity);
                 } else {
-                    $product->decrement('stock_quantity', $item->quantity);
+                    $product->decrement('quantity', $item->quantity);
                 }
-            }
-            
-            // Если был применен купон, привязываем его к заказу и увеличиваем счетчик
-            if ($coupon) {
-                $order->coupons()->attach($coupon->id, [
-                    'discount_amount' => $discountAmount,
-                ]);
-                
-                $coupon->increment('used_count');
             }
             
             // Создаем запись об экологическом вкладе
@@ -345,9 +269,15 @@ class CheckoutController extends Controller
                 }
             }
             
-            // Очищаем корзину и данные оформления заказа в сессии
-            $cart->items()->delete();
-            session()->forget(['checkout.coupon', 'checkout.shipping_method']);
+            // Очищаем корзину и данные оформления заказа
+            $cart->clear();
+            if (auth()->check()) {
+                auth()->user()->cart_data = ['items' => []];
+                auth()->user()->save();
+            } else {
+                session()->forget('cart_data');
+            }
+            session()->forget('checkout.shipping_method');
             
             DB::commit();
             
@@ -381,32 +311,83 @@ class CheckoutController extends Controller
         return view('pages.checkout-success', compact('order'));
     }
 
-    /**
-     * Получить корзину для текущего пользователя или сессии.
-     */
+   /**
+    * Получить или создать объект оформления заказа
+    */
+   protected function getOrCreateCheckout($cart)
+   {
+       // Пытаемся получить существующий чекаут из сессии
+       $checkoutId = session('checkout_id');
+       $checkout = $checkoutId ? Checkout::find($checkoutId) : null;
+
+       if (!$checkout) {
+           // Создаем новый чекаут
+           $checkout = new Checkout();
+           $checkout->shipping_method = session('checkout.shipping_method', 'standard');
+       }
+
+       // Обновляем суммы
+       $checkout->subtotal = $cart->getSubtotal();
+       $checkout->tax_amount = $checkout->calculateTax();
+       $checkout->shipping_amount = $checkout->calculateShipping();
+       $checkout->total_amount = $checkout->calculateTotal();
+
+       $checkout->save();
+
+       // Сохраняем ID в сессии
+       session(['checkout_id' => $checkout->id]);
+
+       return $checkout;
+   }
+
+   /**
+    * Получить корзину для текущего пользователя или сессии.
+    */
     protected function getCart()
     {
+        // Для авторизованных пользователей
         if (auth()->check()) {
-            // Для авторизованного пользователя
-            $cart = Cart::firstOrCreate([
-                'user_id' => auth()->id(),
-            ]);
+            $user = auth()->user();
+            $cartData = $user->cart_data ?? [];
         } else {
-            // Для гостя
-            $sessionId = session()->get('cart_id');
-            
-            if (!$sessionId) {
-                return new Cart();
-            }
-            
-            $cart = Cart::where('session_id', $sessionId)->first();
-            
-            if (!$cart) {
-                return new Cart();
-            }
+            // Для гостей
+            $cartData = session('guest_cart', []);
         }
 
-        return $cart->load('items.product', 'items.variant');
+        // Преобразуем данные корзины в нужный формат
+        $items = collect($cartData)->map(function ($item) {
+            if (!isset($item['product_id'])) {
+                return null;
+            }
+
+            $product = Product::find($item['product_id']);
+            if (!$product || $product->status !== 'published') {
+                return null;
+            }
+
+            $variant = isset($item['variant_id']) ? Variant::find($item['variant_id']) : null;
+            if (isset($item['variant_id']) && !$variant) {
+                return null;
+            }
+
+            if (!isset($item['quantity'])) {
+                return null;
+            }
+
+            return (object)[
+                'product' => $product,
+                'variant' => $variant,
+                'quantity' => $item['quantity']
+            ];
+        })->filter()->values();
+
+        // Создаем объект корзины
+        $cart = new Cart(auth()->id(), $cartData);
+        
+        // Добавляем коллекцию items как свойство
+        $cart->items = $items;
+        
+        return $cart;
     }
 
     /**

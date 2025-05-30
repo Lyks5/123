@@ -57,34 +57,118 @@ class AccountController extends Controller
      */
     public function addToWishlist(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-        ]);
-        
-        $user = Auth::user();
-        $defaultWishlist = Wishlist::getDefaultForUser($user->id);
-        
-        if ($defaultWishlist->addProduct($request->product_id)) {
-            return back()->with('success', 'Товар добавлен в избранное.');
+        try {
+            $request->validate([
+                'product_id' => 'required|exists:products,id',
+            ]);
+            
+            $user = Auth::user();
+            $defaultWishlist = $this->getDefaultWishlist($user);
+            
+            // Проверяем, есть ли уже товар в избранном
+            $itemExists = collect($defaultWishlist['items'] ?? [])->contains('product_id', $request->product_id);
+            
+            \Log::info('Adding to wishlist', [
+                'user_id' => $user->id,
+                'product_id' => $request->product_id,
+                'exists' => $itemExists
+            ]);
+            
+            if (!$itemExists) {
+                $defaultWishlist['items'][] = [
+                    'product_id' => $request->product_id,
+                    'added_at' => now()->toDateTimeString()
+                ];
+                
+                // Обновляем wishlist_data пользователя
+                $wishlistData = $user->wishlist_data ?? [];
+                $wishlistData = collect($wishlistData)
+                    ->map(function($list) use ($defaultWishlist) {
+                        return $list['is_default'] ? $defaultWishlist : $list;
+                    })
+                    ->toArray();
+                
+                $user->update(['wishlist_data' => $wishlistData]);
+                
+                $message = 'Товар добавлен в избранное';
+                $status = true;
+            } else {
+                $message = 'Товар уже есть в избранном';
+                $status = false;
+            }
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => $status,
+                    'message' => $message
+                ]);
+            }
+            
+            return back()->with($status ? 'success' : 'info', $message);
+            
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Произошла ошибка при добавлении в избранное'
+                ], 422);
+            }
+            return back()->with('error', 'Произошла ошибка при добавлении в избранное');
         }
-        
-        return back()->with('info', 'Товар уже есть в избранном.');
     }
     
     /**
      * Remove a product from the user's wishlist.
      *
-     * @param  int  $productId
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function removeFromWishlist($productId)
+    public function removeFromWishlist(Request $request)
     {
-        $user = Auth::user();
-        $defaultWishlist = Wishlist::getDefaultForUser($user->id);
-        
-        $defaultWishlist->removeProduct($productId);
-        
-        return back()->with('success', 'Товар удален из избранного.');
+        try {
+            $request->validate([
+                'product_id' => 'required|exists:products,id',
+            ]);
+            
+            $user = Auth::user();
+            $defaultWishlist = $this->getDefaultWishlist($user);
+            
+            // Удаляем товар из списка
+            $defaultWishlist['items'] = collect($defaultWishlist['items'])
+                ->reject(function($item) use ($request) {
+                    return $item['product_id'] == $request->product_id;
+                })
+                ->values()
+                ->toArray();
+            
+            // Обновляем wishlist_data пользователя
+            $wishlistData = $user->wishlist_data ?? [];
+            $wishlistData = collect($wishlistData)
+                ->map(function($list) use ($defaultWishlist) {
+                    return $list['is_default'] ? $defaultWishlist : $list;
+                })
+                ->toArray();
+            
+            $user->update(['wishlist_data' => $wishlistData]);
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Товар удален из избранного'
+                ]);
+            }
+            
+            return back()->with('success', 'Товар удален из избранного');
+            
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Произошла ошибка при удалении из избранного'
+                ], 422);
+            }
+            return back()->with('error', 'Произошла ошибка при удалении из избранного');
+        }
     }
 
     /**
@@ -97,6 +181,23 @@ class AccountController extends Controller
             ->paginate(10);
             
         return view('account.orders', compact('orders'));
+    }
+
+    /**
+     * Display the details of a specific order.
+     *
+     * @param Order $order
+     * @return \Illuminate\Http\Response
+     */
+    public function showOrder(Order $order)
+    {
+        // Проверяем, принадлежит ли заказ текущему пользователю
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $order->load(['shippingAddress', 'billingAddress', 'items.product.primaryImage']);
+        return view('account.order-details', compact('order'));
     }
     
     /**
