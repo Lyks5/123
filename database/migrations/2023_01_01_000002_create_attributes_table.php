@@ -20,6 +20,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('attribute_id')->constrained()->onDelete('cascade');
             $table->string('value');
+            $table->string('hex_color')->nullable();
             $table->integer('display_order')->default(0);
             $table->timestamps();
         });

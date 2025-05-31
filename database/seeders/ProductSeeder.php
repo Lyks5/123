@@ -157,18 +157,27 @@ class ProductSeeder extends Seeder
         $category = Category::where('name', $categoryName)->first();
 
         foreach ($products as $product) {
-            Product::create([
+            $newProduct = Product::create([
                 'category_id' => $category->id,
                 'name' => $product['name'],
                 'description' => $product['description'],
                 'sku' => Str::uuid(),
                 'price' => $product['price'],
-                'quantity' => rand(10, 100),
+                'stock_quantity' => rand(10, 100),
                 'status' => 'published',
                 'is_featured' => rand(0, 1),
                 'eco_score' => $product['eco_score'],
                 'sustainability_info' => $product['sustainability_info'],
                 'carbon_footprint' => $product['carbon_footprint'],
+            ]);
+
+            // Добавляем изображение для продукта
+            $newProduct->images()->create([
+                'image_path' => 'products/футболка.png',
+                'original_name' => 'футболка.png',
+                'mime_type' => 'image/png',
+                'size' => 0,
+                'order' => 1
             ]);
         }
     }

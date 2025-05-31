@@ -3,20 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
-    protected $appends = ['image', 'stock_quantity'];
+    use HasFactory;
+
+    protected $appends = ['image'];
 
     protected $fillable = [
         'name',
         'description',
         'sku',
         'price',
-        'quantity',
+        'stock_quantity',
         'category_id',
         'status',
         'is_featured',
@@ -33,6 +36,15 @@ class Product extends Model
     ];
 
     protected $with = ['category', 'ecoFeatures'];
+
+    /**
+     * Допустимые статусы товара
+     */
+    public const STATUSES = [
+        'draft' => 'Черновик',
+        'published' => 'Опубликован',
+        'archived' => 'Архивирован'
+    ];
 
     public function category(): BelongsTo
     {
@@ -61,6 +73,7 @@ class Product extends Model
             ->withPivot('value')
             ->withTimestamps();
     }
+    
     public function variants()
     {
         return $this->hasMany(Variant::class);
@@ -83,6 +96,7 @@ class Product extends Model
     {
         return $this->hasMany(Review::class);
     }
+
     /**
      * Get attribute values for the product
      */
@@ -101,8 +115,13 @@ class Product extends Model
         return $url;
     }
 
-    public function getStockQuantityAttribute()
+    /**
+     * Get the route key name for Laravel.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
     {
-        return $this->quantity;
+        return 'sku';
     }
 }

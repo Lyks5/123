@@ -15,7 +15,7 @@
             <div class="product-card group transform transition-all duration-300 hover:-translate-y-1">
                 <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-white to-eco-50/30 border border-eco-100 shadow-lg hover:shadow-xl hover:shadow-eco-100/20 hover:border-eco-200 transition-all duration-300">
                     <!-- Изображение -->
-                    <a href="{{ route('product.show', $product->slug) }}" class="block aspect-[4/3] relative group overflow-hidden">
+                    <a href="{{ route('product.show', ['product' => $product->sku]) }}" class="block aspect-[4/3] relative group overflow-hidden">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                         @if($product->primary_image)
                             <img src="{{ asset('storage/' . $product->primary_image->image_path) }}"
@@ -55,7 +55,7 @@
                             </div>
                         @endif
                         
-                        <a href="{{ route('product.show', $product->slug) }}" class="group/title">
+                        <a href="{{ route('product.show', ['product' => $product->sku]) }}" class="group/title">
                             <h3 class="text-lg font-medium text-eco-900 mb-3 group-hover/title:text-eco-600 transition-colors">
                                 {{ $product->name }}
                             </h3>

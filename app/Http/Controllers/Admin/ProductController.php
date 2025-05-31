@@ -75,12 +75,9 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
             
-            // Удаляем изображения из validatedData, чтобы не передавать их в ProductService
             $validatedData = $request->validated();
-            $images = $request->file('images');
-            unset($validatedData['images']);
-
-            // Создаем продукт
+            
+            // Создаем продукт со всеми данными, включая изображения
             $product = $this->productService->create($validatedData);
             
             // Привязываем экохарактеристики
@@ -88,54 +85,14 @@ class ProductController extends Controller
                 $product->ecoFeatures()->sync($validatedData['eco_features']);
             }
             
-            // Загружаем изображения
-            if ($images) {
-                \Log::info('Uploading product images:', [
-                    'product_id' => $product->id,
-                    'images_count' => count($images)
-                ]);
-                
-                foreach ($images as $index => $imageFile) {
-                    try {
-                        // Создаем временный request с product_id
-                        $currentRequest = request();
-                        $currentRequest->merge(['product_id' => $product->id]);
-                        
-                        $image = $this->productImageService->upload($imageFile);
-                        
-                        \Log::info('Image uploaded successfully:', [
-                            'product_id' => $product->id,
-                            'image_id' => $image->id,
-                            'image_url' => $image->url,
-                            'order' => $image->order,
-                            'index' => $index
-                        ]);
-                    } catch (\Exception $e) {
-                        \Log::error('Ошибка загрузки изображения:', [
-                            'product_id' => $product->id,
-                            'index' => $index,
-                            'error' => $e->getMessage(),
-                            'file' => $e->getFile(),
-                            'line' => $e->getLine()
-                        ]);
-                        continue;
-                    }
-                }
-                
-                // Проверяем успешность загрузки
-                $product->load('images');
-                \Log::info('Product images after upload:', [
-                    'product_id' => $product->id,
-                    'images_count' => $product->images->count(),
-                    'first_image' => $product->images->first() ? [
-                        'id' => $product->images->first()->id,
-                        'url' => $product->images->first()->url,
-                        'order' => $product->images->first()->order
-                    ] : null
-                ]);
-            }
-            
             DB::commit();
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'data' => new ProductResource($product)
+                ], 201);
+            }
             
             return redirect()
                 ->route('admin.products.index')
@@ -144,6 +101,13 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Ошибка создания продукта: ' . $e->getMessage());
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ], 500);
+            }
             
             return redirect()
                 ->back()
@@ -234,17 +198,19 @@ class ProductController extends Controller
         }
     }
 
-    public function update(ProductRequest $request, Product $product): JsonResponse
+    public function update(ProductRequest $request, Product $product)
     {
         try {
             DB::beginTransaction();
             
             $validatedData = $request->validated();
+            \Log::info('Update validated data:', $validatedData);
             
             // Очищаем кэш перед обновлением
             cache()->forget("product_{$product->id}_details");
             
-            $product = $this->productService->update($product, $validatedData);
+            $result = $this->productService->update($product, $validatedData);
+            \Log::info('Updated product:', $result->toArray());
             
             // Обновляем эко-характеристики, если они предоставлены
             if (isset($validatedData['eco_features'])) {
@@ -253,10 +219,9 @@ class ProductController extends Controller
             
             DB::commit();
             
-            return response()->json([
-                'status' => 'success',
-                'data' => new ProductResource($product)
-            ]);
+            return redirect()
+                ->route('admin.products.index')
+                ->with('success', 'Продукт успешно обновлен');
         } catch (\Exception $e) {
             DB::rollBack();
             
@@ -366,6 +331,37 @@ class ProductController extends Controller
                 'status' => 'error',
                 'message' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Удалить продукт.
+     */
+    public function destroy(Product $product)
+    {
+        try {
+            DB::beginTransaction();
+            
+            // Удаляем изображения продукта
+            foreach ($product->images as $image) {
+                $this->productImageService->delete($image);
+            }
+            
+            // Удаляем сам продукт
+            $product->delete();
+            
+            DB::commit();
+            
+            return redirect()
+                ->route('admin.products.index')
+                ->with('success', 'Продукт успешно удален');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()
+                ->back()
+                ->with('error', 'Ошибка при удалении продукта: ' . $e->getMessage());
         }
     }
 }

@@ -436,9 +436,6 @@
                                 В магазин
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                             </a>
-                            <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-6 py-3 rounded-full border border-white/30 text-white font-medium hover:bg-white/10 transition-colors">
-                                Связаться с нами
-                            </a>
                         </div>
                     </div>
                     <div class="relative w-full md:w-auto">

@@ -13,10 +13,9 @@ class AttributeFactory extends Factory
     {
         return [
             'name' => $this->faker->unique()->word(),
-            'type' => $this->faker->randomElement(['select', 'radio', 'checkbox', 'color']),
-            'display_name' => $this->faker->sentence(2),
-            'is_required' => $this->faker->boolean(),
-            'display_order' => $this->faker->numberBetween(1, 100),
+            'type' => $this->faker->randomElement(['text', 'color', 'select']),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }

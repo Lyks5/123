@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use Illuminate\Http\UploadedFile;
 
 class ProductService
 {
@@ -13,7 +14,7 @@ class ProductService
                 'value' => $data['category_id'],
                 'type' => gettype($data['category_id'])
             ],
-            'quantity' => $data['quantity'] ?? 0,
+            'stock_quantity' => $data['stock_quantity'] ?? 0,
             'status' => $data['status'] ?? 'draft'
         ]);
         
@@ -62,7 +63,9 @@ class ProductService
             'raw_category_id' => [
                 'value' => $data['category_id'],
                 'type' => gettype($data['category_id'])
-            ]
+            ],
+            'stock_quantity' => $data['stock_quantity'] ?? 'not set',
+            'all_data' => $data
         ]);
         
         // Валидация и приведение типов
@@ -210,17 +213,44 @@ class ProductService
     
     protected function syncImages(Product $product, array $images): void
     {
-        // Если передан массив файлов, создаем новые изображения
-        if (isset($images[0]) && !isset($images[0]['id'])) {
-            return;
+        \Log::info('Syncing images for product', [
+            'product_id' => $product->id,
+            'images_count' => count($images)
+        ]);
+
+        // Если передан массив объектов с id, это существующие изображения
+        if (isset($images[0]) && isset($images[0]['id'])) {
+            $product->images()->sync(
+                collect($images)->mapWithKeys(fn($item) => [
+                    $item['id'] => ['order' => $item['order'] ?? 0]
+                ])
+            );
+            \Log::info('Synced existing images');
         }
-        
-        // Иначе синхронизируем существующие изображения
-        $product->images()->sync(
-            collect($images)->mapWithKeys(fn($item) => [
-                $item['id'] => ['order' => $item['order'] ?? 0]
-            ])
-        );
+        // Иначе это новые файлы изображений
+        else if (!empty($images)) {
+            \Log::info('Processing new image files');
+            foreach ($images as $index => $image) {
+                if ($image instanceof UploadedFile) {
+                    try {
+                        // Создаем новый запрос с product_id
+                        $currentRequest = request();
+                        $currentRequest->merge(['product_id' => $product->id]);
+                        
+                        // Загружаем изображение
+                        app(ProductImageService::class)->upload($image);
+                        \Log::info('Uploaded new image', ['index' => $index]);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to upload image', [
+                            'error' => $e->getMessage(),
+                            'index' => $index
+                        ]);
+                    }
+                }
+            }
+            // Обновляем отношения
+            $product->load('images');
+        }
     }
 
     protected function syncEcoFeaturesWithValues(Product $product, array $ecoFeatures): void

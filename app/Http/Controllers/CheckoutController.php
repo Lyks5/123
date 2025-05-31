@@ -244,7 +244,7 @@ class CheckoutController extends Controller
                 if ($variant) {
                     $variant->decrement('stock_quantity', $item->quantity);
                 } else {
-                    $product->decrement('quantity', $item->quantity);
+                    $product->decrement('stock_quantity', $item->quantity);
                 }
             }
             
@@ -356,7 +356,8 @@ class CheckoutController extends Controller
 
         // Преобразуем данные корзины в нужный формат
         $items = collect($cartData)->map(function ($item) {
-            if (!isset($item['product_id'])) {
+            // Проверяем, что $item является массивом и содержит необходимые ключи
+            if (!is_array($item) || !isset($item['product_id'])) {
                 return null;
             }
 

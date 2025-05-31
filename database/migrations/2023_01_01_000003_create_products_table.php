@@ -15,7 +15,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('sku')->unique();
             $table->decimal('price', 10, 2);
-            $table->integer('quantity')->default(0);
+            $table->integer('stock_quantity')->default(0);
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->boolean('is_featured')->default(false);
             $table->integer('eco_score')->nullable();

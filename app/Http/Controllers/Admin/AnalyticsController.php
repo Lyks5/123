@@ -64,8 +64,8 @@ class AnalyticsController extends Controller
             // Статистика по продуктам с оптимизированной выборкой
             $productStats = Product::select(
                 DB::raw('COUNT(*) as total'),
-                DB::raw('COUNT(CASE WHEN quantity = 0 THEN 1 END) as out_of_stock'),
-                DB::raw('COUNT(CASE WHEN quantity > 0 AND quantity <= 5 THEN 1 END) as low_stock')
+                DB::raw('COUNT(CASE WHEN stock_quantity = 0 THEN 1 END) as out_of_stock'),
+                DB::raw('COUNT(CASE WHEN stock_quantity > 0 AND stock_quantity <= 5 THEN 1 END) as low_stock')
             )->first();
 
             // Получаем базовую статистику пользователей
@@ -310,11 +310,11 @@ class AnalyticsController extends Controller
             
         // Stock-level products
         $stockLevels = [
-            'out_of_stock' => Product::where('quantity', 0)->count(),
-            'low_stock' => Product::where('quantity', '>', 0)
-                ->where('quantity', '<=', 5)
+            'out_of_stock' => Product::where('stock_quantity', 0)->count(),
+            'low_stock' => Product::where('stock_quantity', '>', 0)
+                ->where('stock_quantity', '<=', 5)
                 ->count(),
-            'in_stock' => Product::where('quantity', '>', 5)->count(),
+            'in_stock' => Product::where('stock_quantity', '>', 5)->count(),
         ];
         
         try {

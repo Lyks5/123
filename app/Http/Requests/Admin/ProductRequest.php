@@ -20,7 +20,7 @@ class ProductRequest extends FormRequest
             'price' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:draft,published',
-            'quantity' => 'required|integer|min:0',
+            'stock_quantity' => 'required|integer|min:0',
             'eco_features' => 'nullable|array',
             'eco_features.*' => 'exists:eco_features,id',
             'eco_feature_values' => 'nullable|array',
@@ -57,9 +57,9 @@ class ProductRequest extends FormRequest
             'images.*.max' => 'Размер изображения не должен превышать 5MB',
             'images.*.dimensions' => 'Минимальный размер изображения 200x200px',
             
-            'quantity.required' => 'Количество товара обязательно',
-            'quantity.integer' => 'Количество должно быть целым числом',
-            'quantity.min' => 'Количество не может быть отрицательным',
+            'stock_quantity.required' => 'Количество товара обязательно',
+            'stock_quantity.integer' => 'Количество должно быть целым числом',
+            'stock_quantity.min' => 'Количество не может быть отрицательным',
             
             'eco_features.array' => 'Некорректный формат экохарактеристик',
             'eco_features.*.exists' => 'Выбранная экохарактеристика не существует',

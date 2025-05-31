@@ -46,9 +46,9 @@ public function add(Request $request)
 
             // Сохраняем обновленную корзину
             if (auth()->check()) {
-                auth()->user()->update(['cart_data' => $cart->toArray()['items']]);
+                auth()->user()->update(['cart_data' => ['items' => $cart->toArray()['items']]]);
             } else {
-                session()->put('guest_cart', $cart->toArray()['items']);
+                session()->put('guest_cart', ['items' => $cart->toArray()['items']]);
             }
         } catch (\Exception $e) {
             throw new \Exception('Ошибка при добавлении товара в корзину');
@@ -63,7 +63,7 @@ public function add(Request $request)
                 'message' => 'Товар добавлен в корзину',
                 'cartCount' => $cartCount,
                 'cartData' => $cart->getItems()
-            ]);
+            ], 201);
         }
 
         return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
@@ -106,6 +106,12 @@ private function normalizeCartData($cartData)
 
 private function validateAvailability($product, $variant, $quantity)
 {
+    if ($product->status === 'archived') {
+        throw ValidationException::withMessages([
+            'product_id' => 'Этот товар находится в архиве.'
+        ]);
+    }
+
     if ($product->status !== 'published') {
         throw ValidationException::withMessages([
             'product_id' => 'Этот товар больше не доступен.'

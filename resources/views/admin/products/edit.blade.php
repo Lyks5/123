@@ -63,15 +63,15 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <label for="stock_quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Количество в наличии
                                 </label>
-                                <input type="number" name="quantity" id="quantity" required
+                                <input type="number" name="stock_quantity" id="stock_quantity" required
                                     min="0"
                                     class="form-input"
-                                    value="{{ old('quantity', $product->quantity) }}"
+                                    value="{{ old('stock_quantity', $product->stock_quantity) }}"
                                     placeholder="0">
-                                <span class="error-message" data-error="quantity"></span>
+                                <span class="error-message" data-error="stock_quantity"></span>
                             </div>
                         </div>
 

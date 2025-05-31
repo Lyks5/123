@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
+        // Проверка количества товара
+        if (!form.stock_quantity.value || parseInt(form.stock_quantity.value) < 0) {
+            errors.stock_quantity = 'Введите корректное количество товара';
+            isValid = false;
+        }
+        
         // Очистка предыдущих ошибок
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         document.querySelectorAll('.form-group').forEach(el => el.classList.remove('has-error'));

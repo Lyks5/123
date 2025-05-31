@@ -89,10 +89,14 @@
 <form action="{{ route('cart.update') }}" method="POST" class="inline-flex">
     @csrf
     @method('PATCH')
-    <input type="hidden" name="items[{{ $loop->index }}][product_id]" value="{{ $item['product']->id }}">
-    <input type="hidden" name="items[{{ $loop->index }}][variant_id]" value="{{ $item['variant'] ? $item['variant']->id : '' }}">
-    <input type="hidden" name="items[{{ $loop->index }}][quantity]" value="{{ min($item['product']->stock_quantity, $item['quantity'] + 1) }}">
-    <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" {{ $item['quantity'] >= $item['product']->stock_quantity ? 'disabled' : '' }}>+</button>
+    <input type="hidden" name="items[{{ $loop->index }}][product_id]" 
+    value="{{ $item['product']->id }}">
+    <input type="hidden" name="items[{{ $loop->index }}][variant_id]" 
+    value="{{ $item['variant'] ? $item['variant']->id : '' }}">
+    <input type="hidden" name="items[{{ $loop->index }}][quantity]" 
+    value="{{ min($item['product']->stock_quantity, $item['quantity'] + 1) }}">
+    <button type="submit" class="px-3 py-1 text-gray-600 hover:bg-gray-100" 
+    {{ $item['quantity'] >= $item['product']->stock_quantity ? 'disabled' : '' }}>+</button>
 </form>
 
                                                 </div>

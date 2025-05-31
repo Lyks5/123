@@ -1,6 +1,6 @@
 @foreach($products as $product)
     <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-        <a href="{{ route('product.show', $product->sku) }}" class="block relative pb-[100%]">
+        <a href="{{ route('product.show', ['product' => $product->sku]) }}" class="block relative pb-[100%]">
             @if($product->images->isNotEmpty() && $product->images->first()->url)
                 <img 
                     src="{{ $product->images->first()->url }}" 
@@ -32,7 +32,7 @@
 
             <!-- Title -->
             <h3 class="text-lg font-semibold text-eco-900 mb-2">
-                <a href="{{ route('product.show', $product->sku) }}" class="hover:text-eco-600">
+                <a href="{{ route('product.show', ['product' => $product->sku]) }}" class="hover:text-eco-600">
                     {{ $product->name }}
                 </a>
             </h3>

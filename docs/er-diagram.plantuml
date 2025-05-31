@@ -1,0 +1,207 @@
+@startuml Database Structure
+
+!define Table(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define primary_key(x) <b><color:red>x</color></b>
+!define foreign_key(x) <color:blue>x</color>
+
+Table(Users, "Пользователи") {
+  primary_key(id): INT
+  name: VARCHAR
+  email: VARCHAR
+  password: VARCHAR
+  phone: VARCHAR
+  is_admin: BOOLEAN
+  email_verified_at: DATETIME
+  created_at: TIMESTAMP
+}
+
+Table(Products, "Товары") {
+  primary_key(id): INT
+  name: VARCHAR
+  description: TEXT
+  sku: VARCHAR
+  price: DECIMAL
+  quantity: INT
+  foreign_key(category_id): INT
+  is_featured: BOOLEAN
+  eco_score: INT
+  sustainability_info: JSON
+  carbon_footprint: DECIMAL
+  created_at: TIMESTAMP
+}
+
+Table(Categories, "Категории") {
+  primary_key(id): INT
+  name: VARCHAR
+  slug: VARCHAR
+  description: TEXT
+  foreign_key(parent_id): INT
+}
+
+Table(Orders, "Заказы") {
+  primary_key(id): INT
+  foreign_key(user_id): INT
+  status: VARCHAR
+  total_amount: DECIMAL
+  tax_amount: DECIMAL
+  shipping_amount: DECIMAL
+  foreign_key(shipping_address_id): INT
+  foreign_key(billing_address_id): INT
+  payment_method: VARCHAR
+  shipping_method: VARCHAR
+  notes: TEXT
+  carbon_offset: BOOLEAN
+  tracking_number: VARCHAR
+  created_at: TIMESTAMP
+}
+
+Table(EcoFeatures, "Эко-характеристики") {
+  primary_key(id): INT
+  name: VARCHAR
+  slug: VARCHAR
+  description: TEXT
+  icon: VARCHAR
+  is_active: BOOLEAN
+}
+
+Table(Reviews, "Отзывы") {
+  primary_key(id): INT
+  foreign_key(user_id): INT
+  foreign_key(product_id): INT
+  rating: INT
+  comment: TEXT
+  created_at: TIMESTAMP
+}
+
+Table(Addresses, "Адреса") {
+  primary_key(id): INT
+  foreign_key(user_id): INT
+  street: VARCHAR
+  city: VARCHAR
+  country: VARCHAR
+  postal_code: VARCHAR
+  phone: VARCHAR
+}
+
+Table(Carts, "Корзины") {
+  primary_key(id): INT
+  foreign_key(user_id): INT
+  created_at: TIMESTAMP
+}
+
+Table(CartItems, "Позиции корзины") {
+  primary_key(id): INT
+  foreign_key(cart_id): INT
+  foreign_key(product_id): INT
+  foreign_key(variant_id): INT
+  quantity: INT
+}
+
+Table(Wishlists, "Списки желаний") {
+  primary_key(id): INT
+  foreign_key(user_id): INT
+  foreign_key(product_id): INT
+  created_at: TIMESTAMP
+}
+
+Table(ProductImages, "Изображения товаров") {
+  primary_key(id): INT
+  foreign_key(product_id): INT
+  url: VARCHAR
+  is_primary: BOOLEAN
+  sort_order: INT
+}
+
+Table(Attributes, "Атрибуты") {
+  primary_key(id): INT
+  name: VARCHAR
+  type: VARCHAR
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+Table(AttributeValues, "Значения атрибутов") {
+  primary_key(id): INT
+  foreign_key(attribute_id): INT
+  value: VARCHAR
+  display_order: INT
+  hex_color: VARCHAR
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+Table(Variants, "Варианты товаров") {
+  primary_key(id): INT
+  foreign_key(product_id): INT
+  sku: VARCHAR
+  price: DECIMAL
+  sale_price: DECIMAL
+  stock_quantity: INT
+  status: VARCHAR
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+Table(ProductAttribute, "Атрибуты товаров") {
+  foreign_key(product_id): INT
+  foreign_key(attribute_id): INT
+  value: VARCHAR
+}
+
+Table(VariantAttributeValues, "Значения атрибутов вариантов") {
+  foreign_key(variant_id): INT
+  foreign_key(attribute_value_id): INT
+}
+
+Table(EcoFeatureProduct, "Эко-характеристики товаров") {
+  foreign_key(eco_feature_id): INT
+  foreign_key(product_id): INT
+}
+
+Table(OrderItems, "Позиции заказа") {
+  primary_key(id): INT
+  foreign_key(order_id): INT
+  foreign_key(product_id): INT
+  foreign_key(variant_id): INT
+  name: VARCHAR
+  sku: VARCHAR
+  price: DECIMAL
+  quantity: INT
+  subtotal: DECIMAL
+  tax_amount: DECIMAL
+  discount_amount: DECIMAL
+  attribute_values_json: JSON
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+' Связи
+Users "1" -- "*" Orders : размещает >
+Users "1" -- "*" Reviews : оставляет >
+Users "1" -- "*" Addresses : имеет >
+Users "1" -- "*" Carts : имеет >
+Users "1" -- "*" Wishlists : создает >
+
+Products "1" -- "*" Reviews : имеет >
+Products "1" -- "*" ProductImages : имеет >
+Products "1" -- "*" CartItems : содержится в >
+Products "1" -- "*" Wishlists : добавлен в >
+Products "*" -- "1" Categories : принадлежит >
+
+Products "*" -- "*" EcoFeatures : имеет >
+
+Orders "1" -- "*" CartItems : содержит >
+Orders "*" -- "1" Addresses : адрес доставки >
+Orders "*" -- "1" Addresses : адрес оплаты >
+
+Carts "1" -- "*" CartItems : содержит >
+
+Products "*" -- "*" Attributes : имеет >
+Products "1" -- "*" Variants : имеет >
+Variants "*" -- "*" AttributeValues : имеет >
+Orders "1" -- "*" OrderItems : содержит >
+OrderItems "*" -- "1" Products : относится к >
+OrderItems "*" -- "1" Variants : относится к >
+Attributes "1" -- "*" AttributeValues : имеет >
+
+@enduml

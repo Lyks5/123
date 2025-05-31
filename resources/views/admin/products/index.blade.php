@@ -59,7 +59,7 @@
                                         <span class="dark:text-gray-300">{{ number_format($product->price, 0, '.', ' ') }} ₽</span>
                                     @endif
                                 </td>
-                                <td class="py-3 px-4 dark:text-gray-300">{{ $product->quantity }}</td>
+                                <td class="py-3 px-4 dark:text-gray-300">{{ $product->stock_quantity  }}</td>
                                 <td class="py-3 px-4">
                                     @if($product->status === 'published')
                                         <span class="px-2 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 rounded-full text-xs">Активен</span>
