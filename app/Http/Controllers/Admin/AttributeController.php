@@ -33,17 +33,14 @@ class AttributeController extends Controller
     {
         try {
             $attribute = Attribute::create($request->validated());
-
-            return response()->json([
-                'message' => 'Атрибут успешно создан',
-                'redirect' => route('admin.attributes.index')
-            ]);
+            
+            return redirect()
+                ->route('admin.attributes.index')
+                ->with('success', 'Атрибут успешно создан');
         } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'errors' => [
-                    'name' => ['Атрибут с таким названием уже существует']
-                ]
-            ], 422);
+            return back()
+                ->withInput()
+                ->withErrors(['name' => 'Атрибут с таким названием уже существует']);
         }
     }
 

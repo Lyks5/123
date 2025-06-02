@@ -7,6 +7,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\Config;
 
 class ProductImageService
 {
@@ -14,73 +15,147 @@ class ProductImageService
 
     public function __construct()
     {
-        $this->manager = new ImageManager(new Driver());
+        $this->manager = new ImageManager(Driver::class);
     }
 
     public function upload(UploadedFile $file): ProductImage
     {
-        // Генерируем уникальное имя файла
-        $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mimeType = $file->getMimeType();
         
-        // Создаем изображение через intervention/image
-        $image = $this->manager->read($file);
-        
-        // Оптимизируем размер, сохраняя пропорции
-        $image->scale(width: 1200);
-        
-        // Сохраняем оригинал
-        $path = 'products/' . $fileName;
-        $success = Storage::disk('public')->put($path, $image->toJpeg());
-        
-        if (!$success) {
-            \Log::error('Failed to save image file');
-            throw new \Exception('Failed to save image file');
+        // Проверяем MIME-тип файла
+        $allowedMimeTypes = Config::get('images.products.mime_types', []);
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            throw new \Exception('Неподдерживаемый тип файла. Разрешены: JPG, PNG, WebP');
         }
+
+        // Проверяем размер файла
+        $maxSize = Config::get('images.products.max_size', 5120); // 5MB по умолчанию
+        if ($file->getSize() > $maxSize * 1024) {
+            throw new \Exception("Файл слишком большой. Максимальный размер: {$maxSize}KB");
+        }
+
+        // Генерируем уникальное имя файла
+        $fileName = uniqid() . '_' . time();
         
-        // Проверяем права доступа
-        $fullPath = Storage::disk('public')->path($path);
-        chmod($fullPath, 0644);
-        
-        \Log::info('Image file saved:', [
-            'path' => $path,
-            'full_disk_path' => $fullPath,
-            'public_url' => Storage::disk('public')->url($path),
-            'exists' => file_exists($fullPath),
-            'permissions' => substr(sprintf('%o', fileperms($fullPath)), -4)
-        ]);
-        
-        // Получаем максимальный order для текущего продукта
-        $maxOrder = ProductImage::where('product_id', request()->input('product_id'))
-            ->max('order');
+        try {
+            // Создаем изображение через intervention/image
+            $image = $this->manager->read($file);
             
-        // Создаем запись в БД
-        $image = ProductImage::create([
-            'image_path' => $path, // Сохраняем относительный путь
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'product_id' => request()->input('product_id'),
-            'order' => ($maxOrder ?? -1) + 1
-        ]);
-        
-        \Log::info('Product image created:', [
-            'image_id' => $image->id,
-            'product_id' => $image->product_id,
-            'image_path' => $image->image_path,
-            'order' => $image->order
-        ]);
-        
-        return $image;
+            // Оптимизируем размер
+            $maxWidth = Config::get('images.products.max_width', 1200);
+            $quality = Config::get('images.products.quality', 80);
+            
+            if ($image->width() > $maxWidth) {
+                $image->scale(width: $maxWidth);
+            }
+            
+            // Определяем пути для сохранения
+            $originalPath = "products/{$fileName}.{$extension}";
+            $webpPath = "products/{$fileName}.webp";
+
+            // Сохраняем оригинал
+            if ($extension === 'webp') {
+                $success = Storage::disk('public')->put(
+                    $originalPath, 
+                    $image->toWebp($quality)
+                );
+            } else {
+                // Для JPG и PNG сохраняем оригинал и создаем WebP версию
+                if ($extension === 'png') {
+                    $success = Storage::disk('public')->put(
+                        $originalPath, 
+                        $image->toPng($quality)
+                    );
+                } else {
+                    $success = Storage::disk('public')->put(
+                        $originalPath, 
+                        $image->toJpeg($quality)
+                    );
+                }
+
+                // Создаем WebP версию
+                Storage::disk('public')->put(
+                    $webpPath, 
+                    $image->toWebp($quality)
+                );
+            }
+            
+            if (!$success) {
+                throw new \Exception('Не удалось сохранить файл изображения');
+            }
+
+            // Устанавливаем права доступа
+            chmod(Storage::disk('public')->path($originalPath), 0644);
+            if ($extension !== 'webp') {
+                chmod(Storage::disk('public')->path($webpPath), 0644);
+            }
+
+            // Логируем информацию о сохраненных файлах
+            \Log::info('Image files saved:', [
+                'original' => [
+                    'path' => $originalPath,
+                    'url' => Storage::disk('public')->url($originalPath),
+                    'size' => Storage::disk('public')->size($originalPath),
+                    'mime' => $mimeType
+                ],
+                'webp' => $extension !== 'webp' ? [
+                    'path' => $webpPath,
+                    'url' => Storage::disk('public')->url($webpPath),
+                    'size' => Storage::disk('public')->size($webpPath)
+                ] : null
+            ]);
+
+            // Получаем максимальный order
+            $maxOrder = ProductImage::where('product_id', request()->input('product_id'))
+                ->max('order') ?? -1;
+
+            // Создаем запись в БД
+            $productImage = ProductImage::create([
+                'image_path' => $originalPath,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $mimeType,
+                'size' => $file->getSize(),
+                'product_id' => request()->input('product_id'),
+                'order' => $maxOrder + 1
+            ]);
+
+            return $productImage;
+
+        } catch (\Exception $e) {
+            \Log::error('Error processing image:', [
+                'error' => $e->getMessage(),
+                'file' => $file->getClientOriginalName(),
+                'mime' => $mimeType
+            ]);
+            throw new \Exception('Ошибка при обработке изображения: ' . $e->getMessage());
+        }
     }
 
     public function delete(ProductImage $image): bool
     {
-        // Удаляем файл
-        $path = str_replace('/storage/', '', $image->image_path);
-        Storage::disk('public')->delete($path);
-        
-        // Удаляем запись из БД
-        return $image->delete();
+        try {
+            // Получаем информацию о файле
+            $pathInfo = pathinfo($image->image_path);
+            $baseDir = $pathInfo['dirname'];
+            $fileName = $pathInfo['filename'];
+            
+            // Удаляем все версии файла
+            Storage::disk('public')->delete([
+                "{$baseDir}/{$fileName}.jpg",
+                "{$baseDir}/{$fileName}.jpeg",
+                "{$baseDir}/{$fileName}.png",
+                "{$baseDir}/{$fileName}.webp"
+            ]);
+            
+            return $image->delete();
+        } catch (\Exception $e) {
+            \Log::error('Error deleting image:', [
+                'image_id' => $image->id,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
     }
 
     public function getById(int $id): ProductImage

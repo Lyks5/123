@@ -13,37 +13,62 @@ class AttributeSeeder extends Seeder
             [
                 'name' => 'Размер',
                 'type' => 'select',
-                'values' => ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+                'values' => [
+                    ['value' => 'XS'],
+                    ['value' => 'S'],
+                    ['value' => 'M'],
+                    ['value' => 'L'],
+                    ['value' => 'XL'],
+                    ['value' => 'XXL']
+                ]
             ],
             [
                 'name' => 'Цвет',
                 'type' => 'color',
                 'values' => [
-                    'Черный #000000',
-                    'Белый #FFFFFF',
-                    'Красный #FF0000',
-                    'Зеленый #00FF00',
-                    'Синий #0000FF',
-                    'Желтый #FFFF00',
-                    'Розовый #FF00FF',
-                    'Голубой #00FFFF',
-                    'Серый #808080'
+                    ['value' => 'Черный', 'hex_color' => '#000000'],
+                    ['value' => 'Белый', 'hex_color' => '#FFFFFF'],
+                    ['value' => 'Красный', 'hex_color' => '#FF0000'],
+                    ['value' => 'Зеленый', 'hex_color' => '#00FF00'],
+                    ['value' => 'Синий', 'hex_color' => '#0000FF'],
+                    ['value' => 'Желтый', 'hex_color' => '#FFFF00'],
+                    ['value' => 'Розовый', 'hex_color' => '#FF00FF'],
+                    ['value' => 'Голубой', 'hex_color' => '#00FFFF'],
+                    ['value' => 'Серый', 'hex_color' => '#808080']
                 ]
             ],
             [
                 'name' => 'Материал',
                 'type' => 'text',
-                'values' => ['Полиэстер', 'Хлопок', 'Нейлон', 'Спандекс', 'Эластан', 'Бамбук', 'Шерсть']
+                'values' => [
+                    ['value' => 'Полиэстер'],
+                    ['value' => 'Хлопок'],
+                    ['value' => 'Нейлон'],
+                    ['value' => 'Спандекс'],
+                    ['value' => 'Эластан'],
+                    ['value' => 'Бамбук'],
+                    ['value' => 'Шерсть']
+                ]
             ],
             [
                 'name' => 'Пол',
                 'type' => 'select',
-                'values' => ['Мужской', 'Женский', 'Унисекс']
+                'values' => [
+                    ['value' => 'Мужской'],
+                    ['value' => 'Женский'],
+                    ['value' => 'Унисекс']
+                ]
             ],
             [
                 'name' => 'Сезон',
                 'type' => 'select',
-                'values' => ['Зима', 'Весна', 'Лето', 'Осень', 'Всесезонный']
+                'values' => [
+                    ['value' => 'Зима'],
+                    ['value' => 'Весна'],
+                    ['value' => 'Лето'],
+                    ['value' => 'Осень'],
+                    ['value' => 'Всесезонный']
+                ]
             ]
         ];
 
@@ -53,8 +78,12 @@ class AttributeSeeder extends Seeder
                 'type' => $attributeData['type']
             ]);
 
-            foreach ($attributeData['values'] as $value) {
-                $attribute->values()->create(['value' => $value]);
+            foreach ($attributeData['values'] as $valueData) {
+                $attribute->values()->create([
+                    'value' => $valueData['value'],
+                    'hex_color' => $valueData['hex_color'] ?? null,
+                    'display_order' => 0
+                ]);
             }
         }
     }

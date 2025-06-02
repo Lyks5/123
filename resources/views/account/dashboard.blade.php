@@ -148,7 +148,7 @@
                             <div>
                                 <h3 class="text-eco-600 text-sm font-medium">Избранное</h3>
                                 <p class="text-2xl font-bold text-eco-900 mt-1">
-                                {{ $user->wishlists?->sum(fn($wishlist) => $wishlist->items->count()) ?? 0 }}
+                                {{ count($user->getWishlist()->toArray()['items']) }}
                                 </p>
                             </div>
                             <div class="h-12 w-12 bg-eco-50 rounded-full flex items-center justify-center text-eco-600">

@@ -16,17 +16,63 @@ class ProductController extends Controller
         }
 
         // Загружаем связанные данные
-        $product->load(['category', 'ecoFeatures', 'images', 'variants.attributeValues.attribute']);
+        $product->load([
+            'category', 
+            'ecoFeatures', 
+            'images', 
+            'attributeValues.attribute'
+        ]);
         
         // Получаем изображения продукта
         $images = $product->images;
-        $mainImage = $product->primaryImage()->first();
-        
-        \Log::debug("Product images loaded:", [
+        $product->primary_image = $product->primaryImage()->first();
+
+        // Логируем информацию об атрибутах
+        \Log::debug('Product attributes:', [
             'product_id' => $product->id,
-            'images_count' => $images->count(),
-            'main_image' => $mainImage ? $mainImage->url : null
+            'attribute_values' => $product->attributeValues->toArray()
         ]);
+
+        // Группируем атрибуты по группам для более удобного отображения
+        $productAttributes = [];
+        
+        foreach ($product->attributeValues as $attributeValue) {
+            $attribute = $attributeValue->attribute;
+            $group = $attribute->type ?? 'general';
+            
+            if (!isset($productAttributes[$group])) {
+                $productAttributes[$group] = [];
+            }
+            
+            // Проверяем, существует ли уже атрибут с таким именем
+            $existingAttr = null;
+            foreach ($productAttributes[$group] as $attr) {
+                if ($attr->name === $attribute->name) {
+                    $existingAttr = $attr;
+                    break;
+                }
+            }
+            
+            if ($existingAttr) {
+                // Добавляем значение к существующему атрибуту
+                $existingAttr->values[] = (object)[
+                    'value' => $attributeValue->value,
+                    'hex_color' => $attributeValue->hex_color
+                ];
+            } else {
+                // Создаем новый атрибут
+                $productAttributes[$group][] = (object)[
+                    'name' => $attribute->name,
+                    'values' => [(object)[
+                        'value' => $attributeValue->value,
+                        'hex_color' => $attributeValue->hex_color
+                    ]]
+                ];
+            }
+        }
+
+        // Логируем собранные атрибуты
+        \Log::debug('Collected product attributes:', $productAttributes);
 
         // Получаем отзывы
         $reviews = $product->reviews()
@@ -40,67 +86,6 @@ class ProductController extends Controller
             ->where('status', 'published')
             ->take(4)
             ->get();
-
-        // Группируем атрибуты по группам для более удобного отображения
-        $productAttributes = [];
-        
-        if ($product->parent_id) {
-            // Если это вариант - берем атрибуты из его attribute_values_json
-            if ($product->attribute_values_json) {
-                foreach ($product->attribute_values_json as $attrId => $valueId) {
-                    $attribute = \App\Models\Attribute::find($attrId);
-                    $value = \App\Models\AttributeValue::find($valueId);
-                    
-                    if ($attribute && $value) {
-                        $group = $attribute->type ?? 'general';
-                        
-                        if (!isset($productAttributes[$group])) {
-                            $productAttributes[$group] = [];
-                        }
-                        
-                        $productAttributes[$group][] = (object)[
-                            'name' => $attribute->display_name_or_name,
-                            'value' => $value->value,
-                            'hex_color' => $value->hex_color
-                        ];
-                    }
-                }
-            }
-        } else {
-            // Если это основной товар - собираем атрибуты из всех его вариантов
-            $processedAttributes = [];
-            
-            foreach ($product->variants as $variant) {
-                foreach ($variant->attributeValues as $attributeValue) {
-                    $attribute = $attributeValue->attribute;
-                    $attrId = $attribute->id;
-                    
-                    // Избегаем дублирования атрибутов
-                    if (!in_array($attrId, $processedAttributes)) {
-                        $processedAttributes[] = $attrId;
-                        
-                        $group = $attribute->type ?? 'general';
-                        
-                        if (!isset($productAttributes[$group])) {
-                            $productAttributes[$group] = [];
-                        }
-                        
-                        $values = $product->variants()
-                            ->join('variant_attribute_values', 'variants.id', '=', 'variant_attribute_values.variant_id')
-                            ->join('attribute_values', 'variant_attribute_values.attribute_value_id', '=', 'attribute_values.id')
-                            ->where('attribute_values.attribute_id', $attrId)
-                            ->select('attribute_values.value', 'attribute_values.hex_color')
-                            ->distinct()
-                            ->get();
-                            
-                        $productAttributes[$group][] = (object)[
-                            'name' => $attribute->display_name_or_name,
-                            'values' => $values
-                        ];
-                    }
-                }
-            }
-        }
         
         // Подготавливаем Эко характеристики для отображения
         $ecoFeatures = $product->ecoFeatures->map(function($feature) {
@@ -118,162 +103,7 @@ class ProductController extends Controller
             'relatedProducts',
             'productAttributes',
             'ecoFeatures',
-            'mainImage',
             'images'
         ));
-    }
-
-    public function submitReview(Request $request, Product $product)
-    {
-        $existingReview = $product->reviews()->where('user_id', auth()->id())->first();
-        if ($existingReview) {
-            return redirect()->route('product.review.edit', $product->sku);
-        }
-
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'title' => 'required|max:100',
-            'comment' => 'required|min:10',
-        ]);
-
-        // Проверяем, покупал ли пользователь этот товар
-        $isVerifiedPurchase = auth()->user()->orders()
-            ->whereHas('items', function ($query) use ($product) {
-                $query->where('product_id', $product->id);
-            })
-            ->exists();
-
-        Review::create([
-            'product_id' => $product->id,
-            'user_id' => auth()->id(),
-            'rating' => $request->rating,
-            'title' => $request->title,
-            'comment' => $request->comment,
-            'is_verified_purchase' => $isVerifiedPurchase,
-            'is_approved' => true, // Automatically approve review
-        ]);
-
-        return redirect()->back()->with('success', 'Спасибо за ваш отзыв! Он будет опубликован после проверки.');
-    }
-
-    public function editReview(Product $product)
-    {
-        $review = $product->reviews()->where('user_id', auth()->id())->firstOrFail();
-
-        // Load related data for the product page
-        $product->load('category', 'ecoFeatures', 'images', 'variants.attributeValues.attribute');
-
-        // Get reviews including user's own unapproved review
-        $reviews = $product->reviews()
-            ->with('user')
-            ->where(function ($query) {
-                $query->where('is_approved', true);
-                if (auth()->check()) {
-                    $query->orWhere('user_id', auth()->id());
-                }
-            })
-            ->latest()
-            ->paginate(5);
-
-        // Related products
-        $relatedProducts = Product::where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->where('status', 'published')
-            ->take(4)
-            ->get();
-
-        // Group attributes as before
-        $productAttributes = [];
-        if ($product->parent_id) {
-            if ($product->attribute_values_json) {
-                foreach ($product->attribute_values_json as $attrId => $valueId) {
-                    $attribute = \App\Models\Attribute::find($attrId);
-                    $value = \App\Models\AttributeValue::find($valueId);
-                    if ($attribute && $value) {
-                        $group = $attribute->type ?? 'general';
-                        if (!isset($productAttributes[$group])) {
-                            $productAttributes[$group] = [];
-                        }
-                        $productAttributes[$group][] = (object)[
-                            'name' => $attribute->display_name_or_name,
-                            'value' => $value->value,
-                            'hex_color' => $value->hex_color
-                        ];
-                    }
-                }
-            }
-        } else {
-            $processedAttributes = [];
-            foreach ($product->variants as $variant) {
-                foreach ($variant->attributeValues as $attributeValue) {
-                    $attribute = $attributeValue->attribute;
-                    $attrId = $attribute->id;
-                    if (!in_array($attrId, $processedAttributes)) {
-                        $processedAttributes[] = $attrId;
-                        $group = $attribute->type ?? 'general';
-                        if (!isset($productAttributes[$group])) {
-                            $productAttributes[$group] = [];
-                        }
-                        $values = $product->variants()
-                            ->join('variant_attribute_values', 'variants.id', '=', 'variant_attribute_values.variant_id')
-                            ->join('attribute_values', 'variant_attribute_values.attribute_value_id', '=', 'attribute_values.id')
-                            ->where('attribute_values.attribute_id', $attrId)
-                            ->select('attribute_values.value', 'attribute_values.hex_color')
-                            ->distinct()
-                            ->get();
-                        $productAttributes[$group][] = (object)[
-                            'name' => $attribute->display_name_or_name,
-                            'values' => $values
-                        ];
-                    }
-                }
-            }
-        }
-
-        $ecoFeatures = $product->ecoFeatures->map(function ($feature) {
-            return (object)[
-                'name' => $feature->name,
-                'description' => $feature->description,
-                'icon' => $feature->icon,
-                'value' => $feature->pivot->value ?? null
-            ];
-        });
-
-        return view('pages.product', compact(
-            'product',
-            'reviews',
-            'relatedProducts',
-            'productAttributes',
-            'ecoFeatures',
-            'review' // pass the user's review for editing
-        ));
-    }
-
-    public function updateReview(Request $request, Product $product)
-    {
-        $review = $product->reviews()->where('user_id', auth()->id())->firstOrFail();
-
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'title' => 'required|max:100',
-            'comment' => 'required|min:10',
-        ]);
-
-        // Проверяем, покупал ли пользователь этот товар
-        $isVerifiedPurchase = auth()->user()->orders()
-            ->whereHas('items', function ($query) use ($product) {
-                $query->where('product_id', $product->id);
-            })
-            ->exists();
-
-        $review->update([
-            'rating' => $request->rating,
-            'title' => $request->title,
-            'comment' => $request->comment,
-            'is_verified_purchase' => $isVerifiedPurchase,
-            'is_approved' => true, // Automatically approve review after edit
-        ]);
-
-        return redirect()->route('product.show', $product->sku)->with('success', 'Ваш отзыв успешно обновлен и будет опубликован после проверки.');
     }
 }

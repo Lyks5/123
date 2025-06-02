@@ -17,12 +17,29 @@
                     <!-- Основная информация -->
                     <div class="space-y-6">
                         <div class="form-group">
+                            <label for="arrival_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Выберите поступление
+                            </label>
+                            <select name="arrival_id" id="arrival_id" required
+                                class="form-select" onchange="updateProductDetails(this.value)">
+                                <option value="">Выберите поступление</option>
+                                @foreach($arrivals as $arrival)
+                                    <option value="{{ $arrival->id }}"
+                                        data-name="{{ $arrival->name }}"
+                                        data-quantity="{{ $arrival->quantity }}">
+                                        {{ $arrival->name }} (Доступно: {{ $arrival->quantity }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="error-message" data-error="arrival_id"></span>
+                        </div>
+
+                        <div class="form-group">
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Название продукта
                             </label>
                             <input type="text" name="name" id="name" required
-                                class="form-input"
-                                placeholder="Введите название продукта">
+                                class="form-input" readonly>
                             <span class="error-message" data-error="name"></span>
                         </div>
 
@@ -65,7 +82,7 @@
                                 <input type="number" name="stock_quantity" id="stock_quantity" required
                                     min="0"
                                     class="form-input"
-                                    placeholder="0">
+                                    readonly>
                                 <span class="error-message" data-error="stock_quantity"></span>
                             </div>
                         </div>
@@ -221,6 +238,19 @@
         'resources/js/admin/products/create-form.js',
         'resources/js/admin/products/eco-features.js'
     ])
+    <script>
+        function updateProductDetails(arrivalId) {
+            if (!arrivalId) {
+                document.getElementById('name').value = '';
+                document.getElementById('stock_quantity').value = '';
+                return;
+            }
+
+            const option = document.querySelector(`option[value="${arrivalId}"]`);
+            document.getElementById('name').value = option.dataset.name;
+            document.getElementById('stock_quantity').value = option.dataset.quantity;
+        }
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (!window.Alpine) {

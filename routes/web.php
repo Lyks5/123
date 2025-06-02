@@ -12,6 +12,7 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\ArrivalController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\CategoryManagementController;
 use App\Http\Controllers\SustainabilityController;
@@ -186,6 +187,17 @@ Route::group([], function () {
             Route::get('/export/csv', [AnalyticsController::class, 'exportCsv'])->name('export.csv');
             Route::get('/export/pdf', [AnalyticsController::class, 'exportPdf'])->name('export.pdf');
             Route::get('/export/json', [AnalyticsController::class, 'exportJson'])->name('export.json');
+            Route::post('/clear-cache', [AnalyticsController::class, 'clearCache'])->name('clear-cache');
+        });
+
+        // Поступления товаров
+        Route::prefix('arrivals')->name('arrivals.')->group(function () {
+            Route::get('/', [ArrivalController::class, 'index'])->name('index');
+            Route::get('/create', [ArrivalController::class, 'create'])->name('create');
+            Route::post('/', [ArrivalController::class, 'store'])->name('store');
+            Route::get('/{arrival}/edit', [ArrivalController::class, 'edit'])->name('edit');
+            Route::put('/{arrival}', [ArrivalController::class, 'update'])->name('update');
+            Route::delete('/{arrival}', [ArrivalController::class, 'destroy'])->name('destroy');
         });
     });
 });

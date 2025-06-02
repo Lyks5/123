@@ -215,6 +215,16 @@
                         </svg>
                         <span>Товары</span>
                     </a>
+
+                    <!-- Arrivals -->
+                    <a href="{{ route('admin.arrivals.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.arrivals.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3h18v18H3z"></path>
+                            <path d="M12 8v8"></path>
+                            <path d="M8 12h8"></path>
+                        </svg>
+                        <span>Поступления</span>
+                    </a>
                     
                     <!-- Categories -->
                     <a href="{{ route('admin.categories.index') }}" class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.categories.*') ? 'bg-eco-100 dark:bg-eco-900 text-eco-600 dark:text-eco-400' : 'text-gray-600 dark:text-gray-300 hover:bg-eco-50 dark:hover:bg-eco-900/50 hover:text-eco-600 dark:hover:text-eco-400' }}">

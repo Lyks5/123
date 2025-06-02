@@ -167,8 +167,8 @@
                                                     <div class="flex items-center justify-between">
                                                         <div class="flex items-center">
                                                             <div class="w-12 h-12 bg-eco-50 rounded-lg flex items-center justify-center overflow-hidden mr-3">
-                                                                @if($item->product && $item->product->images && $item->product->images->isNotEmpty() && $item->product->images->where('is_primary', true)->first())
-                                                                    <img src="{{ asset('storage/' . $item->product->images->where('is_primary', true)->first()->image_path) }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
+                                                                @if($item->product)
+                                                                    <img src="{{ $item->product->image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
                                                                 @else
                                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-eco-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>

@@ -1,8 +1,13 @@
+<?php mb_http_output('UTF-8'); ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="Content-Language" content="ru">
     <title>Счет № {{ $order->id }}</title>
     <style>
         @media print {
@@ -13,6 +18,15 @@
                 color: #000;
                 margin: 0;
                 padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            @font-face {
+                font-family: 'Arial';
+                src: local('Arial');
+                font-weight: normal;
+                font-style: normal;
+                unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
             }
             .container {
                 max-width: 800px;
@@ -247,10 +261,15 @@
     <script>
         // Automatically open print dialog when page loads
         window.onload = function() {
-            // Delay to ensure page is fully loaded
+            // Устанавливаем кодировку для печати
+            document.designMode = 'on';
+            document.charset = 'UTF-8';
+            document.designMode = 'off';
+            
+            // Задержка для полной загрузки страницы и применения стилей
             setTimeout(function() {
                 window.print();
-            }, 500);
+            }, 1000);
         };
     </script>
 </body>

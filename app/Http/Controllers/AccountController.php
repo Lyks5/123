@@ -32,8 +32,10 @@ class AccountController extends Controller
             ->latest()
             ->take(5)
             ->get();
+
+        $ecoImpact = $user->getTotalEcoImpact();
             
-        return view('account.dashboard', compact('user', 'recentOrders'));
+        return view('account.dashboard', compact('user', 'recentOrders', 'ecoImpact'));
     }
      /**
      * Show the user's wishlist.

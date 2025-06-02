@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\EcoFeature;
+use App\Models\Arrival;
+
 use App\Http\Requests\Admin\ProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Services\ProductService;
@@ -66,16 +68,52 @@ class ProductController extends Controller
         return view('admin.products.create', [
             'categories' => $this->categoryService->getAll(),
             'attributes' => $this->attributeService->getAll(),
-            'ecoFeatures' => EcoFeature::all()
+            'ecoFeatures' => EcoFeature::all(),
+            'arrivals' => Arrival::where('status', 'active')
+                ->where('quantity', '>', 0)
+                ->get()
         ]);
     }
 
     public function store(ProductRequest $request)
     {
+        $validatedData = $request->validated();
+        
+        if ($request->has('arrival_id')) {
+            return $this->storeFromArrival($validatedData);
+        }
+        
+        return $this->storeRegular($validatedData);
+    }
+    
+    protected function storeFromArrival(array $validatedData)
+    {
         try {
             DB::beginTransaction();
             
-            $validatedData = $request->validated();
+            // Создаем продукт из поступления
+            $product = $this->productService->createFromArrival($validatedData);
+            
+            DB::commit();
+            
+            return redirect()
+                ->route('admin.products.index')
+                ->with('success', 'Продукт успешно создан из поступления');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Ошибка при создании продукта: ' . $e->getMessage());
+        }
+    }
+    
+    protected function storeRegular(array $validatedData)
+    {
+        try {
+            DB::beginTransaction();
             
             // Создаем продукт со всеми данными, включая изображения
             $product = $this->productService->create($validatedData);

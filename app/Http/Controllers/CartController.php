@@ -26,47 +26,67 @@ class CartController extends Controller
 public function add(Request $request)
 {
     try {
-        $request->validate([
+        $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'variant_id' => 'nullable|exists:variants,id',
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
-        $variant = $request->variant_id ? Variant::findOrFail($request->variant_id) : null;
+        $product = Product::findOrFail($validated['product_id']);
+        $variant = isset($validated['variant_id']) ? Variant::findOrFail($validated['variant_id']) : null;
 
         // Проверка доступности
-        $this->validateAvailability($product, $variant, $request->quantity);
+        $this->validateAvailability($product, $variant, $validated['quantity']);
 
         // Получаем текущую корзину
         $cart = $this->getCart();
 
         try {
-            $cart->addItem($request->product_id, $request->variant_id, $request->quantity);
+            // Добавляем товар в корзину
+            $cart->addItem(
+                $validated['product_id'],
+                $validated['variant_id'] ?? null,
+                $validated['quantity']
+            );
+
+            // Получаем данные корзины
+            $cartArray = $cart->toArray();
+            
+            // Проверяем наличие ключа items
+            if (!isset($cartArray['items'])) {
+                throw new \Exception('Некорректная структура данных корзины');
+            }
 
             // Сохраняем обновленную корзину
             if (auth()->check()) {
-                auth()->user()->update(['cart_data' => ['items' => $cart->toArray()['items']]]);
+                auth()->user()->update(['cart_data' => $cartArray['items']]);
             } else {
-                session()->put('guest_cart', ['items' => $cart->toArray()['items']]);
+                session()->put('guest_cart', $cartArray['items']);
             }
+
+            // Получаем общее количество товаров в корзине
+            $cartCount = collect($cartArray['items'])->sum('quantity');
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Товар добавлен в корзину',
+                    'cartCount' => $cartCount,
+                    'cartData' => $cart->getItems()
+                ], 201);
+            }
+
+            return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
+
         } catch (\Exception $e) {
+            \Log::error('Ошибка при добавлении товара в корзину: ' . $e->getMessage(), [
+                'product_id' => $validated['product_id'],
+                'variant_id' => $validated['variant_id'] ?? null,
+                'quantity' => $validated['quantity']
+            ]);
             throw new \Exception('Ошибка при добавлении товара в корзину');
         }
 
-        // Получаем общее количество товаров в корзине
-        $cartCount = collect($cart->toArray()['items'])->sum('quantity');
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Товар добавлен в корзину',
-                'cartCount' => $cartCount,
-                'cartData' => $cart->getItems()
-            ], 201);
-        }
-
-        return redirect()->route('cart')->with('success', 'Товар добавлен в корзину.');
     } catch (\Exception $e) {
         if ($request->expectsJson()) {
             return response()->json([
@@ -80,27 +100,41 @@ public function add(Request $request)
 
 private function normalizeCartData($cartData)
 {
+    if (!is_array($cartData)) {
+        return collect();
+    }
+
     // Преобразуем JSON-данные в коллекцию с моделями и проверяем наличие товаров
     return collect($cartData)->map(function($item) {
-        if (!isset($item['product_id'])) {
+        if (!is_array($item) || !isset($item['product_id'])) {
             return null;
         }
 
-        $product = Product::find($item['product_id']);
-        if (!$product || $product->status !== 'published') {
+        try {
+            $product = Product::find($item['product_id']);
+            if (!$product || $product->status !== 'published') {
+                return null;
+            }
+
+            $variant = null;
+            if (isset($item['variant_id'])) {
+                $variant = Variant::find($item['variant_id']);
+                if (!$variant) {
+                    return null;
+                }
+            }
+
+            return [
+                'product' => $product,
+                'variant' => $variant,
+                'quantity' => min($item['quantity'] ?? 1, $product->stock_quantity)
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error normalizing cart item: ' . $e->getMessage(), [
+                'item' => $item
+            ]);
             return null;
         }
-
-        $variant = isset($item['variant_id']) ? Variant::find($item['variant_id']) : null;
-        if (isset($item['variant_id']) && !$variant) {
-            return null;
-        }
-
-        return [
-            'product' => $product,
-            'variant' => $variant,
-            'quantity' => min($item['quantity'], $product->stock_quantity)
-        ];
     })->filter();
 }
 
@@ -235,51 +269,76 @@ private function findCartItemIndex($cartData, $productId, $variantId)
  */
 protected function getCart()
 {
-    // Для авторизованных пользователей
-    if (auth()->check()) {
-        $user = auth()->user();
-        $cartData = $user->cart_data ?? [];
-
-        // Объединение с гостевой корзиной при наличии
-        if (session()->has('guest_cart')) {
-            $guestCart = session('guest_cart', []);
-
-            foreach ($guestCart as $guestItem) {
-                $found = false;
-                
-                // Ищем совпадения в пользовательской корзине
-                foreach ($cartData as &$userItem) {
-                    if ($userItem['product_id'] == $guestItem['product_id'] 
-                        && $userItem['variant_id'] == $guestItem['variant_id']) {
-                        $userItem['quantity'] += $guestItem['quantity'];
-                        $found = true;
-                        break;
-                    }
-                }
-                
-                // Добавляем новый элемент если не найдено совпадений
-                if (!$found) {
-                    $cartData[] = $guestItem;
-                }
+    try {
+        // Для авторизованных пользователей
+        if (auth()->check()) {
+            $user = auth()->user();
+            $cartData = $user->cart_data ?? [];
+            
+            if (!is_array($cartData)) {
+                $cartData = [];
             }
 
-            // Сохраняем обновлённую корзину
-            $user->update(['cart_data' => $cartData]);
-            session()->forget('guest_cart');
+            // Объединение с гостевой корзиной при наличии
+            if (session()->has('guest_cart')) {
+                $guestCart = session('guest_cart', []);
+                
+                if (is_array($guestCart)) {
+                    foreach ($guestCart as $guestItem) {
+                        if (!isset($guestItem['product_id'])) {
+                            continue;
+                        }
+                        
+                        $found = false;
+                        
+                        // Ищем совпадения в пользовательской корзине
+                        foreach ($cartData as &$userItem) {
+                            if (isset($userItem['product_id']) &&
+                                $userItem['product_id'] == $guestItem['product_id'] &&
+                                ($userItem['variant_id'] ?? null) == ($guestItem['variant_id'] ?? null)) {
+                                    $userItem['quantity'] = ($userItem['quantity'] ?? 0) + ($guestItem['quantity'] ?? 1);
+                                    $found = true;
+                                    break;
+                            }
+                        }
+                        
+                        // Добавляем новый элемент если не найдено совпадений
+                        if (!$found) {
+                            $cartData[] = [
+                                'product_id' => $guestItem['product_id'],
+                                'variant_id' => $guestItem['variant_id'] ?? null,
+                                'quantity' => $guestItem['quantity'] ?? 1
+                            ];
+                        }
+                    }
+                }
+
+                // Сохраняем обновлённую корзину
+                $user->update(['cart_data' => $cartData]);
+                session()->forget('guest_cart');
+            }
+
+            $items = $this->normalizeCartData($cartData);
+            $cart = new Cart(auth()->id(), $cartData);
+            $cart->items = $items;
+            return $cart;
+
+        // Для гостей
+        } else {
+            $guestCart = session('guest_cart', []);
+            
+            if (!is_array($guestCart)) {
+                $guestCart = [];
+            }
+            
+            $items = $this->normalizeCartData($guestCart);
+            $cart = new Cart(null, $guestCart);
+            $cart->items = $items;
+            return $cart;
         }
-
-        $items = $this->normalizeCartData($cartData);
-        $cart = new Cart(auth()->id(), $cartData);
-        $cart->items = $items;
-        return $cart;
-
-    // Для гостей
-    } else {
-        $guestCart = session('guest_cart', []);
-        $items = $this->normalizeCartData($guestCart);
-        $cart = new Cart(null, $guestCart);
-        $cart->items = $items;
-        return $cart;
+    } catch (\Exception $e) {
+        \Log::error('Error in getCart method: ' . $e->getMessage());
+        return new Cart(auth()->id() ?? null, []);
     }
 }
     

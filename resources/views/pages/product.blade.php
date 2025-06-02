@@ -42,7 +42,8 @@
                 <!-- Галерея -->
                 <section class="p-6 md:p-8 border-b md:border-b-0 md:border-r border-eco-100" aria-label="Галерея продукта">
                     <div class="product-gallery" role="region" aria-label="Просмотр изображений">
-                        <x-product.gallery 
+                        <x-product.gallery
+                            :product="$product"
                             :images="$product->images"
                             :mainImage="$product->primary_image ? $product->primary_image->url : null" />
                     </div>

@@ -36,10 +36,10 @@
                             @foreach($products as $product)
                                 <div class="relative group">
                                     <a href="{{ route('product.show', $product->sku) }}" class="block">
-                                        <div class="aspect-w-1 aspect-h-1 rounded-lg overflow-hidden bg-eco-50">
-                                            <img src="{{ $product->primary_image ? asset($product->primary_image->url) : asset('images/placeholder.png') }}" 
+                                        <div class="relative w-full h-80 rounded-lg overflow-hidden bg-eco-50">
+                                            <img src="{{ $product->image }}"
                                                  alt="{{ $product->name }}"
-                                                 class="w-full h-full object-center object-cover group-hover:opacity-90 transition-opacity">
+                                                 class="absolute inset-0 w-full h-full object-center object-cover group-hover:opacity-90 transition-opacity">
                                         </div>
                                         <div class="mt-4">
                                             <h3 class="text-sm font-medium text-eco-900">{{ $product->name }}</h3>
@@ -47,7 +47,7 @@
                                         </div>
                                     </a>
                                     <button type="button"
-                                            class="wishlist-remove-btn absolute top-2 right-2 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                            class="wishlist-remove-btn absolute top-2 right-2 p-2 bg-white rounded-full shadow-md"
                                             data-product-id="{{ $product->id }}"
                                             title="Удалить из избранного">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-eco-600" fill="currentColor" viewBox="0 0 24 24">

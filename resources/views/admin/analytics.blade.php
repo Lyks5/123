@@ -1,68 +1,79 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold dark:text-white">Аналитика</h1>
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-eco-600 hover:bg-eco-700 dark:bg-eco-500 dark:hover:bg-eco-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-eco-500 dark:focus:ring-offset-gray-900">
-                <span>Скачать отчет</span>
-                <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
-                <div class="py-1">
-                    <a href="{{ route('admin.analytics.export.csv') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
-                        </svg>
-                        CSV
-                    </a>
-                    <a href="{{ route('admin.analytics.export.pdf') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"/>
-                        </svg>
-                        PDF
-                    </a>
-                    <a href="{{ route('admin.analytics.export.json') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"/>
-                        </svg>
-                        JSON
-                    </a>
+<div class="container mx-auto px-4 py-6">
+    <!-- Заголовок и управление -->
+    <div class="flex flex-wrap justify-between items-start gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Аналитика</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                Последнее обновление: {{ $cache_updated_at->format('d.m.Y H:i:s') }}
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-4">
+            <form action="{{ route('admin.analytics.clear-cache') }}" method="POST">
+                @csrf
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Обновить данные
+                </button>
+            </form>
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-eco-600 hover:bg-eco-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-eco-500">
+                    <span>Скачать отчет</span>
+                    <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
+                    <div class="py-1">
+                        <a href="{{ route('admin.analytics.export.csv') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <svg class="mr-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
+                            </svg>
+                            CSV
+                        </a>
+                        <a href="{{ route('admin.analytics.export.pdf') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <svg class="mr-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                            </svg>
+                            PDF
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-eco-600 dark:bg-eco-500 rounded-lg shadow p-6 text-white">
+
+    <!-- Основные показатели -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-eco-600 rounded-lg shadow p-6 text-white">
             <h2 class="text-3xl font-bold mb-2">{{ number_format($totalSales, 0, '.', ' ') }} ₽</h2>
             <p class="text-eco-100">Общая выручка</p>
         </div>
-        
-        <div class="bg-green-600 dark:bg-green-500 rounded-lg shadow p-6 text-white">
+        <div class="bg-green-600 rounded-lg shadow p-6 text-white">
             <h2 class="text-3xl font-bold mb-2">{{ $totalOrders }}</h2>
-            <p class="text-green-100">Всего заказов</p>
+            <p class="text-green-100">Всего выполненных заказов</p>
         </div>
-        
-        <div class="bg-blue-600 dark:bg-blue-500 rounded-lg shadow p-6 text-white">
+        <div class="bg-blue-600 rounded-lg shadow p-6 text-white">
             <h2 class="text-3xl font-bold mb-2">{{ number_format($averageOrderValue, 0, '.', ' ') }} ₽</h2>
             <p class="text-blue-100">Средний чек</p>
         </div>
-        
-        <div class="bg-yellow-600 dark:bg-yellow-500 rounded-lg shadow p-6 text-white">
+        <div class="bg-yellow-600 rounded-lg shadow p-6 text-white">
             <h2 class="text-3xl font-bold mb-2">{{ $totalCustomers }}</h2>
             <p class="text-yellow-100">Клиентов</p>
         </div>
     </div>
-    
+
+    <!-- Графики -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- График выручки -->
         <div class="lg:col-span-2">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold mb-4 dark:text-white">
-                    <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Выручка по месяцам
@@ -72,11 +83,12 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- График статусов заказов -->
         <div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold mb-4 dark:text-white">
-                    <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                     </svg>
@@ -88,11 +100,13 @@
             </div>
         </div>
     </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+    <!-- Таблицы -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Популярные товары -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4 dark:text-white">
-                <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
                 Популярные товары
@@ -121,9 +135,10 @@
             </div>
         </div>
 
+        <!-- Популярные категории -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold mb-4 dark:text-white">
-                <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
                 Популярные категории

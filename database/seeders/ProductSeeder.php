@@ -4,11 +4,65 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Attribute;
+use App\Models\EcoFeature;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
+    private function getProductAttributes(string $categoryName): array 
+    {
+        $attributes = [];
+        
+        switch($categoryName) {
+            case 'Футболки':
+                $attributes = [
+                    'Размер' => ['M', 'L', 'XL'],
+                    'Цвет' => ['Белый', 'Черный', 'Зеленый'],
+                    'Материал' => ['Хлопок'],
+                    'Пол' => ['Унисекс'],
+                    'Сезон' => ['Лето']
+                ];
+                break;
+            case 'Толстовки':
+                $attributes = [
+                    'Размер' => ['S', 'M', 'L', 'XL'],
+                    'Цвет' => ['Серый', 'Черный', 'Синий'],
+                    'Материал' => ['Хлопок', 'Полиэстер'],
+                    'Пол' => ['Унисекс'],
+                    'Сезон' => ['Весна', 'Осень']
+                ];
+                break;
+            case 'Брюки':
+                $attributes = [
+                    'Размер' => ['S', 'M', 'L', 'XL'],
+                    'Цвет' => ['Черный', 'Синий'],
+                    'Материал' => ['Нейлон', 'Спандекс'],
+                    'Пол' => ['Унисекс'],
+                    'Сезон' => ['Всесезонный']
+                ];
+                break;
+            case 'Аксессуары':
+                $attributes = [
+                    'Цвет' => ['Черный', 'Синий', 'Зеленый'],
+                    'Материал' => ['Нейлон', 'Полиэстер']
+                ];
+                break;
+            case 'Обувь':
+                $attributes = [
+                    'Размер' => ['38', '39', '40', '41', '42', '43'],
+                    'Цвет' => ['Черный', 'Белый', 'Серый'],
+                    'Материал' => ['Нейлон', 'Хлопок'],
+                    'Пол' => ['Унисекс'],
+                    'Сезон' => ['Всесезонный']
+                ];
+                break;
+        }
+        
+        return $attributes;
+    }
+
     public function run(): void
     {
         // Футболки
@@ -155,6 +209,8 @@ class ProductSeeder extends Seeder
     private function createProducts(string $categoryName, array $products): void
     {
         $category = Category::where('name', $categoryName)->first();
+        $attributes = Attribute::with('values')->get();
+        $productAttributes = $this->getProductAttributes($categoryName);
 
         foreach ($products as $product) {
             $newProduct = Product::create([
@@ -170,6 +226,33 @@ class ProductSeeder extends Seeder
                 'sustainability_info' => $product['sustainability_info'],
                 'carbon_footprint' => $product['carbon_footprint'],
             ]);
+
+            // Добавляем атрибуты
+            foreach ($attributes as $attribute) {
+                if (isset($productAttributes[$attribute->name])) {
+                    $valueNames = $productAttributes[$attribute->name];
+                    $value = $attribute->values()
+                        ->whereIn('value', $valueNames)
+                        ->inRandomOrder()
+                        ->first();
+                        
+                    if ($value) {
+                        $newProduct->attributeValues()->attach($value->id);
+                    }
+                }
+            }
+
+            // Добавляем случайное количество эко-характеристик (1-2)
+            $ecoFeatures = EcoFeature::inRandomOrder()->take(rand(1, 2))->get();
+            $ecoFeaturesData = [];
+
+            foreach ($ecoFeatures as $feature) {
+                $ecoFeaturesData[$feature->id] = ['value' => rand(1, 10)];
+            }
+
+            if (!empty($ecoFeaturesData)) {
+                $newProduct->ecoFeatures()->attach($ecoFeaturesData);
+            }
 
             // Добавляем изображение для продукта
             $newProduct->images()->create([

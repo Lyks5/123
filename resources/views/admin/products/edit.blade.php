@@ -117,25 +117,45 @@
 
                         <!-- Атрибуты -->
                         <div class="form-group">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Атрибуты
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                Характеристики продукта
                             </label>
-                            <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 @foreach($attributes as $attribute)
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <div class="form-group">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             {{ $attribute->name }}
                                         </label>
-                                        <select name="attributes[{{ $attribute->id }}]"
-                                                class="form-select mt-1">
-                                            <option value="">Выберите значение</option>
-                                            @foreach($attribute->values as $value)
-                                                <option value="{{ $value->id }}"
-                                                    {{ $product->attributes->contains('id', $value->id) ? 'selected' : '' }}>
-                                                    {{ $value->value }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <div class="space-y-2">
+                                            @if($attribute->type === 'color')
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($attribute->values as $value)
+                                                        <label class="flex items-center space-x-2">
+                                                            <input type="radio"
+                                                                name="attribute_values[{{ $attribute->id }}]"
+                                                                value="{{ $value->id }}"
+                                                                {{ $product->attributeValues->contains($value->id) ? 'checked' : '' }}
+                                                                class="hidden peer">
+                                                            <div class="w-8 h-8 rounded-full border-2 peer-checked:border-eco-500 cursor-pointer"
+                                                                 style="background-color: {{ $value->hex_color }};"
+                                                                 title="{{ $value->value }}">
+                                                            </div>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <select name="attribute_values[{{ $attribute->id }}]" 
+                                                        class="form-select w-full">
+                                                    <option value="">Выберите {{ mb_strtolower($attribute->name) }}</option>
+                                                    @foreach($attribute->values as $value)
+                                                        <option value="{{ $value->id }}"
+                                                            {{ $product->attributeValues->contains($value->id) ? 'selected' : '' }}>
+                                                            {{ $value->value }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -272,7 +292,4 @@
         'resources/js/admin/products/edit-form.js',
         'resources/js/admin/products/eco-features.js'
     ])
-    <script>
-        window.ecoFeatures = {!! json_encode($ecoFeatures->pluck('slug', 'id')) !!};
-    </script>
 @endpush

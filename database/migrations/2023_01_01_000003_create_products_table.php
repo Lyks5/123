@@ -24,20 +24,20 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('product_attribute', function (Blueprint $table) {
+        Schema::create('product_attribute_values', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('attribute_id')->constrained()->onDelete('cascade');
-            $table->string('value');
+            $table->foreignId('attribute_value_id')->constrained()->onDelete('cascade');
+            $table->string('value')->nullable();
             $table->timestamps();
 
-            $table->unique(['product_id', 'attribute_id']);
+            $table->unique(['product_id', 'attribute_value_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('product_attribute');
+        Schema::dropIfExists('product_attribute_values');
         Schema::dropIfExists('products');
     }
 };

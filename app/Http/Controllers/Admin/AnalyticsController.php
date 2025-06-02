@@ -25,6 +25,19 @@ class AnalyticsController extends Controller
      * Constructor
      */
     
+    /**
+     * Clear analytics cache
+     */
+    public function clearCache()
+    {
+        cache()->forget('environmental_analytics');
+        cache()->forget('analytics_dashboard');
+        cache()->forget('sales_analytics');
+        cache()->forget('monthly_sales_data');
+        
+        return redirect()->back()->with('success', 'Кэш аналитики успешно очищен');
+    }
+
 
     /**
      * Display the analytics dashboard.
@@ -45,8 +58,8 @@ class AnalyticsController extends Controller
             $orders = Order::select(
                 DB::raw('COUNT(*) as total_count'),
                 DB::raw('SUM(CASE WHEN status = "completed" THEN total_amount ELSE 0 END) as total_revenue'),
-                DB::raw('COUNT(CASE WHEN status = "completed" THEN 1 END) as completed_count'),
-                DB::raw('SUM(CASE WHEN status = "completed" THEN total_amount END) / COUNT(CASE WHEN status = "completed" THEN 1 END) as avg_order_value')
+                DB::raw('COUNT(CASE WHEN status IN ("completed", "delivered", "shipped") THEN 1 END) as completed_count'),
+                DB::raw('SUM(CASE WHEN status IN ("completed", "delivered", "shipped") THEN total_amount END) / COUNT(CASE WHEN status IN ("completed", "delivered", "shipped") THEN 1 END) as avg_order_value')
             )->first();
 
             // Статистика по статусам заказов одним запросом
@@ -99,13 +112,73 @@ class AnalyticsController extends Controller
         // Убеждаемся, что все данные существуют
         $environmentalData = $analyticsData['environmental'] ?? [];
         
-        return view('admin.analytics.index', [
+        // Подготавливаем месяцы на русском
+        $monthNames = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $monthNames[] = Carbon::now()->subMonths($i)->locale('ru')->monthName;
+        }
+
+        // Получаем данные о выручке
+        $yearlyData = collect($analyticsData['monthly_data']['year']);
+        $revenueByMonth = $yearlyData->map(function($item) {
+            return $item['revenue'] ?? 0;
+        })->values()->toArray();
+
+        // Получаем данные о статусах заказов
+        $ordersByStatus = [
+            'pending' => Order::where('status', 'pending')->count(),
+            'processing' => Order::where('status', 'processing')->count(),
+            'shipped' => Order::where('status', 'shipped')->count(),
+            'delivered' => Order::where('status', 'delivered')->count(),
+            'completed' => Order::where('status', 'completed')->count(),
+            'cancelled' => Order::where('status', 'cancelled')->count()
+        ];
+
+        // Получаем популярные товары
+        $topProducts = Product::select(
+            'products.name',
+            DB::raw('COUNT(order_items.id) as sales_count')
+        )
+        ->join('order_items', 'products.id', '=', 'order_items.product_id')
+        ->join('orders', 'order_items.order_id', '=', 'orders.id')
+        ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
+        ->groupBy('products.id', 'products.name')
+        ->orderByDesc('sales_count')
+        ->limit(10)
+        ->get();
+
+        // Получаем популярные категории
+        $topCategories = Category::select(
+            'categories.name',
+            DB::raw('COUNT(order_items.id) as sales_count')
+        )
+        ->join('products', 'categories.id', '=', 'products.category_id')
+        ->join('order_items', 'products.id', '=', 'order_items.product_id')
+        ->join('orders', 'order_items.order_id', '=', 'orders.id')
+        ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
+        ->groupBy('categories.id', 'categories.name')
+        ->orderByDesc('sales_count')
+        ->limit(10)
+        ->get();
+
+        // Добавляем кнопку для очистки кэша
+        return view('admin.analytics', [
+            'cache_updated_at' => cache('analytics_dashboard_updated_at', now()),
             'analyticsData' => $analyticsData,
             'salesData' => $analyticsData['sales'] ?? [],
             'userData' => $analyticsData['users'] ?? [],
             'monthlyData' => $analyticsData['monthly_data'] ?? [],
             'productData' => $analyticsData['products'] ?? [],
-            'environmentalData' => $environmentalData
+            'environmentalData' => $environmentalData,
+            'monthNames' => $monthNames,
+            'revenueByMonth' => $revenueByMonth,
+            'ordersByStatus' => $ordersByStatus,
+            'totalSales' => $analyticsData['orders']['total_revenue'] ?? 0,
+            'totalOrders' => $analyticsData['sales']['order_count'] ?? 0,
+            'averageOrderValue' => $analyticsData['sales']['average_order'] ?? 0,
+            'totalCustomers' => $analyticsData['users']['total_users'] ?? 0,
+            'topProducts' => $topProducts,
+            'topCategories' => $topCategories
         ]);
     }
 
@@ -152,7 +225,7 @@ class AnalyticsController extends Controller
             )
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->orderByDesc('total_revenue')
             ->limit(10)
@@ -169,7 +242,7 @@ class AnalyticsController extends Controller
             ->join('products', 'categories.id', '=', 'products.category_id')
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
             ->groupBy('categories.name')
             ->orderByDesc('total_revenue')
             ->get();
@@ -201,7 +274,7 @@ class AnalyticsController extends Controller
                 : 100;
 
             // Получаем общую выручку и количество заказов
-            $totalRevenue = Order::where('status', 'completed')->sum('total_amount') ?? 0;
+            $totalRevenue = Order::whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount') ?? 0;
             $orderCount = Order::where('status', 'completed')->count() ?? 0;
 
             // Устанавливаем цели (можно настроить в зависимости от бизнес-требований)
@@ -224,7 +297,7 @@ class AnalyticsController extends Controller
                     'revenues' => $salesTrends->pluck('revenue')
                 ],
                 'sales_growth' => $salesGrowth,
-                'average_order' => Order::where('status', 'completed')->avg('total_amount') ?: 0
+                'average_order' => Order::whereIn('status', ['completed', 'delivered', 'shipped'])->avg('total_amount') ?: 0
             ];
         });
     }
@@ -259,7 +332,7 @@ class AnalyticsController extends Controller
         // Top customers by spending
         $topCustomers = DB::table('users')
             ->join('orders', 'users.id', '=', 'orders.user_id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
             ->select(
                 'users.id',
                 'users.name',
@@ -295,7 +368,7 @@ class AnalyticsController extends Controller
         $topProducts = DB::table('products')
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
             ->select(
                 'products.id',
                 'products.name',
@@ -366,14 +439,14 @@ class AnalyticsController extends Controller
             ->join('eco_feature_product', 'products.id', '=', 'eco_feature_product.product_id')
             ->join('order_items', 'products.id', '=', 'order_items.product_id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
             ->distinct('order_items.id')
             ->sum('order_items.subtotal');
 
             
         $totalSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'delivered', 'shipped'])
             ->sum('order_items.subtotal');
 
             
@@ -417,7 +490,7 @@ class AnalyticsController extends Controller
     {
         return cache()->remember('monthly_sales_data', 3600, function () {
             $periods = collect(['day', 'week', 'month', 'year'])->mapWithKeys(function ($period) {
-                $query = Order::where('status', 'completed');
+                $query = Order::whereIn('status', ['completed', 'delivered', 'shipped']);
                 
                 switch ($period) {
                     case 'day':

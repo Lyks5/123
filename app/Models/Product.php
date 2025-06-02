@@ -37,9 +37,6 @@ class Product extends Model
 
     protected $with = ['category', 'ecoFeatures'];
 
-    /**
-     * Допустимые статусы товара
-     */
     public const STATUSES = [
         'draft' => 'Черновик',
         'published' => 'Опубликован',
@@ -58,8 +55,15 @@ class Product extends Model
 
     public function attributes(): BelongsToMany
     {
-        return $this->belongsToMany(Attribute::class, 'product_attribute')
+        return $this->belongsToMany(Attribute::class)
             ->withPivot('value');
+    }
+
+    public function attributeValues(): BelongsToMany
+    {
+        return $this->belongsToMany(AttributeValue::class, 'product_attribute_values')
+            ->withPivot('value')
+            ->withTimestamps();
     }
 
     public function primaryImage()
@@ -79,9 +83,6 @@ class Product extends Model
         return $this->hasMany(Variant::class);
     }
 
-    /**
-     * Get the orders containing this product.
-     */
     public function orders()
     {
         return $this->belongsToMany(Order::class, 'order_items')
@@ -89,22 +90,9 @@ class Product extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Get all reviews for the product.
-     */
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
-    }
-
-    /**
-     * Get attribute values for the product
-     */
-    public function attributeValues()
-    {
-        return $this->belongsToMany(AttributeValue::class, 'product_attribute')
-            ->withPivot('value')
-            ->withTimestamps();
     }
 
     public function getImageAttribute()
@@ -115,11 +103,6 @@ class Product extends Model
         return $url;
     }
 
-    /**
-     * Get the route key name for Laravel.
-     *
-     * @return string
-     */
     public function getRouteKeyName()
     {
         return 'sku';
