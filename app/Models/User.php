@@ -81,11 +81,26 @@ class User extends Authenticatable
 
     public function getTotalEcoImpact()
     {
-        return [
-            'carbon_saved' => $this->ecoImpactRecords()->sum('carbon_saved'),
-            'plastic_saved' => $this->ecoImpactRecords()->sum('plastic_saved'),
-            'water_saved' => $this->ecoImpactRecords()->sum('water_saved')
+        $impact = [
+            'carbon_saved' => (float) $this->ecoImpactRecords()->sum('carbon_saved'),
+            'plastic_saved' => (float) $this->ecoImpactRecords()->sum('plastic_saved'),
+            'water_saved' => (float) $this->ecoImpactRecords()->sum('water_saved')
         ];
+
+        // Если все значения пусты, вернуть нули
+        if (
+            $impact['carbon_saved'] === 0.0 &&
+            $impact['plastic_saved'] === 0.0 &&
+            $impact['water_saved'] === 0.0
+        ) {
+            return [
+                'carbon_saved' => 0.0,
+                'plastic_saved' => 0.0,
+                'water_saved' => 0.0
+            ];
+        }
+
+        return $impact;
     }
 
     public function isAdmin()

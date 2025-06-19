@@ -54,7 +54,17 @@
                     <div class="mb-8">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
-                                <h1 class="text-2xl font-bold text-eco-900 mb-2" itemprop="name">{{ $product->name }}</h1>
+                                <div class="flex items-center gap-3">
+                                    <h1 class="text-2xl font-bold text-eco-900 mb-2" itemprop="name">{{ $product->name }}</h1>
+                                    <button id="wishlist-btn"
+                                            class="inline-flex items-center justify-center p-2 rounded-full border border-eco-200 bg-white text-eco-600 hover:bg-eco-50/80 transition{{ $product->in_wishlist ? ' bg-eco-50/80 text-yellow-500' : '' }}"
+                                            data-product-id="{{ $product->id }}"
+                                            title="{{ $product->in_wishlist ? 'Товар в избранном' : 'Добавить в избранное' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="{{ $product->in_wishlist ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3.332.787-4.5 2.05C10.932 3.786 9.36 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 @if($product->category)
                                     <div class="text-sm text-eco-600 mb-4">
                                         <a href="{{ route('shop', ['category' => $product->category->slug]) }}"
@@ -174,3 +184,4 @@
     </script>
 @endpush
 @endsection
+<script src="{{ asset('js/wishlist.js') }}"></script>

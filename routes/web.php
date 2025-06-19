@@ -38,6 +38,9 @@ Route::get('/shop/tag/{tag}', [ShopController::class, 'tag'])->name('shop.tag');
 
 // Товары
 Route::get('/product/review/{product:sku}', [ProductController::class, 'show'])->name('product.review');
+// Эко-рейтинг пользователя
+use App\Http\Controllers\EcoController;
+Route::middleware(['auth'])->get('/account/eco-rating', [EcoController::class, 'rating'])->name('account.eco_rating');
 Route::get('/product/{product:sku}', [ProductController::class, 'show'])->name('product.show');
 
 Route::middleware('auth')->group(function () {

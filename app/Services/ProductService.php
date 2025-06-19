@@ -99,21 +99,14 @@ class ProductService
         ]);
         
         try {
-            // Валидация и нормализация значений атрибутов
+            // Валидация входных данных
             $normalizedValues = collect($attributeValues)
                 ->filter(function ($item) {
-                    return isset($item['attribute_value_id']);
+                    return isset($item['attribute_value_id']) && isset($item['attribute_id']);
                 })
                 ->map(function ($item) {
-                    $valueId = (int)$item['attribute_value_id'];
-                    \Log::debug('ProductService: Normalizing attribute value', [
-                        'value_id' => $valueId,
-                        'custom_value' => $item['value'] ?? null
-                    ]);
-                    
                     return [
-                        'attribute_value_id' => $valueId,
-                        'value' => isset($item['value']) ? trim((string)$item['value']) : null
+                        'attribute_value_id' => (int)$item['attribute_value_id'],
                     ];
                 });
             
@@ -133,13 +126,23 @@ class ProductService
                 );
             }
             
+            // Проверяем существование атрибутов и их значений
+            $attributeValueIds = $normalizedValues->pluck('attribute_value_id')->toArray();
+            $existingValues = AttributeValue::whereIn('id', $attributeValueIds)
+                ->get()
+                ->pluck('id')
+                ->toArray();
+
+            $invalidIds = array_diff($attributeValueIds, $existingValues);
+            if (!empty($invalidIds)) {
+                throw new \InvalidArgumentException(
+                    'Недопустимые значения атрибутов: ' . implode(', ', $invalidIds)
+                );
+            }
+
             // Синхронизируем значения атрибутов
             $syncData = $normalizedValues->mapWithKeys(function ($item) {
-                return [
-                    $item['attribute_value_id'] => [
-                        'value' => $item['value']
-                    ]
-                ];
+                return [$item['attribute_value_id'] => []];
             })->toArray();
             
             \Log::info('ProductService: Syncing normalized attribute values', [

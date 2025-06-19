@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/js/admin/dashboard.js',
                 'resources/css/admin/products/form.css',
                 'resources/js/admin/products/edit-form.js',
+                'resources/js/admin/products/create-form.js',
                 'resources/js/admin/products/eco-features.js'
             ],
             refresh: true,

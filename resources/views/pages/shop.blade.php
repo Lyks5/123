@@ -126,7 +126,7 @@
                         </div>
                         
                         <!-- Clear Filters -->
-                        <button id="clear-filters" class="w-full py-2 border border-eco-300 hover:bg-eco-50 text-eco-800 rounded-lg transition-colors">
+                        <button id="clear-filters" class="w-full py-2 mb-6 border border-eco-300 bg-white text-eco-800 font-semibold rounded-lg transition-colors hover:bg-eco-100">
                             Очистить фильтры
                         </button>
                     </div>
@@ -136,10 +136,24 @@
                 <div class="lg:col-span-3">
                     <!-- Sort Options -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-eco-100">
-                        <div class="mb-4 sm:mb-0">
+                        <div class="mb-4 sm:mb-0 flex flex-col gap-2">
                             <span id="products-count" class="text-eco-800">
                                 Показано {{ $products->firstItem() }} - {{ $products->lastItem() }} из {{ $products->total() }} товаров
                             </span>
+                            <form method="get" class="flex gap-2">
+                                <input
+                                    type="text"
+                                    id="product-search"
+                                    name="search"
+                                    value="{{ request()->search ?? '' }}"
+                                    placeholder="Поиск по названию"
+                                    class="w-full sm:w-72 rounded-lg border-eco-300 focus:border-eco-500 focus:ring-eco-500"
+                                    autocomplete="off"
+                                >
+                                <button type="submit" class="px-4 py-2 bg-eco-600 text-white rounded hover:bg-eco-700">
+                                    Найти
+                                </button>
+                            </form>
                         </div>
                         <div class="flex items-center">
                             <span class="text-eco-800 mr-2">Сортировать по:</span>
@@ -154,6 +168,13 @@
                         </div>
                     </div>
                     
+                    <!-- Products Loader -->
+                    <div id="products-loader" class="flex justify-center items-center py-12 hidden">
+                        <svg class="animate-spin h-10 w-10 text-eco-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                    </div>
                     <!-- Products -->
                     <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         @include('components.product-grid', ['products' => $products])

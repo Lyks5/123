@@ -287,6 +287,31 @@ class ProductController extends Controller
         }
     }
 
+    public function uploadImages(Request $request): JsonResponse
+    {
+        try {
+            $uploadedImages = [];
+            
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $uploadedImage = $this->productImageService->upload($image);
+                    $uploadedImages[] = [
+                        'id' => $uploadedImage->id,
+                        'url' => url('storage/' . $uploadedImage->image_path),
+                        'order' => $uploadedImage->order
+                    ];
+                }
+            }
+            
+            return response()->json($uploadedImages);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
+
     public function deleteImage(ProductImage $image): JsonResponse
     {
         try {

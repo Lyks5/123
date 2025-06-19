@@ -67,6 +67,15 @@ class ShopController extends Controller
 
     private function applyFiltersAndSort($query, Request $request)
     {
+        // Поиск по названию и описанию
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
         // Фильтр по категориям (множественный выбор)
         if ($request->has('category')) {
             $categories = explode(',', $request->category);
@@ -89,7 +98,7 @@ class ShopController extends Controller
         if ($request->has('eco_features')) {
             $features = explode(',', $request->eco_features);
             $query->whereHas('ecoFeatures', function ($q) use ($features) {
-                $q->whereIn('id', $features);
+                $q->whereIn('eco_features.id', $features);
             });
         }
 

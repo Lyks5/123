@@ -32,16 +32,27 @@ export function ImageUpload({ form, maxFiles = 8, maxSize = 5242880, error }: Im
     onDrop: async (acceptedFiles) => {
       setIsUploading(true);
       try {
-        // Здесь будет логика загрузки файлов на сервер
-        const newImages = acceptedFiles.map((file, index) => ({
-          id: Date.now() + index,
-          url: URL.createObjectURL(file),
-          order: images.length + index
-        }));
-        
-        form.setValue('images', [...images, ...newImages], { 
+        const formData = new FormData();
+        acceptedFiles.forEach((file, index) => {
+          formData.append(`images[]`, file);
+        });
+
+        const response = await fetch('/api/products/upload-images', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка загрузки изображений');
+        }
+
+        const uploadedImages = await response.json();
+        form.setValue('images', [...images, ...uploadedImages], {
           shouldDirty: true,
-          shouldValidate: true 
+          shouldValidate: true
         });
       } finally {
         setIsUploading(false);

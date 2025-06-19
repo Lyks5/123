@@ -101,10 +101,12 @@ document.addEventListener('DOMContentLoaded', function() {
         editModal.classList.remove('hidden');
     }
 
-    // Назначаем обработчики для существующих кнопок редактирования
-    const editButtons = document.querySelectorAll('.edit-address-btn');
-    editButtons.forEach(button => {
-        button.addEventListener('click', editButtonHandler);
+    // Делегирование событий для кнопок редактирования адреса
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.edit-address-btn');
+        if (btn) {
+            editButtonHandler.call(btn, e);
+        }
     });
 
     // Закрытие модального окна редактирования по клику вне его области

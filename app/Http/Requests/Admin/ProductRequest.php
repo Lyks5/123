@@ -34,10 +34,9 @@ class ProductRequest extends FormRequest
             'eco_features' => 'nullable|array',
             'eco_features.*' => 'exists:eco_features,id',
             'eco_feature_values' => 'nullable|array',
-            'eco_feature_values.*' => 'required_with:eco_features.*|numeric|min:0',
-            'attributes' => 'nullable|array',
-            'attributes.*.attribute_id' => 'nullable|exists:attributes,id',
-            'attributes.*.value' => 'required_with:attributes.*.attribute_id|string',
+            'eco_feature_values.*' => 'nullable|numeric|min:0',
+            'attribute_values' => 'nullable|array',
+            'attribute_values.*' => 'nullable|exists:attribute_values,id',
             'images' => 'nullable|array',
             'images.*' => [
                 'nullable',
@@ -89,9 +88,8 @@ class ProductRequest extends FormRequest
             'eco_feature_values.*.numeric' => 'Значение экохарактеристики должно быть числом',
             'eco_feature_values.*.min' => 'Значение экохарактеристики не может быть отрицательным',
             
-            'attributes.array' => 'Некорректный формат атрибутов',
-            'attributes.*.attribute_id.exists' => 'Выбранный атрибут не существует',
-            'attributes.*.value.required_with' => 'Для выбранного атрибута необходимо указать значение',
+            'attribute_values.array' => 'Некорректный формат атрибутов',
+            'attribute_values.*.exists' => 'Выбранное значение атрибута не существует',
         ];
     }
 
@@ -107,7 +105,7 @@ class ProductRequest extends FormRequest
             'stock_quantity' => 'количество',
             'images.*' => 'изображение',
             'eco_features' => 'эко-характеристики',
-            'attributes' => 'атрибуты',
+            'attribute_values' => 'значения атрибутов',
         ];
     }
 }

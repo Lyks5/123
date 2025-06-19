@@ -181,7 +181,15 @@ public function update(Request $request)
             $requestItem['variant_id']
         );
 
-        if ($foundIndex === null) continue;
+        // Если элемент не найден — добавляем новый
+        if ($foundIndex === null) {
+            $cartData[] = [
+                'product_id' => $requestItem['product_id'],
+                'variant_id' => $requestItem['variant_id'],
+                'quantity' => $requestItem['quantity'],
+            ];
+            continue;
+        }
 
         // Проверяем доступность товара
         $product = Product::find($requestItem['product_id']);

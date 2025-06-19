@@ -15,7 +15,8 @@
         'resources/css/app.css',
         'resources/js/product-page.js',
         'resources/js/components/notification.js',
-        'resources/js/wishlist.js'
+        'resources/js/wishlist.js',
+        'resources/js/shop.js'
     ])
 </head>
 <style>

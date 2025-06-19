@@ -12,6 +12,12 @@
         <div class="mb-10 max-w-3xl mx-auto text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-eco-900 mb-3">Мой профиль</h1>
             <p class="text-eco-600 text-lg max-w-2xl mx-auto">Управляйте личными данными и просматривайте заказы</p>
+@if(isset($eco_rating))
+    <div class="mb-4 text-center">
+        <span class="font-semibold text-eco-700">Ваш эко-рейтинг: </span>
+        <span class="font-bold text-eco-900">{{ $eco_rating }}</span>
+    </div>
+@endif
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">

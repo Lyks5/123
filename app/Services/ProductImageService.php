@@ -64,8 +64,8 @@ class ProductImageService
                 // Для JPG и PNG сохраняем оригинал и создаем WebP версию
                 if ($extension === 'png') {
                     $success = Storage::disk('public')->put(
-                        $originalPath, 
-                        $image->toPng($quality)
+                        $originalPath,
+                        $image->toPng(false) // PNG interlaced parameter should be boolean
                     );
                 } else {
                     $success = Storage::disk('public')->put(

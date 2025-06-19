@@ -411,3 +411,6 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+    <script src="{{ asset('resources/js/addresses.js') }}"></script>
+@endpush

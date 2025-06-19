@@ -109,7 +109,6 @@
                                 class="form-select">
                                 <option value="draft">Черновик</option>
                                 <option value="published">Опубликован</option>
-                                <option value="archived">Архивирован</option>
                             </select>
                             <span class="error-message" data-error="status"></span>
                         </div>
@@ -131,19 +130,43 @@
                             </label>
                             <div class="space-y-4">
                                 @foreach($attributes as $attribute)
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <div class="form-group">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             {{ $attribute->name }}
                                         </label>
-                                        <select name="attributes[{{ $attribute->id }}]"
-                                                class="form-select mt-1">
-                                            <option value="">Выберите значение</option>
-                                            @foreach($attribute->values as $value)
-                                                <option value="{{ $value->id }}">
-                                                    {{ $value->value }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <div class="space-y-2">
+                                            @if($attribute->type === 'color')
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($attribute->values as $value)
+                                                        <label class="flex items-center space-x-2">
+                                                            <input type="radio"
+                                                                name="attribute_values[{{ $loop->index }}][attribute_value_id]"
+                                                                value="{{ $value->id }}"
+                                                                class="hidden peer">
+                                                            <div class="w-8 h-8 rounded-full border-2 peer-checked:border-eco-500 cursor-pointer"
+                                                                 style="background-color: {{ $value->hex_color }};"
+                                                                 title="{{ $value->value }}">
+                                                            </div>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <select
+                                                    name="attribute_values[{{ $loop->index }}][attribute_value_id]"
+                                                    class="form-select w-full"
+                                                    required>
+                                                    <option value="">Выберите {{ mb_strtolower($attribute->name) }}</option>
+                                                    @foreach($attribute->values as $value)
+                                                        <option value="{{ $value->id }}">
+                                                            {{ $value->value }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="hidden"
+                                                    name="attribute_values[{{ $loop->index }}][attribute_id]"
+                                                    value="{{ $attribute->id }}">
+                                            @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -183,7 +206,21 @@
                                                        step="0.01">
                                                 <span class="text-sm text-gray-600">{{ $feature->unit }}</span>
                                             </div>
-                                            <div class="mt-1 text-sm text-green-600 savings-text" id="savings_{{ $feature->id }}"></div>
+                                            <div class="mt-1 text-sm text-green-600 savings-text" id="savings_{{ $feature->id }}">
+                                                @php
+                                                switch($feature->slug) {
+                                                    case 'carbon-footprint':
+                                                        echo 'Введите значение для расчета экономии CO₂';
+                                                        break;
+                                                    case 'water-saved':
+                                                        echo 'Введите значение для расчета экономии воды';
+                                                        break;
+                                                    case 'recycled-plastic':
+                                                        echo 'Введите количество использованного переработанного пластика';
+                                                        break;
+                                                }
+                                                @endphp
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach
@@ -196,8 +233,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Изображения продукта
                             </label>
-                            <div class="flex items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md"
-                                id="dropZone">
+                            <div class="flex items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
                                 <div class="space-y-1 text-center">
                                     <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -206,13 +242,15 @@
                                         <label for="images" class="relative cursor-pointer bg-white rounded-md font-medium text-eco-600 hover:text-eco-500">
                                             <span>Загрузить файлы</span>
                                             <input id="images" name="images[]" type="file" class="sr-only" multiple accept="image/*">
+                                            <input type="hidden" id="primary_image" name="primary_image" value="0">
                                         </label>
                                         <p class="pl-1">или перетащите их сюда</p>
                                     </div>
                                     <p class="text-xs text-gray-500">PNG, JPG, GIF до 10MB</p>
                                 </div>
                             </div>
-                            <div id="imagePreviewContainer" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- Контейнер для предпросмотра -->
+                            <div id="preview-container" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 preview-images">
                             </div>
                             <span class="error-message" data-error="images"></span>
                         </div>
@@ -235,7 +273,7 @@
 
 @push('scripts')
     @vite([
-        'resources/js/admin/products/create-form.js',
+        'resources/js/admin/products/form-handler.js',
         'resources/js/admin/products/eco-features.js'
     ])
     <script>
