@@ -182,7 +182,7 @@
                     
                     <!-- Pagination -->
                     <div class="mt-12">
-                        {{ $products->links() }}
+                        {{ $products->links('components.custom-pagination') }}
                     </div>
                 </div>
             </div>

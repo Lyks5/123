@@ -40,12 +40,21 @@ class ShopController extends Controller
 
         if ($request->ajax()) {
             $html = View::make('components.product-grid', compact('products'))->render();
-            return response()->json([
+            
+            $response = [
                 'html' => $html,
                 'from' => $products->firstItem(),
                 'to' => $products->lastItem(),
-                'total' => $products->total()
-            ]);
+                'total' => $products->total(),
+                'success' => true
+            ];
+
+            // Добавляем сообщение, если нет результатов
+            if ($products->total() === 0) {
+                $response['message'] = 'По вашему запросу ничего не найдено';
+            }
+
+            return response()->json($response);
         }
 
         return view('pages.shop', compact(
@@ -140,13 +149,28 @@ class ShopController extends Controller
         $products = $query->paginate(12)->withQueryString();
 
         if ($request->ajax()) {
-            $html = View::make('components.product-grid', compact('products'))->render();
-            return response()->json([
-                'html' => $html,
-                'from' => $products->firstItem(),
-                'to' => $products->lastItem(),
-                'total' => $products->total()
-            ]);
+            try {
+                $html = View::make('components.product-grid', compact('products'))->render();
+                
+                $response = [
+                    'html' => $html,
+                    'from' => $products->firstItem(),
+                    'to' => $products->lastItem(),
+                    'total' => $products->total(),
+                    'success' => true
+                ];
+
+                if ($request->has('clear_filters')) {
+                    $response['message'] = 'Фильтры успешно сброшены';
+                }
+
+                return response()->json($response);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Произошла ошибка при обновлении списка товаров'
+                ], 500);
+            }
         }
 
         return $products;

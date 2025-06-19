@@ -70,17 +70,39 @@
                         В корзину
                     </button>
                 </form>
-                <form action="{{ route('wishlist.toggle') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <button type="submit" 
-                        class="p-2 text-eco-600 hover:text-eco-700 border border-eco-200 rounded-lg hover:bg-eco-50 transition-colors"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                        </svg>
-                    </button>
-                </form>
+                <button
+                    onclick="toggleWishlist({{ $product->id }})"
+                    class="p-2 text-eco-600 hover:text-eco-700 border border-eco-200 rounded-lg hover:bg-eco-50 transition-colors"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                </button>
+
+                <script>
+                function toggleWishlist(productId) {
+                    fetch('{{ route('wishlist.toggle') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            product_id: productId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Ответ от сервера:', data);
+                        document.dispatchEvent(new CustomEvent('show-notification', {
+                            detail: {
+                                type: data.success ? 'success' : 'error',
+                                message: data.message
+                            }
+                        }));
+                    });
+                }
+                </script>
             </div>
         </div>
     </div>

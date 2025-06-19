@@ -170,18 +170,11 @@
 
 @push('scripts')
     <script type="module">
-        // Дожидаемся загрузки всех модулей через Vite
-        document.addEventListener('DOMContentLoaded', function () {
-            // Даем время на инициализацию всех модулей
-            setTimeout(() => {
-                if (typeof window.EcoStoreProductPage === 'undefined') {
-                    console.error('Product page script not loaded properly');
-                    return;
-                }
-                window.EcoStoreProductPage.init(@json($product->name), @json($product->id));
-            }, 100);
+        import { init } from '{{ asset("js/product-page.js") }}';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            init(@json($product->name), @json($product->id));
         });
     </script>
 @endpush
 @endsection
-<script src="{{ asset('js/wishlist.js') }}"></script>

@@ -3,6 +3,48 @@
 @section('title', 'Мои адреса - ЭкоМаркет')
 
 @section('content')
+<script>
+   document.addEventListener('DOMContentLoaded', function() {
+    // Показать модальное окно
+    document.querySelectorAll('.show-modal-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.dataset.modal;
+            document.getElementById(modalId).classList.remove('hidden');
+        });
+    });
+
+    // Скрыть модальное окно
+    document.querySelectorAll('.hide-modal-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.dataset.modal;
+            document.getElementById(modalId).classList.add('hidden');
+        });
+    });
+
+    // Обработка кнопки редактирования адреса
+    document.querySelectorAll('.edit-address-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const addressId = this.dataset.addressId;
+            const modal = document.getElementById('edit-address-modal');
+            const form = document.getElementById('edit-address-form');
+            
+            // Получаем данные адреса
+            fetch(`/account/addresses/${addressId}/get`)
+                .then(response => response.json())
+                .then(address => {
+                    // Устанавливаем action для формы
+                    form.action = `/account/addresses/${addressId}`;
+                    
+                    // Заполняем поля формы
+                    document.getElementById('edit_address_line1').value = address.address_line1;
+                    
+                    // Показываем модальное окно
+                    modal.classList.remove('hidden');
+                });
+        });
+    });
+});
+</script>
 <!-- Header spacing -->
 <div class="h-20"></div>
 
@@ -137,7 +179,7 @@
                                 </svg>
                                 Адреса доставки
                             </h2>
-                            <button type="button" class="px-4 py-2 bg-eco-600 hover:bg-eco-700 text-white rounded-lg text-sm font-medium transition-colors" onclick="document.getElementById('add-address-modal').classList.remove('hidden')">
+                            <button type="button" class="show-modal-btn px-4 py-2 bg-eco-600 hover:bg-eco-700 text-white rounded-lg text-sm font-medium transition-colors" data-modal="add-address-modal">
                                 Добавить адрес
                             </button>
                         </div>
@@ -188,9 +230,107 @@
                                                     Удалить
                                                 </button>
                                             </form>
-                                            <button type="button" class="px-3 py-1.5 bg-eco-50 hover:bg-eco-100 text-eco-900 rounded-lg text-sm font-medium transition-colors edit-address-btn" data-address-id="{{ $address->id }}">
+                                            <button type="button" class="px-3 py-1.5 bg-eco-50 hover:bg-eco-100 text-eco-900 rounded-lg text-sm font-medium transition-colors show-modal-btn" data-modal="edit-address-modal-{{ $address->id }}">
                                                 Изменить
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Edit Address Modal for this address -->
+                                    <div id="edit-address-modal-{{ $address->id }}" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+                                        <div class="bg-white rounded-lg max-w-lg w-full mx-4 max-h-90vh overflow-y-auto">
+                                            <div class="p-6 border-b border-eco-100 flex justify-between items-center">
+                                                <h3 class="text-lg font-medium text-eco-900">Редактировать адрес</h3>
+                                                <button type="button" class="hide-modal-btn text-eco-500 hover:text-eco-700" data-modal="edit-address-modal-{{ $address->id }}">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <form action="{{ route('account.addresses.update', $address->id) }}" method="POST" class="p-6">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label for="edit_first_name_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Имя</label>
+                                                            <input type="text" name="first_name" id="edit_first_name_{{ $address->id }}" value="{{ $address->first_name }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                        </div>
+                                                        <div>
+                                                            <label for="edit_last_name_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Фамилия</label>
+                                                            <input type="text" name="last_name" id="edit_last_name_{{ $address->id }}" value="{{ $address->last_name }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label for="edit_address_line1_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Адрес</label>
+                                                        <input type="text" name="address_line1" id="edit_address_line1_{{ $address->id }}" value="{{ $address->address_line1 }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label for="edit_address_line2_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Дополнительная информация (кв./офис)</label>
+                                                        <input type="text" name="address_line2" id="edit_address_line2_{{ $address->id }}" value="{{ $address->address_line2 }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500">
+                                                    </div>
+
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label for="edit_city_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Город</label>
+                                                            <input type="text" name="city" id="edit_city_{{ $address->id }}" value="{{ $address->city }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                        </div>
+                                                        <div>
+                                                            <label for="edit_state_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Область/Регион</label>
+                                                            <input type="text" name="state" id="edit_state_{{ $address->id }}" value="{{ $address->state }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label for="edit_postal_code_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Почтовый индекс</label>
+                                                            <input type="text" name="postal_code" id="edit_postal_code_{{ $address->id }}" value="{{ $address->postal_code }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                        </div>
+                                                        <div>
+                                                            <label for="edit_country_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Страна</label>
+                                                            <input type="text" name="country" id="edit_country_{{ $address->id }}" value="{{ $address->country }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label for="edit_phone_{{ $address->id }}" class="block text-sm font-medium text-eco-700 mb-1">Телефон</label>
+                                                        <input type="text" name="phone" id="edit_phone_{{ $address->id }}" value="{{ $address->phone }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500">
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-eco-700 mb-1">Тип адреса</label>
+                                                        <div class="flex gap-4">
+                                                            <label class="inline-flex items-center">
+                                                                <input type="radio" name="type" value="shipping" class="h-4 w-4 text-eco-600 focus:ring-eco-500 border-eco-300" {{ $address->type == 'shipping' ? 'checked' : '' }}>
+                                                                <span class="ml-2 text-eco-700">Для доставки</span>
+                                                            </label>
+                                                            <label class="inline-flex items-center">
+                                                                <input type="radio" name="type" value="billing" class="h-4 w-4 text-eco-600 focus:ring-eco-500 border-eco-300" {{ $address->type == 'billing' ? 'checked' : '' }}>
+                                                                <span class="ml-2 text-eco-700">Для счетов</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label class="inline-flex items-center">
+                                                            <input type="checkbox" name="is_default" value="1" class="h-4 w-4 text-eco-600 focus:ring-eco-500 border-eco-300" {{ $address->is_default ? 'checked' : '' }}>
+                                                            <span class="ml-2 text-eco-700">Установить как адрес по умолчанию</span>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="mt-6 flex justify-end gap-3">
+                                                        <button type="button" class="hide-modal-btn px-4 py-2 border border-eco-200 text-eco-700 rounded-lg hover:bg-eco-50 transition-colors" data-modal="edit-address-modal-{{ $address->id }}">
+                                                            Отмена
+                                                        </button>
+                                                        <button type="submit" class="px-4 py-2 bg-eco-600 text-white rounded-lg hover:bg-eco-700 transition-colors">
+                                                            Сохранить изменения
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 @endforeach
@@ -205,7 +345,7 @@
                                 </div>
                                 <h3 class="text-lg font-medium text-eco-900 mb-2">У вас еще нет сохраненных адресов</h3>
                                 <p class="text-eco-600 mb-6 max-w-md mx-auto">Добавьте адрес доставки или адрес для выставления счетов</p>
-                                <button type="button" class="inline-block bg-eco-600 hover:bg-eco-700 text-white py-2 px-4 rounded-lg transition-colors" onclick="document.getElementById('add-address-modal').classList.remove('hidden')">
+                                <button type="button" class="show-modal-btn inline-block bg-eco-600 hover:bg-eco-700 text-white py-2 px-4 rounded-lg transition-colors" data-modal="add-address-modal">
                                     Добавить адрес
                                 </button>
                             </div>
@@ -213,19 +353,19 @@
                     </div>
                 </div>
                 
-                <!-- Edit Address Modal -->
-                <div id="edit-address-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <!-- Add Address Modal -->
+                <div id="add-address-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
                     <div class="bg-white rounded-lg max-w-lg w-full mx-4 max-h-90vh overflow-y-auto">
                         <div class="p-6 border-b border-eco-100 flex justify-between items-center">
-                            <h3 class="text-lg font-medium text-eco-900">Редактировать адрес</h3>
-                            <button type="button" class="text-eco-500 hover:text-eco-700" onclick="document.getElementById('edit-address-modal').classList.add('hidden')">
+                            <h3 class="text-lg font-medium text-eco-900">Добавить новый адрес</h3>
+                            <button type="button" class="hide-modal-btn text-eco-500 hover:text-eco-700" data-modal="add-address-modal">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
                         </div>
-                        <form id="edit-address-form" method="POST" class="p-6">
+                        <form action="{{ route('account.addresses.store') }}" method="POST" class="p-6">
                             @csrf
                             @method('PUT')
                             <div class="space-y-4">
@@ -242,7 +382,7 @@
                                 
                                 <div>
                                     <label for="edit_address_line1" class="block text-sm font-medium text-eco-700 mb-1">Адрес</label>
-                                    <input type="text" name="address_line1" id="edit_address_line1" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    <input type="text" name="address_line1" id="edit_address_line1" value="{{ $address->address_line1 }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
                                 </div>
                                 
                                 <div>
@@ -300,7 +440,7 @@
                             </div>
                             
                             <div class="mt-6 flex justify-end gap-3">
-                                <button type="button" class="px-4 py-2 border border-eco-200 text-eco-700 rounded-lg hover:bg-eco-50 transition-colors" onclick="document.getElementById('edit-address-modal').classList.add('hidden')">
+                                <button type="button" class="hide-modal-btn px-4 py-2 border border-eco-200 text-eco-700 rounded-lg hover:bg-eco-50 transition-colors" data-modal="edit-address-modal">
                                     Отмена
                                 </button>
                                 <button type="submit" class="px-4 py-2 bg-eco-600 text-white rounded-lg hover:bg-eco-700 transition-colors">
@@ -315,7 +455,7 @@
                     <div class="bg-white rounded-lg max-w-lg w-full mx-4 max-h-90vh overflow-y-auto">
                         <div class="p-6 border-b border-eco-100 flex justify-between items-center">
                             <h3 class="text-lg font-medium text-eco-900">Добавить новый адрес</h3>
-                            <button type="button" class="text-eco-500 hover:text-eco-700" onclick="document.getElementById('add-address-modal').classList.add('hidden')">
+                            <button type="button" class="hide-modal-btn text-eco-500 hover:text-eco-700" data-modal="add-address-modal">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -396,7 +536,7 @@
                             </div>
                             
                             <div class="mt-6 flex justify-end gap-3">
-                                <button type="button" class="px-4 py-2 border border-eco-200 text-eco-700 rounded-lg hover:bg-eco-50 transition-colors" onclick="document.getElementById('add-address-modal').classList.add('hidden')">
+                                <button type="button" class="hide-modal-btn px-4 py-2 border border-eco-200 text-eco-700 rounded-lg hover:bg-eco-50 transition-colors" data-modal="add-address-modal">
                                     Отмена
                                 </button>
                                 <button type="submit" class="px-4 py-2 bg-eco-600 text-white rounded-lg hover:bg-eco-700 transition-colors">
@@ -411,6 +551,4 @@
     </div>
 </div>
 @endsection
-@push('scripts')
-    <script src="{{ asset('resources/js/addresses.js') }}"></script>
-@endpush
+

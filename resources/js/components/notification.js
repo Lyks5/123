@@ -19,7 +19,25 @@ export class NotificationManager {
 
     show(type, message) {
         const notification = document.createElement('div');
-        const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+        
+        // Определяем цвет фона в зависимости от типа уведомления
+        let bgColor;
+        switch(type) {
+            case 'success':
+                bgColor = 'bg-green-500';
+                break;
+            case 'error':
+                bgColor = 'bg-red-500';
+                break;
+            case 'info':
+                bgColor = 'bg-blue-500';
+                break;
+            case 'warning':
+                bgColor = 'bg-yellow-500';
+                break;
+            default:
+                bgColor = 'bg-gray-500';
+        }
         
         notification.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center justify-between transform transition-all duration-300 ease-in-out opacity-0 translate-x-full`;
         

@@ -38,14 +38,9 @@ class WishlistController extends Controller
             $status = true;
         }
 
-        if ($request->ajax()) {
-            return response()->json([
-                'message' => $message,
-                'status' => $status,
-                'in_wishlist' => $status
-            ]);
-        }
-
-        return back()->with('success', $message);
+        return response()->json([
+            'success' => $status,
+            'message' => $message
+        ]);
     }
 }

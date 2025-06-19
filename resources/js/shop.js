@@ -1,6 +1,12 @@
 import noUiSlider from 'nouislider';
+import { initNotifications } from './components/product/notifications';
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация уведомлений
+    const notifications = initNotifications({
+        position: 'top-right',
+        duration: 3000
+    });
     // Отладочная информация
     console.log('Shop.js loaded');
 
@@ -83,6 +89,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (productsGrid && data.html) {
                     productsGrid.innerHTML = data.html;
                 }
+                
+                // Отображаем уведомление, если оно есть в ответе
+                if (data.message) {
+                    document.dispatchEvent(new CustomEvent('show-notification', {
+                        detail: {
+                            message: data.message,
+                            type: data.success ? 'success' : 'error'
+                        }
+                    }));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.dispatchEvent(new CustomEvent('show-notification', {
+                    detail: {
+                        message: 'Произошла ошибка при загрузке данных',
+                        type: 'error'
+                    }
+                }));
             });
     }
 
