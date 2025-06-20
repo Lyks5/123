@@ -453,7 +453,7 @@
                                 
                                 <div>
                                     <label for="edit_address_line1" class="block text-sm font-medium text-eco-700 mb-1">Адрес</label>
-                                    <input type="text" name="address_line1" id="edit_address_line1" value="{{ $address->address_line1 }}" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
+                                    <input type="text" name="address_line1" id="edit_address_line1" class="w-full px-3 py-2 border border-eco-200 rounded-lg focus:ring-2 focus:ring-eco-500 focus:border-eco-500" required>
                                 </div>
                                 
                                 <div>

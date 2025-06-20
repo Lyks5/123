@@ -368,46 +368,44 @@ class CheckoutController extends Controller
         $waterSaved = 0;
         
         foreach ($ecoFeatures as $feature) {
-            // Получаем значение из pivot таблицы
-            $value = (float)($feature->pivot->value ?? 0);
+            // Получаем значение из pivot таблицы и преобразуем в float
+            $value = floatval($feature->pivot->value);
             
-            // Определяем тип эко-характеристики по slug
-            switch ($feature->slug) {
-                case 'carbon-footprint':
-                    $carbonSaved += $value;
-                    break;
-                    
-                case 'recycled-plastic':
-                    $plasticSaved += $value;
-                    break;
-                    
-                case 'water-saved':
-                    $waterSaved += $value;
-                    break;
-                    
-                // Можно добавить другие типы эко-характеристик
-                default:
-                    // Проверяем наличие ключевых слов в названии характеристики
-                    $name = strtolower($feature->name);
-                    if (str_contains($name, 'carbon') || str_contains($name, 'co2')) {
-                        $carbonSaved += $value;
-                    } elseif (str_contains($name, 'plastic')) {
-                        $plasticSaved += $value;
-                    } elseif (str_contains($name, 'water')) {
-                        $waterSaved += $value;
-                    }
-                    break;
+            // Проверяем тип эко-характеристики по slug и названию
+            $slug = strtolower($feature->slug);
+            $name = strtolower($feature->name);
+            
+            // Для углерода
+            if (str_contains($slug, 'carbon') || str_contains($slug, 'co2') ||
+                str_contains($name, 'carbon') || str_contains($name, 'co2')) {
+                $carbonSaved += $value;
+            }
+            
+            // Для пластика
+            if (str_contains($slug, 'plastic') || str_contains($name, 'plastic') ||
+                str_contains($slug, 'recycled') || str_contains($name, 'recycled')) {
+                $plasticSaved += $value;
+            }
+            
+            // Для воды
+            if (str_contains($slug, 'water') || str_contains($name, 'water')) {
+                $waterSaved += $value;
             }
         }
         
         // Учитываем количество и вес товара
-        $weight = $product->weight ?? 1;
+        $weight = floatval($product->weight ?? 1);
         
-        // Возвращаем сумму эко-метрик
+        // Убедимся, что все значения положительные
+        $carbonTotal = max(0, $carbonSaved * $quantity * $weight);
+        $plasticTotal = max(0, $plasticSaved * $quantity * $weight);
+        $waterTotal = max(0, $waterSaved * $quantity * $weight);
+        
+        // Возвращаем сумму эко-метрик с округлением до 2 знаков
         return [
-            'carbon_saved' => round($carbonSaved * $quantity * $weight, 2),
-            'plastic_saved' => round($plasticSaved * $quantity * $weight, 2),
-            'water_saved' => round($waterSaved * $quantity * $weight, 2),
+            'carbon_saved' => round($carbonTotal, 2),
+            'plastic_saved' => round($plasticTotal, 2),
+            'water_saved' => round($waterTotal, 2),
         ];
     }
 
