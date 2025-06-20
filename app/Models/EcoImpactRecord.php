@@ -28,7 +28,6 @@ class EcoImpactRecord extends Model
      * Правила валидации
      */
     public static $rules = [
-        'product_id' => 'required|exists:products,id',
         'user_id' => 'required|exists:users,id',
         'plastic_saved' => 'required|numeric|min:0',
         'carbon_saved' => 'required|numeric|min:0',

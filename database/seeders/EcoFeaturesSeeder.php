@@ -12,8 +12,8 @@ class EcoFeaturesSeeder extends Seeder
     {
         $features = [
             [
-                'name' => 'Углеродный след',
-                'slug' => 'carbon-footprint',
+                'name' => 'Сокращение CO₂',
+                'slug' => 'carbon-saved',
                 'description' => 'Количество сокращенных выбросов CO₂ по сравнению с обычным производством',
                 'unit' => 'кг CO₂',
                 'icon' => 'carbon-footprint',
@@ -26,9 +26,9 @@ class EcoFeaturesSeeder extends Seeder
                 'icon' => 'water-drop',
             ],
             [
-                'name' => 'Переработанный пластик',
-                'slug' => 'recycled-plastic',
-                'description' => 'Количество переработанного пластика в составе продукта',
+                'name' => 'Экономия пластика',
+                'slug' => 'plastic-saved',
+                'description' => 'Количество сэкономленного пластика в производстве',
                 'unit' => 'кг',
                 'icon' => 'recycle',
             ],

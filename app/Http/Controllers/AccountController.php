@@ -208,7 +208,10 @@ class AccountController extends Controller
     public function profile()
     {
         $user = Auth::user();
-        return view('account.profile', compact('user'));
+        $ecoImpact = $user->getTotalEcoImpact();
+        $eco_rating = $user->eco_impact_score ?? 0;
+        
+        return view('account.profile', compact('user', 'ecoImpact', 'eco_rating'));
     }
     
     /**

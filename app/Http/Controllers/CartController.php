@@ -262,8 +262,16 @@ public function applyCoupon(Request $request)
 
 private function findCartItemIndex($cartData, $productId, $variantId)
 {
+    if (!is_array($cartData)) {
+        return null;
+    }
+    
     foreach ($cartData as $index => $item) {
-        if ($item['product_id'] == $productId && $item['variant_id'] == $variantId) {
+        if (!isset($item['product_id'])) {
+            continue;
+        }
+        
+        if ($item['product_id'] == $productId && ($item['variant_id'] ?? null) == $variantId) {
             return $index;
         }
     }

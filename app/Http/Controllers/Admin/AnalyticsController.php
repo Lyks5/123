@@ -591,10 +591,27 @@ class AnalyticsController extends Controller
             $data['Экономия воды (л)'] = $envData['impact']['water_saved'] ?? 0;
             $data['Снижение пластика (кг)'] = $envData['impact']['plastic_reduced'] ?? 0;
 
-            $html = '<h1>Аналитический отчет</h1>';
-            $html .= '<p>Дата: ' . date('Y-m-d') . '</p>';
-            $html .= '<table border="1" cellpadding="5">';
-            $html .= '<tr><th>Показатель</th><th>Значение</th></tr>';
+            $html = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                <style>
+                    body { font-family: DejaVu Sans, sans-serif; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                    th { background-color: #f5f5f5; }
+                    h1 { color: #333; }
+                </style>
+            </head>
+            <body>
+                <h1>Аналитический отчет</h1>
+                <p>Дата: ' . date('Y-m-d') . '</p>
+                <table>
+                    <tr>
+                        <th>Показатель</th>
+                        <th>Значение</th>
+                    </tr>';
             
             foreach ($data as $key => $value) {
                 $html .= '<tr>';
@@ -603,9 +620,13 @@ class AnalyticsController extends Controller
                 $html .= '</tr>';
             }
             
-            $html .= '</table>';
+            $html .= '</table>
+            </body>
+            </html>';
 
             $pdf = PDF::loadHTML($html);
+            $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
+            $pdf->setPaper('A4');
             return $pdf->download('analytics_' . date('Y-m-d') . '.pdf');
         } catch (\Exception $e) {
             Log::error('Ошибка экспорта PDF: ' . $e->getMessage());

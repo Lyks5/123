@@ -232,6 +232,7 @@ class CheckoutController extends Controller
             
             $ecoImpact = $this->calculateEcoImpact($cart);
             
+            // Создаем запись в eco_impact_records
             EcoImpactRecord::create([
                 'user_id' => auth()->id(),
                 'order_id' => $order->id,
@@ -244,8 +245,19 @@ class CheckoutController extends Controller
             
             if (auth()->check()) {
                 $user = auth()->user();
-                $multiplier = $request->has('carbon_offset') ? 0.2 : 0.1;
-                $user->increment('eco_impact_score', $ecoImpact['carbon_saved'] * $multiplier);
+                
+                // Обновляем eco_impact_score (0.02 очка за каждую единицу эко-метрик)
+                $score_increment = 0;
+                $score_increment += $ecoImpact['carbon_saved'] * 0.02; // За каждый кг CO2
+                $score_increment += $ecoImpact['plastic_saved'] * 0.02; // За каждый кг пластика
+                $score_increment += $ecoImpact['water_saved'] * 0.02; // За каждый литр воды
+                
+                // Если выбрана carbon offset опция, добавляем бонус
+                if ($request->has('carbon_offset')) {
+                    $score_increment *= 1.5; // 50% бонус за carbon offset
+                }
+                
+                $user->increment('eco_impact_score', $score_increment);
             }
             
             $cart->clear();
@@ -356,25 +368,46 @@ class CheckoutController extends Controller
         $waterSaved = 0;
         
         foreach ($ecoFeatures as $feature) {
+            // Получаем значение из pivot таблицы
+            $value = (float)($feature->pivot->value ?? 0);
+            
+            // Определяем тип эко-характеристики по slug
             switch ($feature->slug) {
-                case 'recycled-materials':
-                    $carbonSaved += 0.5;
-                    $plasticSaved += 0.2;
+                case 'carbon-footprint':
+                    $carbonSaved += $value;
                     break;
-                case 'organic-cotton':
-                    $waterSaved += 2000;
-                    $carbonSaved += 0.3;
+                    
+                case 'recycled-plastic':
+                    $plasticSaved += $value;
                     break;
-                case 'biodegradable':
-                    $plasticSaved += 0.5;
+                    
+                case 'water-saved':
+                    $waterSaved += $value;
+                    break;
+                    
+                // Можно добавить другие типы эко-характеристик
+                default:
+                    // Проверяем наличие ключевых слов в названии характеристики
+                    $name = strtolower($feature->name);
+                    if (str_contains($name, 'carbon') || str_contains($name, 'co2')) {
+                        $carbonSaved += $value;
+                    } elseif (str_contains($name, 'plastic')) {
+                        $plasticSaved += $value;
+                    } elseif (str_contains($name, 'water')) {
+                        $waterSaved += $value;
+                    }
                     break;
             }
         }
         
+        // Учитываем количество и вес товара
+        $weight = $product->weight ?? 1;
+        
+        // Возвращаем сумму эко-метрик
         return [
-            'carbon_saved' => $carbonSaved * $quantity,
-            'plastic_saved' => $plasticSaved * $quantity,
-            'water_saved' => $waterSaved * $quantity,
+            'carbon_saved' => round($carbonSaved * $quantity * $weight, 2),
+            'plastic_saved' => round($plasticSaved * $quantity * $weight, 2),
+            'water_saved' => round($waterSaved * $quantity * $weight, 2),
         ];
     }
 

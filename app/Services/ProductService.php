@@ -100,23 +100,21 @@ class ProductService
         
         try {
             // Валидация входных данных
+            // Нормализуем массив значений атрибутов
             $normalizedValues = collect($attributeValues)
-                ->filter(function ($item) {
-                    return isset($item['attribute_value_id']) && isset($item['attribute_id']);
-                })
-                ->map(function ($item) {
-                    return [
-                        'attribute_value_id' => (int)$item['attribute_value_id'],
-                    ];
+                ->filter()
+                ->map(function ($attributeValueId) {
+                    return ['attribute_value_id' => (int)$attributeValueId];
                 });
             
             // Проверяем существование значений атрибутов
-            $existingValueIds = AttributeValue::whereIn('id', $normalizedValues->pluck('attribute_value_id'))
+            // Проверяем существование значений атрибутов
+            $existingValueIds = AttributeValue::whereIn('id', array_values($attributeValues))
                 ->pluck('id')
                 ->toArray();
             
             $invalidIds = array_diff(
-                $normalizedValues->pluck('attribute_value_id')->toArray(),
+                array_values($attributeValues),
                 $existingValueIds
             );
             
@@ -126,20 +124,6 @@ class ProductService
                 );
             }
             
-            // Проверяем существование атрибутов и их значений
-            $attributeValueIds = $normalizedValues->pluck('attribute_value_id')->toArray();
-            $existingValues = AttributeValue::whereIn('id', $attributeValueIds)
-                ->get()
-                ->pluck('id')
-                ->toArray();
-
-            $invalidIds = array_diff($attributeValueIds, $existingValues);
-            if (!empty($invalidIds)) {
-                throw new \InvalidArgumentException(
-                    'Недопустимые значения атрибутов: ' . implode(', ', $invalidIds)
-                );
-            }
-
             // Синхронизируем значения атрибутов
             $syncData = $normalizedValues->mapWithKeys(function ($item) {
                 return [$item['attribute_value_id'] => []];
@@ -164,42 +148,34 @@ class ProductService
     
     protected function syncImages(Product $product, array $images): void
     {
-        \Log::info('Syncing images for product', [
+        if (empty($images)) {
+            return;
+        }
+
+        \Log::info('Uploading images for product', [
             'product_id' => $product->id,
             'images_count' => count($images)
         ]);
 
-        if (isset($images[0]) && is_array($images[0]) && isset($images[0]['id'])) {
-            $product->images()->sync(
-                collect($images)->mapWithKeys(fn($item) => [
-                    $item['id'] => ['order' => $item['order'] ?? 0]
-                ])
-            );
-        } else if (!empty($images)) {
-            foreach ($images as $index => $image) {
-                if ($image instanceof UploadedFile) {
-                    try {
-                        $currentRequest = request();
-                        $currentRequest->merge(['product_id' => $product->id]);
-                        
-                        $imageService = app(ProductImageService::class);
-                        $uploadedImage = $imageService->upload($image);
-                        
-                        if ($uploadedImage) {
-                            $product->images()->attach($uploadedImage->id, [
-                                'order' => $index
-                            ]);
-                        }
-                    } catch (\Exception $e) {
-                        \Log::error('Failed to upload image', [
-                            'error' => $e->getMessage(),
-                            'index' => $index
-                        ]);
-                    }
-                }
+        $imageService = app(ProductImageService::class);
+        
+        foreach ($images as $image) {
+            if (!$image instanceof UploadedFile) {
+                continue;
             }
-            $product->load('images');
+
+            try {
+                request()->merge(['product_id' => $product->id]);
+                $imageService->upload($image);
+            } catch (\Exception $e) {
+                \Log::error('Failed to upload image', [
+                    'error' => $e->getMessage(),
+                    'product_id' => $product->id
+                ]);
+            }
         }
+
+        $product->load('images');
     }
 
     protected function syncEcoFeaturesWithValues(Product $product, array $ecoFeatures): void
@@ -210,7 +186,26 @@ class ProductService
                 'eco_features' => $ecoFeatures
             ]);
 
-            $product->ecoFeatures()->sync($ecoFeatures);
+            // Подготавливаем данные для синхронизации
+            $syncData = [];
+            foreach ($ecoFeatures as $featureId => $data) {
+                if (isset($data['value']) && $data['value'] !== '' && $data['value'] !== null) {
+                    $syncData[$featureId] = ['value' => $data['value']];
+                }
+            }
+
+            \Log::info('ProductService: Prepared sync data', [
+                'product_id' => $product->id,
+                'sync_data' => $syncData
+            ]);
+
+            // Синхронизируем эко-характеристики с их значениями
+            $product->ecoFeatures()->sync($syncData);
+
+            \Log::info('ProductService: Successfully synced eco features', [
+                'product_id' => $product->id,
+                'feature_count' => count($syncData)
+            ]);
 
         } catch (\Exception $e) {
             \Log::error('ProductService: Error syncing eco features', [
@@ -273,7 +268,7 @@ class ProductService
             }
 
             // Создаем продукт
-            $product = $this->create([
+            $productData = [
                 'name' => $arrival->name,
                 'sku' => $this->generateSku($arrival->name),
                 'description' => $data['description'],
@@ -281,7 +276,17 @@ class ProductService
                 'category_id' => $data['category_id'],
                 'stock_quantity' => $data['stock_quantity'],
                 'status' => $data['status'] ?? 'draft'
-            ]);
+            ];
+
+            // Добавляем обязательные эко-характеристики
+            if (isset($data['eco_features'])) {
+                $productData['eco_features'] = $data['eco_features'];
+                $productData['eco_feature_values'] = $data['eco_feature_values'];
+            } else {
+                throw new \InvalidArgumentException('Эко-характеристики обязательны для создания товара');
+            }
+
+            $product = $this->create($productData);
 
             // Обновляем количество в поступлении
             $arrival->update([

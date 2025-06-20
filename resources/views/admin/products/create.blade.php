@@ -241,18 +241,24 @@
                                     <div class="flex text-sm text-gray-600">
                                         <label for="images" class="relative cursor-pointer bg-white rounded-md font-medium text-eco-600 hover:text-eco-500">
                                             <span>Загрузить файлы</span>
-                                            <input id="images" name="images[]" type="file" class="sr-only" multiple accept="image/*">
-                                            <input type="hidden" id="primary_image" name="primary_image" value="0">
+                                            <input id="images" name="images[]" type="file" class="sr-only" multiple accept="image/jpeg,image/png,image/gif">
                                         </label>
                                         <p class="pl-1">или перетащите их сюда</p>
                                     </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF до 10MB</p>
+                                    <p class="text-xs text-gray-500">PNG, JPG, GIF до 5MB</p>
                                 </div>
                             </div>
+                            
                             <!-- Контейнер для предпросмотра -->
-                            <div id="preview-container" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 preview-images">
+                            <div id="preview-container" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                             </div>
-                            <span class="error-message" data-error="images"></span>
+                            
+                            @error('images')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                            @error('images.*')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
 

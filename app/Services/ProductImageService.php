@@ -106,8 +106,15 @@ class ProductImageService
                 ] : null
             ]);
 
+            // Получаем product_id из request или переданных параметров
+            $productId = request()->input('product_id');
+            
+            if (!$productId) {
+                throw new \InvalidArgumentException('Product ID is required for image upload');
+            }
+
             // Получаем максимальный order
-            $maxOrder = ProductImage::where('product_id', request()->input('product_id'))
+            $maxOrder = ProductImage::where('product_id', $productId)
                 ->max('order') ?? -1;
 
             // Создаем запись в БД
@@ -116,7 +123,7 @@ class ProductImageService
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $mimeType,
                 'size' => $file->getSize(),
-                'product_id' => request()->input('product_id'),
+                'product_id' => $productId,
                 'order' => $maxOrder + 1
             ]);
 
