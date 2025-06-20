@@ -12,16 +12,25 @@
         <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
+            @if ($errors->has('general'))
+                <div class="mb-4 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    {{ $errors->first('general') }}
+                </div>
+            @endif
+
             <div class="mb-6">
                 <label for="name" class="block text-sm font-medium text-gray-700">Название категории</label>
                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 @error('name') border-red-500 @enderror">
+                @error('name')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             
             <div class="mb-6">
                 <label for="parent_id" class="block text-sm font-medium text-gray-700">Родительская категория (опционально)</label>
                 <select name="parent_id" id="parent_id"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 @error('parent_id') border-red-500 @enderror">
                     <option value="">Нет родительской категории</option>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}" {{ old('parent_id') == $category->id ? 'selected' : '' }}>
@@ -34,37 +43,46 @@
             <div class="mb-6">
                 <label for="description" class="block text-sm font-medium text-gray-700">Описание</label>
                 <textarea name="description" id="description" rows="4"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">{{ old('description') }}</textarea>
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
+                @error('description')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700">Изображение категории</label>
-                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                    <div class="space-y-1 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="flex text-sm text-gray-600">
-                            <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-eco-600 hover:text-eco-500 focus-within:outline-none">
-                                <span>Загрузить изображение</span>
-                                <input id="image" name="image" type="file" class="sr-only" accept="image/*">
-                            </label>
-                            <p class="pl-1">или перетащите файл сюда</p>
-                        </div>
-                        <p class="text-xs text-gray-500">PNG, JPG, GIF до 2MB</p>
-                    </div>
+                <label for="image" class="block text-sm font-medium text-gray-700">Изображение категории</label>
+                @error('image')
+                    <p class="mb-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                <div class="mt-1 flex items-center">
+                    <input type="file"
+                           id="image"
+                           name="image"
+                           accept="image/*"
+                           class="block w-full text-sm text-gray-500
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-semibold
+                                  file:bg-eco-50 file:text-eco-700
+                                  hover:file:bg-eco-100"
+                           onchange="previewImage(this)">
                 </div>
                 <div id="image-preview" class="mt-2 hidden">
                     <img src="" alt="Предпросмотр" class="h-40 object-cover rounded">
                 </div>
+                <p class="mt-1 text-sm text-gray-500">PNG, JPG, GIF до 2MB</p>
             </div>
             
             <div class="mb-6">
                 <div class="flex items-center">
-                    <input id="status" name="status" type="checkbox" value="active" {{ old('status', 'active') === 'active' ? 'checked' : '' }}
+                    <input id="is_active" name="is_active" type="hidden" value="0">
+                    <input id="is_active" name="is_active" type="checkbox" value="1" {{ old('is_active', '1') == '1' ? 'checked' : '' }}
                         class="h-4 w-4 rounded border-gray-300 text-eco-600 focus:ring-eco-500">
-                    <label for="status" class="ml-2 block text-sm text-gray-700">Категория активна</label>
+                    <label for="is_active" class="ml-2 block text-sm text-gray-700">Категория активна</label>
                 </div>
+                @error('is_active')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             
             <div class="flex justify-end">
@@ -79,13 +97,29 @@
     </div>
 
     <script>
-        // Предпросмотр изображения
-        document.getElementById('image').addEventListener('change', function(event) {
+        function previewImage(input) {
             const preview = document.getElementById('image-preview');
             const img = preview.querySelector('img');
-            const file = event.target.files[0];
+            const file = input.files[0];
             
             if (file) {
+                // Проверка типа файла
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Пожалуйста, выберите изображение формата JPG, PNG или GIF');
+                    input.value = '';
+                    preview.classList.add('hidden');
+                    return;
+                }
+                
+                // Проверка размера файла (2MB = 2 * 1024 * 1024 bytes)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Размер файла не должен превышать 2MB');
+                    input.value = '';
+                    preview.classList.add('hidden');
+                    return;
+                }
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     img.src = e.target.result;
@@ -95,6 +129,6 @@
             } else {
                 preview.classList.add('hidden');
             }
-        });
+        }
     </script>
 @endsection

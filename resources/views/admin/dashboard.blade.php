@@ -7,6 +7,8 @@
 @endpush
 
 @section('content')
+
+
 <div class="space-y-6">
     <!-- Заголовок и приветствие -->
     <div class="flex items-center justify-between">
@@ -52,16 +54,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>За последние 24 часа</span>
-                        <span>{{ $stats['orders_today'] ?? 0 }} новых</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>За неделю</span>
-                        <span>{{ $stats['orders_week'] ?? 0 }} заказов</span>
-                    </div>
-                </div>
+                
             </div>
             <div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-3">
                 <a href="{{ route('admin.orders.index') }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
@@ -71,7 +64,7 @@
         </div>
 
         <!-- Статистика продаж -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        <!-- <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div class="p-6">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/50 text-green-600">
@@ -83,7 +76,7 @@
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Продажи</h2>
                         <div class="flex items-baseline">
                             <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                                {{ number_format($stats['revenue'] ?? 0, 0, '.', ' ') }} ₽
+                                {{ isset($totalSales) ? number_format($totalSales, 0, '.', ' ') : '0' }} ₽
                             </p>
                             <p class="ml-2 text-sm text-green-600">
                                 @if(isset($stats['revenue_growth']))
@@ -96,11 +89,11 @@
                 <div class="mt-4">
                     <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                         <span>Средний чек</span>
-                        <span>{{ number_format($stats['average_order'] ?? 0, 0, '.', ' ') }} ₽</span>
+                        <span>{{ isset($stats['average_order']) ? number_format($stats['average_order'], 0, '.', ' ') : '0' }} ₽</span>
                     </div>
                     <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                         <span>Продажи сегодня</span>
-                        <span>{{ number_format($stats['today_revenue'] ?? 0, 0, '.', ' ') }} ₽</span>
+                        <span>{{ isset($stats['today_revenue']) ? number_format($stats['today_revenue'], 0, '.', ' ') : '0' }} ₽</span>
                     </div>
                 </div>
             </div>
@@ -109,7 +102,7 @@
                     Подробная статистика →
                 </a>
             </div>
-        </div>
+        </div> -->
 
         <!-- Товары -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
@@ -128,16 +121,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>Нет в наличии</span>
-                        <span>{{ $stats['out_of_stock'] ?? 0 }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>Заканчиваются</span>
-                        <span>{{ $stats['low_stock'] ?? 0 }}</span>
-                    </div>
-                </div>
+                
             </div>
             <div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-3">
                 <a href="{{ route('admin.products.index') }}" class="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500">
@@ -167,16 +151,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>Новые сегодня</span>
-                        <span>{{ $stats['new_users_today'] ?? 0 }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>Активные</span>
-                        <span>{{ $stats['active_users'] ?? 0 }}</span>
-                    </div>
-                </div>
+                
             </div>
             <div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-3">
                 <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-orange-600 dark:text-orange-400 hover:text-orange-500">
@@ -284,9 +259,6 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900 dark:text-gray-200">
-                                                    {{ $order->user->name }}
-                                                </div>
                                                 <div class="text-xs text-gray-500 dark:text-gray-400">
                                                     {{ $order->created_at->format('d.m.Y H:i') }}
                                                 </div>

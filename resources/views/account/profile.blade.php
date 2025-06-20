@@ -169,25 +169,7 @@
                                     @enderror
                                 </div>
 
-                                <div>
-                                    <label for="preferences" class="block text-sm font-medium text-eco-800 mb-1.5">
-                                        Предпочтения
-                                    </label>
-                                    <select 
-                                        id="preferences" 
-                                        name="preferences[]" 
-                                        multiple
-                                        class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
-                                    >
-                                        <option value="eco_friendly" {{ in_array('eco_friendly', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Экологичные товары</option>
-                                        <option value="vegan" {{ in_array('vegan', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Веганские товары</option>
-                                        <option value="organic" {{ in_array('organic', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Органические товары</option>
-                                        <option value="local" {{ in_array('local', json_decode($user->preferences ?? '[]')) ? 'selected' : '' }}>Локальные производители</option>
-                                    </select>
-                                    @error('preferences')
-                                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                
                             
                                 <div class="md:col-span-2">
                                     <label for="bio" class="block text-sm font-medium text-eco-800 mb-1.5">
@@ -265,9 +247,8 @@
                                         name="password" 
                                         type="password"
                                         required
-                                        minlength="8"
-                                        pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
-                                        title="Минимум 8 символов, должен содержать буквы и цифры"
+                                        minlength="6"
+                                        title="Минимум 6 символов"
                                         class="w-full rounded-lg border-eco-200 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 transition-colors"
                                     >
                                     @error('password')

@@ -12,9 +12,9 @@ use Illuminate\Database\Seeder;
 class OrderSeeder extends Seeder
 {
     private $orderStatuses = [
-        ['status' => 'completed', 'weight' => 60],
-        ['status' => 'pending', 'weight' => 30],
-        ['status' => 'processing', 'weight' => 5],
+        ['status' => 'completed', 'weight' => 30],
+        ['status' => 'pending', 'weight' => 15],
+        ['status' => 'processing', 'weight' => 10],
         ['status' => 'cancelled', 'weight' => 5],
     ];
 

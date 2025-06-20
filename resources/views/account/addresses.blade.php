@@ -4,7 +4,59 @@
 
 @section('content')
 <script>
-   document.addEventListener('DOMContentLoaded', function() {
+    function validateForm(form) {
+        const inputs = {
+            first_name: form.querySelector('input[name="first_name"]'),
+            last_name: form.querySelector('input[name="last_name"]'),
+            postal_code: form.querySelector('input[name="postal_code"]'),
+            phone: form.querySelector('input[name="phone"]')
+        };
+        
+        let isValid = true;
+        
+        // Очищаем предыдущие ошибки
+        form.querySelectorAll('.error-message').forEach(error => error.remove());
+        
+        // Валидация имени и фамилии (только русские буквы, пробел или дефис)
+        const nameRegex = /^[а-яА-ЯёЁ\s-]{2,50}$/;
+        if (!nameRegex.test(inputs.first_name.value)) {
+            showError(inputs.first_name, 'Имя должно содержать только русские буквы');
+            isValid = false;
+        }
+        
+        if (!nameRegex.test(inputs.last_name.value)) {
+            showError(inputs.last_name, 'Фамилия должна содержать только русские буквы');
+            isValid = false;
+        }
+        
+        // Валидация почтового индекса (6 цифр)
+        const postalRegex = /^\d{6}$/;
+        if (!postalRegex.test(inputs.postal_code.value)) {
+            showError(inputs.postal_code, 'Введите корректный почтовый индекс (6 цифр)');
+            isValid = false;
+        }
+        
+        // Валидация телефона (если заполнен)
+        if (inputs.phone.value) {
+            const phoneRegex = /^(\+7|8)?[\s\-]?\(?[489][0-9]{2}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
+            if (!phoneRegex.test(inputs.phone.value)) {
+                showError(inputs.phone, 'Введите корректный номер телефона (+7/8XXXXXXXXXX)');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+
+    function showError(input, message) {
+        const error = document.createElement('div');
+        error.className = 'error-message text-red-500 text-sm mt-1';
+        error.textContent = message;
+        input.classList.add('border-red-500');
+        input.parentNode.appendChild(error);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
     // Показать модальное окно
     document.querySelectorAll('.show-modal-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -250,6 +302,16 @@
                                             </div>
                                             <form action="{{ route('account.addresses.update', $address->id) }}" method="POST" class="p-6">
                                                 @csrf
+                                                <div class="error-container"></div>
+                                                <script>
+                                                    document.currentScript.closest('form').onsubmit = function(e) {
+                                                        if (!validateForm(this)) {
+                                                            e.preventDefault();
+                                                            return false;
+                                                        }
+                                                        return true;
+                                                    };
+                                                </script>
                                                 @method('PUT')
                                                 <div class="space-y-4">
                                                     <div class="grid grid-cols-2 gap-4">
@@ -367,7 +429,16 @@
                         </div>
                         <form action="{{ route('account.addresses.store') }}" method="POST" class="p-6">
                             @csrf
-                            @method('PUT')
+                            <div class="error-container"></div>
+                            <script>
+                                document.currentScript.closest('form').onsubmit = function(e) {
+                                    if (!validateForm(this)) {
+                                        e.preventDefault();
+                                        return false;
+                                    }
+                                    return true;
+                                };
+                            </script>
                             <div class="space-y-4">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>

@@ -13,7 +13,13 @@ class OrderManagementController extends Controller
      */
     public function orders()
     {
-        $orders = Order::with('user')->latest()->paginate(10);
+        $query = Order::with('user')->latest();
+        
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+        
+        $orders = $query->paginate(10);
         return view('admin.orders.index', compact('orders'));
     }
 
@@ -31,7 +37,7 @@ class OrderManagementController extends Controller
     public function updateOrderStatus(Request $request, Order $order)
     {
         $request->validate([
-            'status' => 'required|string|in:pending,completed,canceled,processing,shipped,delivered',
+            'status' => 'required|string|in:pending,completed,cancelled,processing,shipped,delivered',
         ]);
 
         $order->update(['status' => $request->status]);

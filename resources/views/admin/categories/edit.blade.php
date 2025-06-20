@@ -39,42 +39,15 @@
             </div>
             
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700">Текущее изображение</label>
-                @if($category->image)
-                    <div class="mt-2 mb-4">
-                        <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="h-40 object-cover rounded">
-                    </div>
-                @else
-                    <div class="text-gray-500 mb-4">У категории нет изображения.</div>
-                @endif
-                
-                <label class="block text-sm font-medium text-gray-700 mt-4">Загрузить новое изображение</label>
-                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                    <div class="space-y-1 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="flex text-sm text-gray-600">
-                            <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-eco-600 hover:text-eco-500 focus-within:outline-none">
-                                <span>Загрузить изображение</span>
-                                <input id="image" name="image" type="file" class="sr-only" accept="image/*">
-                            </label>
-                            <p class="pl-1">или перетащите файл сюда</p>
-                        </div>
-                        <p class="text-xs text-gray-500">PNG, JPG, GIF до 2MB</p>
-                    </div>
-                </div>
-                <div id="image-preview" class="mt-2 hidden">
-                    <img src="" alt="Предпросмотр" class="h-40 object-cover rounded">
-                </div>
-            </div>
-            
-            <div class="mb-6">
                 <div class="flex items-center">
-                    <input id="is_active" name="is_active" type="checkbox" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
+                    <input type="hidden" name="is_active" value="0">
+                    <input id="is_active" name="is_active" type="checkbox" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
                         class="h-4 w-4 rounded border-gray-300 text-eco-600 focus:ring-eco-500">
                     <label for="is_active" class="ml-2 block text-sm text-gray-700">Категория активна</label>
                 </div>
+                @error('is_active')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
             
             <div class="flex justify-end">
@@ -88,23 +61,4 @@
         </form>
     </div>
 
-    <script>
-        // Предпросмотр изображения
-        document.getElementById('image').addEventListener('change', function(event) {
-            const preview = document.getElementById('image-preview');
-            const img = preview.querySelector('img');
-            const file = event.target.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                    preview.classList.remove('hidden');
-                }
-                reader.readAsDataURL(file);
-            } else {
-                preview.classList.add('hidden');
-            }
-        });
-    </script>
 @endsection

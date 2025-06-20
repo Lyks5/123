@@ -44,13 +44,17 @@
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
                 </div>
                 
-                <div class="mb-6">
-                    <div class="flex items-center">
-                        <input id="is_admin" name="is_admin" type="checkbox" value="1" {{ old('is_admin', $user->is_admin) ? 'checked' : '' }}
-                            class="h-4 w-4 rounded border-gray-300 text-eco-600 focus:ring-eco-500">
-                        <label for="is_admin" class="ml-2 block text-sm text-gray-700">Администратор</label>
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <div class="flex items-center">
+                            <input id="is_admin" name="is_admin" type="checkbox" value="1" {{ old('is_admin', $user->is_admin) ? 'checked' : '' }}
+                                class="h-4 w-4 rounded border-gray-300 text-eco-600 focus:ring-eco-500">
+                            <label for="is_admin" class="ml-2 block text-sm text-gray-700">Администратор</label>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Администраторы имеют полный доступ к панели управления.</p>
                     </div>
-                    <p class="mt-1 text-sm text-gray-500">Администраторы имеют полный доступ к панели управления.</p>
+
+                    
                 </div>
                 
                 <div class="flex justify-end">

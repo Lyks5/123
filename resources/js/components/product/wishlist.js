@@ -1,73 +1,74 @@
-const WISHLIST_STORAGE_KEY = 'product_wishlist';
-
 export const initWishlist = (productId) => {
-    const wishlistButton = document.querySelector('.wishlist-button');
+    const wishlistButton = document.querySelector('#wishlist-btn');
     
     if (!wishlistButton) {
         console.error('Wishlist button not found');
         return null;
     }
 
-    const getWishlist = () => {
-        const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
-    };
+    const toggleWishlist = async () => {
+        try {
+            // Добавляем класс загрузки
+            wishlistButton.classList.add('animate-pulse');
+            wishlistButton.disabled = true;
 
-    const saveWishlist = (wishlist) => {
-        localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
-    };
+            const response = await fetch('/wishlist/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ product_id: productId })
+            });
 
-    const isInWishlist = () => {
-        return getWishlist().includes(productId);
-    };
+            const data = await response.json();
 
-    const updateButtonState = () => {
-        if (isInWishlist()) {
-            wishlistButton.classList.add('active');
-            wishlistButton.setAttribute('aria-label', 'Удалить из избранного');
-        } else {
-            wishlistButton.classList.remove('active');
-            wishlistButton.setAttribute('aria-label', 'Добавить в избранное');
-        }
-    };
+            // Показываем уведомление
+            showNotification(data.inWishlist ? 'Товар добавлен в избранное' : 'Товар удален из избранного', 'success');
 
-    const toggleWishlist = () => {
-        const wishlist = getWishlist();
-        const index = wishlist.indexOf(productId);
-
-        if (index === -1) {
-            wishlist.push(productId);
-            dispatchWishlistEvent('added');
-        } else {
-            wishlist.splice(index, 1);
-            dispatchWishlistEvent('removed');
-        }
-
-        saveWishlist(wishlist);
-        updateButtonState();
-    };
-
-    const dispatchWishlistEvent = (action) => {
-        const event = new CustomEvent('wishlist-change', {
-            detail: {
-                productId,
-                action,
-                wishlistCount: getWishlist().length
+            // Если мы на странице избранного и товар удален - перезагружаем страницу
+            if (!data.inWishlist && window.location.pathname.includes('/account/wishlists')) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000); // Перезагружаем через 1 секунду, чтобы успело показаться уведомление
+                return;
             }
-        });
-        document.dispatchEvent(event);
+
+            // Обновляем внешний вид кнопки
+            const icon = wishlistButton.querySelector('svg');
+            
+            if (data.inWishlist) {
+                wishlistButton.classList.add('text-yellow-500', 'bg-eco-50/80');
+                icon.setAttribute('fill', 'currentColor');
+            } else {
+                wishlistButton.classList.remove('text-yellow-500', 'bg-eco-50/80');
+                icon.setAttribute('fill', 'none');
+            }
+
+        } catch (error) {
+            showNotification('Не удалось обновить избранное', 'error');
+        } finally {
+            // Убираем класс загрузки
+            wishlistButton.classList.remove('animate-pulse');
+            wishlistButton.disabled = false;
+        }
+    };
+
+    const showNotification = (message, type) => {
+        const notification = document.createElement('div');
+        notification.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white z-50`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        // Удаляем уведомление через 3 секунды
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     };
 
     // Добавляем обработчик клика
     wishlistButton.addEventListener('click', toggleWishlist);
-
-    // Устанавливаем начальное состояние
-    updateButtonState();
-
-    // Публичные методы
-    return {
-        isInWishlist,
-        toggle: toggleWishlist,
-        getWishlistItems: getWishlist
-    };
 };

@@ -171,6 +171,7 @@ Route::group([], function () {
             Route::get('/', [UserManagementController::class, 'users'])->name('index');
             Route::get('/{user}/edit', [UserManagementController::class, 'editUser'])->name('edit');
             Route::put('/{user}', [UserManagementController::class, 'updateUser'])->name('update');
+            Route::post('/{user}/toggle-block', [UserManagementController::class, 'toggleBlock'])->name('toggle-block');
         });
         
         // Заказы

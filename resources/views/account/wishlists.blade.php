@@ -47,27 +47,30 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($products as $product)
                                 <div class="relative group">
-                                    <a href="{{ route('product.show', $product->sku) }}" class="block group relative">
-                                        <div class="relative w-full h-80 rounded-lg overflow-hidden bg-eco-50">
+                                    <div class="relative w-full h-80 rounded-lg overflow-hidden bg-eco-50">
+                                        <a href="{{ route('product.show', $product->sku) }}" class="block">
                                             <img src="{{ $product->image }}"
                                                  alt="{{ $product->name }}"
                                                  class="absolute inset-0 w-full h-full object-center object-cover group-hover:opacity-90 transition-opacity">
-                                        </div>
-                                        <div class="mt-4">
-                                            <div class="flex items-center gap-2">
+                                        </a>
+                                    </div>
+                                    <div class="mt-4">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <a href="{{ route('product.show', $product->sku) }}" class="block flex-1">
                                                 <h3 class="text-sm font-medium text-eco-900 mb-0">{{ $product->name }}</h3>
-                                                <button type="button"
-                                                        class="wishlist-remove-btn p-2 bg-white rounded-full shadow-md border border-eco-200 text-eco-600 hover:bg-eco-50/80 transition"
-                                                        data-product-id="{{ $product->id }}"
-                                                        title="Удалить из избранного">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3.332.787-4.5 2.05C10.932 3.786 9.36 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                            <p class="mt-1 text-lg font-semibold text-eco-600">{{ number_format($product->price, 0, '.', ' ') }} ₽</p>
+                                            </a>
+                                            <button type="button"
+                                                    id="wishlist-btn"
+                                                    data-product-id="{{ $product->id }}"
+                                                    class="border border-eco-200 text-eco-800 hover:bg-eco-50/80 rounded-full p-3 transition-all duration-300 hover:shadow-md hover:shadow-eco-100/20 hover:border-eco-300 group bg-eco-50/80 text-yellow-500"
+                                                    title="Удалить из избранного">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" stroke="currentColor">
+                                                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3.332.787-4.5 2.05C10.932 3.786 9.36 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                                </svg>
+                                            </button>
                                         </div>
-                                    </a>
+                                        <p class="mt-1 text-lg font-semibold text-eco-600">{{ number_format($product->price, 0, '.', ' ') }} ₽</p>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -80,5 +83,13 @@
 @endsection
 
 @push('scripts')
-<script src="{{ mix('js/wishlist.js') }}" defer></script>
+<script src="{{ mix('js/components/product/wishlist.js') }}" defer></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('#wishlist-btn').forEach(button => {
+            const productId = button.dataset.productId;
+            initWishlist(productId);
+        });
+    });
+</script>
 @endpush

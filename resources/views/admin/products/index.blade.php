@@ -4,11 +4,101 @@
 
 @section('content')
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Товары</h1>
-            <a href="{{ route('admin.products.create') }}" class="bg-eco-600 hover:bg-eco-700 text-white font-bold py-2 px-4 rounded">
-                Добавить товар
-            </a>
+        <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Товары</h1>
+                <a href="{{ route('admin.products.create') }}" class="bg-eco-600 hover:bg-eco-700 text-white font-bold py-2 px-4 rounded">
+                    Добавить товар
+                </a>
+            </div>
+
+            <form action="{{ route('admin.products.index') }}" method="GET" class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <!-- Поиск по названию и SKU -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Поиск по названию</label>
+                        <input type="text"
+                               name="name"
+                               id="name"
+                               value="{{ request('name') }}"
+                               placeholder="Введите название товара"
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="sku" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Поиск по SKU</label>
+                        <input type="text"
+                               name="sku"
+                               id="sku"
+                               value="{{ request('sku') }}"
+                               placeholder="Введите SKU товара"
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Фильтр по категории -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Категория</label>
+                        <select name="category" id="category" class="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option value="">Все категории</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Фильтр по статусу -->
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Статус</label>
+                        <select name="status" id="status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option value="">Все статусы</option>
+                            <option value="published" {{ request('status') === 'published' ? 'selected' : '' }}>Активные</option>
+                            <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Черновики</option>
+                        </select>
+                    </div>
+
+                    <!-- Фильтр по цене -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Цена</label>
+                        <div class="flex space-x-2">
+                            <input type="number" name="price_min" value="{{ request('price_min') }}"
+                                   placeholder="От" min="0"
+                                   class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <input type="number" name="price_max" value="{{ request('price_max') }}"
+                                   placeholder="До" min="0"
+                                   class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                        </div>
+                    </div>
+
+                    <!-- Фильтр по количеству -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Количество на складе</label>
+                        <div class="flex space-x-2">
+                            <input type="number" name="stock_min" value="{{ request('stock_min') }}"
+                                   placeholder="От" min="0"
+                                   class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <input type="number" name="stock_max" value="{{ request('stock_max') }}"
+                                   placeholder="До" min="0"
+                                   class="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button type="submit"
+                            class="bg-eco-600 hover:bg-eco-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-eco-500">
+                        Применить фильтры
+                    </button>
+                    @if(request()->hasAny(['category', 'status', 'price_min', 'price_max', 'stock_min', 'stock_max', 'name', 'sku']))
+                        <a href="{{ route('admin.products.index') }}"
+                           class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Сбросить
+                        </a>
+                    @endif
+                </div>
+            </form>
         </div>
 
         @if($products->count() > 0)

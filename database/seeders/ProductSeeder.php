@@ -255,9 +255,19 @@ class ProductSeeder extends Seeder
             }
 
             // Добавляем изображение для продукта
+            // Добавляем изображение для продукта в зависимости от категории
+            $imagePath = match($categoryName) {
+                'Футболки' => 'products/футболка.png',
+                'Толстовки' => 'products/Толстовки.webp',
+                'Брюки' => 'products/брюки.png',
+                'Аксессуары' => 'products/Аксессуары.webp',
+                'Обувь' => 'products/обувь.png',
+                default => 'products/default.png'
+            };
+
             $newProduct->images()->create([
-                'image_path' => 'products/футболка.png',
-                'original_name' => 'футболка.png',
+                'image_path' => $imagePath,
+                'original_name' => basename($imagePath),
                 'mime_type' => 'image/png',
                 'size' => 0,
                 'order' => 1

@@ -14,21 +14,44 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Получаем данные о продажах из AnalyticsController
-        $analyticsController = new AnalyticsController();
-        $salesData = $analyticsController->getSalesAnalytics();
+        // Собираем все статистические данные
+        // Получаем данные о продажах
+        $completedOrders = Order::whereIn('status', ['completed', 'delivered', 'shipped'])
+            ->select(DB::raw('COUNT(*) as count, SUM(total_amount) as total'))
+            ->first();
 
-        // Основная статистика
-        // Логируем данные для отладки
-        \Log::info('Sales Analytics Data:', $salesData);
-        
+        \Log::info('Orders data:', [
+            'orders_query' => Order::whereIn('status', ['completed', 'delivered', 'shipped'])->toSql(),
+            'bindings' => Order::whereIn('status', ['completed', 'delivered', 'shipped'])->getBindings(),
+            'completed_orders' => $completedOrders
+        ]);
+
+        // Явно задаем сумму продаж
+        $totalSales = $completedOrders->total ?? 0;
+
+        \Log::info('Total sales calculated:', ['total' => $totalSales]);
+
+        // Формируем основные статистические данные
         $stats = [
             'products' => Product::count(),
             'orders' => Order::count(),
-            'users' => User::where('is_admin', false)->count(),
-            'revenue' => $salesData['total_revenue'],
-            'revenue_growth' => $salesData['sales_growth'],
+            'users' => User::where('is_admin', false)->count()
         ];
+
+        \Log::info('Basic stats:', $stats);
+
+        // Добавляем статистику по заказам за разные периоды
+        $stats['orders_today'] = Order::where('created_at', '>=', Carbon::now()->subDay())->count();
+        $stats['orders_week'] = Order::where('created_at', '>=', Carbon::now()->subWeek())->count();
+
+        // Рост количества заказов
+        $currentMonthOrders = Order::whereMonth('created_at', Carbon::now()->month)->count();
+        $lastMonthOrders = Order::whereMonth('created_at', Carbon::now()->subMonth()->month)->count();
+        $stats['orders_growth'] = $lastMonthOrders > 0
+            ? round(($currentMonthOrders - $lastMonthOrders) / $lastMonthOrders * 100, 2)
+            : 100;
+
+        \Log::info('Dashboard stats:', $stats);
 
         // Статистика заказов за разные периоды
         $ordersToday = Order::where('created_at', '>=', Carbon::now()->subDay())->count();
@@ -58,17 +81,11 @@ class DashboardController extends Controller
             ? round(($currentMonthOrders - $lastMonthOrders) / $lastMonthOrders * 100, 2)
             : 100;
 
-        // Статистика продаж из AnalyticsController
-        $stats['average_order'] = $salesData['average_order'];
-        $stats['today_revenue'] = Order::whereIn('status', ['completed', 'delivered', 'shipped'])
-            ->whereDate('created_at', Carbon::today())
-            ->sum('total_amount');
 
         // Данные по месяцам из AnalyticsController
-        $monthlyData = $salesData['monthly_revenue'] ?? [];
-        if (!empty($monthlyData['months'])) {
-            $stats['monthly_dates'] = $monthlyData['months'];
-            $stats['monthly_revenue'] = $monthlyData['revenues'];
+        if (isset($salesData['monthly_revenue'])) {
+            $stats['monthly_dates'] = $salesData['monthly_revenue']['months'] ?? [];
+            $stats['monthly_revenue'] = $salesData['monthly_revenue']['revenues'] ?? [];
         }
 
         // Статистика товаров
@@ -115,15 +132,18 @@ class DashboardController extends Controller
         // Количество эко-характеристик
         $ecoFeaturesCount = EcoFeature::count();
 
-        return view('admin.dashboard', [
+        // Логируем окончательные данные перед отправкой в представление
+        \Log::info('Final data for view:', [
             'stats' => $stats,
-            'recentOrders' => $recentOrders,
-            'latestProducts' => $latestProducts,
-            'ecoFeaturesCount' => $ecoFeaturesCount,
-            'debug' => [
-                'orders_today' => $ordersToday,
-                'orders_week' => $ordersWeek
-            ]
+            'totalSales' => $totalSales
         ]);
+
+        return view('admin.dashboard', compact(
+            'stats',
+            'recentOrders',
+            'latestProducts',
+            'ecoFeaturesCount',
+            'totalSales'
+        ));
     }
 }

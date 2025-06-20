@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AttributeRequest;
 use App\Models\Attribute;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AttributeController extends Controller
 {
@@ -87,6 +88,16 @@ class AttributeController extends Controller
      */
     public function destroy(Attribute $attribute)
     {
+        // Проверяем использование значений атрибута в товарах
+        $usageCount = DB::table('product_attribute_values')
+            ->join('attribute_values', 'product_attribute_values.attribute_value_id', '=', 'attribute_values.id')
+            ->where('attribute_values.attribute_id', $attribute->id)
+            ->count();
+            
+        if ($usageCount > 0) {
+            return back()->with('error', 'Нельзя удалить атрибут, значения которого используются в товарах');
+        }
+
         $attribute->delete();
         return redirect()->route('admin.attributes.index')
             ->with('success', 'Атрибут успешно удален.');
@@ -97,7 +108,25 @@ class AttributeController extends Controller
      */
     public function values(Attribute $attribute)
     {
-        $values = $attribute->values()->paginate(10);
+        $values = DB::table('attribute_values')
+            ->select([
+                'attribute_values.*',
+                DB::raw('COUNT(DISTINCT product_attribute_values.product_id) as products_count')
+            ])
+            ->leftJoin('product_attribute_values', 'attribute_values.id', '=', 'product_attribute_values.attribute_value_id')
+            ->where('attribute_values.attribute_id', $attribute->id)
+            ->groupBy([
+                'attribute_values.id', 
+                'attribute_values.attribute_id',
+                'attribute_values.value',
+                'attribute_values.hex_color',
+                'attribute_values.display_order',
+                'attribute_values.created_at',
+                'attribute_values.updated_at'
+            ])
+            ->orderBy('attribute_values.display_order')
+            ->paginate(10);
+
         return view('admin.attributes.values.index', compact('attribute', 'values'));
     }
 
@@ -198,6 +227,16 @@ class AttributeController extends Controller
     public function deleteValue(Attribute $attribute, $valueId)
     {
         $value = $attribute->values()->findOrFail($valueId);
+        
+        // Проверяем использование значения в товарах
+        $usageCount = DB::table('product_attribute_values')
+            ->where('attribute_value_id', $valueId)
+            ->count();
+            
+        if ($usageCount > 0) {
+            return back()->with('error', 'Нельзя удалить значение, которое используется в товарах.');
+        }
+        
         $value->delete();
 
         return redirect()->route('admin.attributes.values.index', $attribute)

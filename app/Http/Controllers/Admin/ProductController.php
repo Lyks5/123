@@ -37,8 +37,10 @@ class ProductController extends Controller
         $this->attributeService = $attributeService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $query = Product::select('products.*');
+
         // Создаем подзапрос для выбора первого изображения по order
         $firstImageSubquery = \DB::table('product_images as pi1')
             ->select('pi1.image_path')
@@ -46,21 +48,51 @@ class ProductController extends Controller
             ->orderBy('pi1.order')
             ->limit(1);
 
-        $products = Product::select('products.*')
-            ->selectSub($firstImageSubquery, 'image_url')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query->selectSub($firstImageSubquery, 'image_url');
 
-        // Отладочная информация
-        foreach ($products as $product) {
-            \Log::info("Product image data:", [
-                'product_id' => $product->id,
-                'image_url' => $product->image_url,
-                'full_url' => $product->image_url ? asset($product->image_url) : null
-            ]);
+        // Фильтр по названию
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
         }
 
-        return view('admin.products.index', compact('products'));
+        // Фильтр по SKU
+        if ($request->filled('sku')) {
+            $query->where('sku', 'like', '%' . $request->sku . '%');
+        }
+
+        // Фильтр по категории
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        // Фильтр по статусу
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Фильтр по цене
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
+        }
+
+        // Фильтр по количеству на складе
+        if ($request->filled('stock_min')) {
+            $query->where('stock_quantity', '>=', $request->stock_min);
+        }
+        if ($request->filled('stock_max')) {
+            $query->where('stock_quantity', '<=', $request->stock_max);
+        }
+
+        // Сортировка
+        $query->orderBy('created_at', 'desc');
+
+        $products = $query->paginate(20)->withQueryString();
+        $categories = \App\Models\Category::all();
+
+        return view('admin.products.index', compact('products', 'categories'));
     }
 
     public function create()

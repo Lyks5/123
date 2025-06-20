@@ -7,17 +7,17 @@
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-gray-800">Заказы</h1>
             <div class="flex space-x-2">
-                <div class="relative">
-                    <select id="statusFilter" class="block pl-3 pr-10 py-2 rounded-md border-gray-300 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
+                <form action="{{ route('admin.orders.index') }}" method="GET" class="relative">
+                    <select id="statusFilter" name="status" onchange="this.form.submit()" class="block pl-3 pr-10 py-2 rounded-md border-gray-300 focus:border-eco-500 focus:ring focus:ring-eco-500 focus:ring-opacity-50">
                         <option value="">Все статусы</option>
-                        <option value="pending">Ожидает</option>
-                        <option value="processing">В обработке</option>
-                        <option value="shipped">Отправлен</option>
-                        <option value="delivered">Доставлен</option>
-                        <option value="completed">Завершен</option>
-                        <option value="cancelled">Отменен</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Ожидает</option>
+                        <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>В обработке</option>
+                        <option value="shipped" {{ request('status') == 'shipped' ? 'selected' : '' }}>Отправлен</option>
+                        <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Доставлен</option>
+                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Завершен</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Отменен</option>
                     </select>
-                </div>
+                </form>
                 
                 <div class="relative">
                     <input type="text" id="orderSearch" placeholder="Поиск по номеру или имени" 
@@ -110,23 +110,6 @@
     </div>
 
     <script>
-        // Фильтрация заказов по статусу
-        document.getElementById('statusFilter').addEventListener('change', function() {
-            const status = this.value;
-            const rows = document.querySelectorAll('tbody tr');
-            
-            rows.forEach(row => {
-                const statusCell = row.querySelector('td:nth-child(5)');
-                const statusText = statusCell.textContent.trim().toLowerCase();
-                
-                if (status === '' || statusText.includes(status.toLowerCase())) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-        
         // Поиск заказов
         document.getElementById('orderSearch').addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();

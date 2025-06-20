@@ -31,6 +31,9 @@ Route::get('products/filter', [App\Http\Controllers\ShopController::class, 'filt
 
 // Корзина и заказы (требуют аутентификации)
 Route::middleware('auth:sanctum')->group(function () {
+    // Избранное
+    Route::post('wishlist/toggle', [\App\Http\Controllers\API\WishlistController::class, 'toggle']);
+
     // Корзина
     Route::post('cart/add', [CartController::class, 'add']);
     Route::get('cart', [CartController::class, 'index']);

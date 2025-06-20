@@ -18,10 +18,33 @@ class CategoryManagementController extends Controller
     /**
      * Display a listing of categories
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::with('parent')->withCount('products')->paginate(15);
-        return view('admin.categories.index', compact('categories'));
+        $query = Category::with('parent')->withCount('products');
+        
+        // Фильтр по поиску
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        
+        // Фильтр по статусу
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+        
+        // Фильтр по родительской категории
+        if ($request->filled('parent')) {
+            if ($request->parent === 'root') {
+                $query->whereNull('parent_id');
+            } else {
+                $query->where('parent_id', $request->parent);
+            }
+        }
+        
+        $categories = $query->paginate(15)->withQueryString();
+        $parentCategories = Category::whereNull('parent_id')->get();
+        
+        return view('admin.categories.index', compact('categories', 'parentCategories'));
     }
 
     /**
@@ -38,26 +61,40 @@ class CategoryManagementController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'nullable|boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'parent_id' => 'nullable|exists:categories,id',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'is_active' => 'boolean',
+            ]);
+            
+            // Set boolean values
+            $validated['is_active'] = $request->boolean('is_active');
+            
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                try {
+                    $validated['image'] = $request->file('image')->store('categories', 'public');
+                } catch (\Exception $e) {
+                    return back()
+                        ->withInput()
+                        ->withErrors(['image' => 'Ошибка при загрузке изображения. Пожалуйста, попробуйте другой файл.']);
+                }
+            }
         
-        // Set boolean values
-        $validated['is_active'] = $request->has('is_active');
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            Category::create($validated);
+            
+            return redirect()->route('admin.categories.index')
+                ->with('success', 'Категория успешно создана.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['general' => 'Произошла ошибка при создании категории.']);
         }
-        
-        Category::create($validated);
-        
-        return redirect()->route('admin.categories.index')
-            ->with('success', 'Категория успешно создана.');
     }
 
     /**
@@ -74,33 +111,31 @@ class CategoryManagementController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'nullable|boolean',
-        ]);
-        
-        // Check for circular dependency
-        if ($validated['parent_id'] == $category->id) {
-            return back()->withErrors(['parent_id' => 'Категория не может быть родителем самой себя.']);
-        }
-        
-        // Set boolean values
-        $validated['is_active'] = $request->has('is_active');
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'parent_id' => 'nullable|exists:categories,id',
+                'description' => 'nullable|string',
+                'is_active' => 'boolean',
+            ]);
+            
+            // Check for circular dependency
+            if ($validated['parent_id'] == $category->id) {
+                return back()->withErrors(['parent_id' => 'Категория не может быть родителем самой себя.']);
             }
             
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            // Set boolean values
+            $validated['is_active'] = $request->boolean('is_active');
+            
+            $category->update($validated);
+            
+            return redirect()->route('admin.categories.index')
+                ->with('success', 'Категория успешно обновлена.');
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['general' => 'Произошла ошибка при обновлении категории.']);
         }
-        
-        $category->update($validated);
         
         return redirect()->route('admin.categories.index')
             ->with('success', 'Категория успешно обновлена.');

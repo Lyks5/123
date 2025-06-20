@@ -261,21 +261,35 @@ class AnalyticsController extends Controller
                 ->orderBy('month')
                 ->get();
 
-            $currentPeriodSales = Order::where('status', 'completed')
+            $currentPeriodSales = Order::whereIn('status', ['completed', 'delivered', 'shipped'])
                 ->where('created_at', '>=', now()->subDays(30))
                 ->sum('total_amount');
 
-            $previousPeriodSales = Order::where('status', 'completed')
+            $previousPeriodSales = Order::whereIn('status', ['completed', 'delivered', 'shipped'])
                 ->whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])
                 ->sum('total_amount');
+
+            // Логируем значения для отладки
+            \Log::info('Sales calculations:', [
+                'current_period' => $currentPeriodSales,
+                'previous_period' => $previousPeriodSales,
+                'statuses' => Order::distinct()->pluck('status')->toArray(),
+                'orders_count' => Order::whereIn('status', ['completed', 'delivered', 'shipped'])->count()
+            ]);
 
             $salesGrowth = $previousPeriodSales > 0
                 ? (($currentPeriodSales - $previousPeriodSales) / $previousPeriodSales) * 100
                 : 100;
 
-            // Получаем общую выручку и количество заказов
-            $totalRevenue = Order::whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount') ?? 0;
-            $orderCount = Order::where('status', 'completed')->count() ?? 0;
+            // Получаем общую выручку и количество заказов с учетом всех релевантных статусов
+            $totalRevenue = Order::whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
+            $orderCount = Order::whereIn('status', ['completed', 'delivered', 'shipped'])->count();
+
+            \Log::info('Revenue calculation:', [
+                'total_revenue' => $totalRevenue,
+                'order_count' => $orderCount,
+                'sql' => Order::whereIn('status', ['completed', 'delivered', 'shipped'])->toSql()
+            ]);
 
             // Устанавливаем цели (можно настроить в зависимости от бизнес-требований)
             $revenueGoal = 1000000; // Цель по выручке
@@ -286,7 +300,7 @@ class AnalyticsController extends Controller
                     'current' => array_sum($conversionRates) / max(count($conversionRates), 1),
                     'change' => $salesGrowth
                 ],
-                'total_revenue' => $totalRevenue,
+                'revenue' => $totalRevenue,
                 'revenue_goal_progress' => min(100, ($totalRevenue / $revenueGoal) * 100),
                 'order_count' => $orderCount,
                 'orders_goal_progress' => min(100, ($orderCount / $ordersGoal) * 100),
@@ -296,7 +310,7 @@ class AnalyticsController extends Controller
                     'months' => $salesTrends->pluck('month'),
                     'revenues' => $salesTrends->pluck('revenue')
                 ],
-                'sales_growth' => $salesGrowth,
+                'revenue_growth' => $salesGrowth,
                 'average_order' => Order::whereIn('status', ['completed', 'delivered', 'shipped'])->avg('total_amount') ?: 0
             ];
         });
