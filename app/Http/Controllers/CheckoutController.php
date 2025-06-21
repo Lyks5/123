@@ -20,6 +20,7 @@ class CheckoutController extends Controller
 
     public function __construct(ArrivalStockService $arrivalStockService)
     {
+        $this->middleware('auth');
         $this->arrivalStockService = $arrivalStockService;
     }
 
